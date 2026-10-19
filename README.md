@@ -28,7 +28,3 @@ Read the topics in order; each one builds on the ones before it.
 14. [Shutting down](docs/topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
 15. [Async code inside a reaction](docs/topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
 16. [Rules of thumb](docs/topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
-
-## Branding
-
-`branding/fluorine-logo.png` is the master logo (transparent background). `branding/icons/` holds the generated icon set: `windows/` (ICO, app tiles, NuGet icon), `web/` (favicons, Android, Apple touch), `social/` (GitHub avatar and social preview), `png/` (plain sizes).
