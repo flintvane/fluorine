@@ -53,6 +53,8 @@ Triggering and queueing never throw an exception (§1.8). When a loop no longer 
 
 A queued reaction always gets its run, and a scheduler gives other work of its loop (such as UI messages) its turn as well (§11.9a).
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Coalesced runs](side-by-side/coalesced-runs.md).*
+
 ---
 
 *Spec references: §1.4, §1.8, §4, §11.5-11.9a; cs 2.15. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*

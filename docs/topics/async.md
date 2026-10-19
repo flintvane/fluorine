@@ -45,6 +45,8 @@ reactor.Add(async () =>
 
 Writing a register after the `await` is ordinary threading: it triggers the reactions that read it, as any write does. A display reaction reading `searchResults` then shows the result.
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Async in a reaction](side-by-side/async.md).*
+
 ---
 
 *Spec references: §10.2; cs 8.1. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*

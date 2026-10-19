@@ -28,6 +28,7 @@ plugins:
   - search
 markdown_extensions:
   - admonition
+  - footnotes
   - tables
   - pymdownx.highlight
   - pymdownx.superfences
@@ -51,4 +52,14 @@ nav:
       - "Async code inside a reaction": topics/async.md
       - "Rules of thumb": topics/rules-of-thumb.md
       - "Comparison with other frameworks": topics/comparison.md
+      - Side by side:
+          - Overview: topics/side-by-side/index.md
+          - "First reaction": topics/side-by-side/first-reaction.md
+          - "Dynamic dependencies": topics/side-by-side/dynamic-dependencies.md
+          - "Coalesced runs": topics/side-by-side/coalesced-runs.md
+          - "Untracked reads": topics/side-by-side/untracked-reads.md
+          - "Derived values and self-writes": topics/side-by-side/derived-and-self-writes.md
+          - "Errors": topics/side-by-side/errors.md
+          - "Dispose": topics/side-by-side/dispose.md
+          - "Async in a reaction": topics/side-by-side/async.md
   - Maintaining these docs: maintaining.md

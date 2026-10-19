@@ -48,6 +48,8 @@ A trigger or a queued run never throws (§1.8). The only exception a write can r
 
 `Reaction.ExecutionCount` returns how often a reaction has run, for monitoring (cs 7.4). It may be compiled into debug builds only, so use it in diagnostics code, and keep it out of application logic.
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Errors](side-by-side/errors.md).*
+
 ---
 
 *Spec references: §8, §15; cs 7. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
