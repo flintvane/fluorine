@@ -1,0 +1,53 @@
+site_name: Fluorine
+site_description: Fluorine reactive programming library, C# user documentation
+repo_url: https://github.com/flintvane/fluorine
+theme:
+  name: material
+  logo: logo.png
+  favicon: assets/favicon.png
+  features:
+    - navigation.footer
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+nav:
+  - Topics: index.md
+  - Guide:
+      - "What Fluorine is": topics/introduction.md
+      - "Your first reaction": topics/first-reaction.md
+      - "Registers": topics/registers.md
+      - "Reactions and dependencies": topics/reactions.md
+      - "When reactions run": topics/when-reactions-run.md
+      - "Equality: what counts as a change": topics/equality.md
+      - "Reactors and lifetimes": topics/reactors.md
+      - "Schedulers": topics/schedulers.md
+      - "Threads and consistency": topics/threads-and-consistency.md
+      - "Pausing: reads that do not subscribe": topics/pausing.md
+      - "Signal registers and shadow registers": topics/signal-registers.md
+      - "Derived values, self-writes and cycles": topics/derived-values.md
+      - "Errors and logging": topics/errors-and-logging.md
+      - "Shutting down": topics/shutdown.md
+      - "Async code inside a reaction": topics/async.md
+      - "Rules of thumb": topics/rules-of-thumb.md
+  - Maintaining these docs: maintaining.md
