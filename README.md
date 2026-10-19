@@ -8,6 +8,27 @@ Program state lives in registers. Code that must stay in step with that state is
 
 Status: the platform-neutral semantic specification is being written. No implementation yet.
 
+## Documentation: using Fluorine from C#
+
+Read the topics in order; each one builds on the ones before it.
+
+1. [What Fluorine is](docs/topics/introduction.md): Registers hold state, reactions follow it. The one idea behind the library, and when to use it.
+2. [Your first reaction](docs/topics/first-reaction.md): A complete program: a scheduler, two registers, a reactor and a reaction that keeps a full name up to date.
+3. [Registers](docs/topics/registers.md): `Register<T>`, its `Value` property, `SetValue`, initial values and names.
+4. [Reactions and dependencies](docs/topics/reactions.md): How a reaction discovers what it reads, and how its dependencies change from run to run.
+5. [When reactions run](docs/topics/when-reactions-run.md): Queued runs, coalescing, the run guarantee and manual triggers.
+6. [Equality: what counts as a change](docs/topics/equality.md): `object.Equals`, writes that change nothing, and how to choose sound value types.
+7. [Reactors and lifetimes](docs/topics/reactors.md): Reactors own reactions; disposing a reactor or a reaction ends it cleanly.
+8. [Schedulers](docs/topics/schedulers.md): `ThreadScheduler`, `DispatcherScheduler` and `WinFormsScheduler`, `Scheduler.Current`, and queueing your own work.
+9. [Threads and consistency](docs/topics/threads-and-consistency.md): Writing from any thread, what reactions on other threads see, and aggregate values for consistent state.
+10. [Pausing: reads that do not subscribe](docs/topics/pausing.md): `Reaction.Pause` in its three shapes, and `Reaction.Current` / `Reaction.Recording`.
+11. [Signal registers and shadow registers](docs/topics/signal-registers.md): A `Register` without a value, `TriggerReactions()`, and wrapping controls that hold their own data.
+12. [Derived values, self-writes and cycles](docs/topics/derived-values.md): Reactions that write registers, reactions that follow a state, and reactions that create reactions.
+13. [Errors and logging](docs/topics/errors-and-logging.md): Exceptions in reactions, `Reactive.UnhandledException`, `ReactiveException` and programming errors.
+14. [Shutting down](docs/topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
+15. [Async code inside a reaction](docs/topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
+16. [Rules of thumb](docs/topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
+
 ## Branding
 
 `branding/fluorine-logo.png` is the master logo (transparent background). `branding/icons/` holds the generated icon set: `windows/` (ICO, app tiles, NuGet icon), `web/` (favicons, Android, Apple touch), `social/` (GitHub avatar and social preview), `png/` (plain sizes).
