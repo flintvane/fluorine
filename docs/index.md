@@ -22,3 +22,4 @@ Format: `N. [Title](topics/slug.md): description`
 14. [Shutting down](topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
 15. [Async code inside a reaction](topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
 16. [Rules of thumb](topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
+17. [Comparison with other frameworks](topics/comparison.md): How Meteor Tracker, Compose, MobX, Knockout, Vue, the signals libraries and the .NET options map onto registers, recorded dependencies and scheduled runs.
