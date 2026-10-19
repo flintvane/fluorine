@@ -50,4 +50,5 @@ nav:
       - "Shutting down": topics/shutdown.md
       - "Async code inside a reaction": topics/async.md
       - "Rules of thumb": topics/rules-of-thumb.md
+      - "Comparison with other frameworks": topics/comparison.md
   - Maintaining these docs: maintaining.md
