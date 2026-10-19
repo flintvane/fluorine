@@ -84,6 +84,10 @@ Fluorine shares its central idea with several well-known libraries: dependencies
 
 Fluorine registers accept writes from any thread, and reactions always run on their own scheduler (§1.3, §11.1).
 
+## Side by side
+
+Eight small programs, written in Fluorine and in seven of these frameworks and run, show the differences in practice: scheduling, self-writes, errors, dispose and async. See [Side by side](side-by-side/index.md).
+
 ---
 
 *Spec references: §1–§12; cs 1.16, 2.24, 7.1, 8.1. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5). Sources: research/landscape.md (2026-10-17), research/dotnet-demo/RESULT.md (2026-10-18).*

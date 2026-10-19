@@ -52,6 +52,8 @@ The same lambda may also be called directly, outside a reaction. Then it is an o
 
 How and when the runs happen is the subject of [When reactions run](when-reactions-run.md).
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Dynamic dependencies](side-by-side/dynamic-dependencies.md).*
+
 ---
 
 *Spec references: §1.9, §7.3, §10.1, §11.10; cs 2.6-2.18. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*

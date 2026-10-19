@@ -52,6 +52,8 @@ reactor.Add(() =>
 
 `Reaction.Recording` is `true` when a reaction is running on this thread and is not paused, that is, when a read would be recorded now (cs 2.22). `Reaction.Current` returns the running reaction, paused or not (cs 2.18).
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Untracked reads](side-by-side/untracked-reads.md).*
+
 ---
 
 *Spec references: §6.3, §7.3a, §9; cs 2.18-2.24. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*

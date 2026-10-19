@@ -62,6 +62,8 @@ reactor.Queue(() => statusBar.Text = "Saved");
 
 `Reactor.Queue(Action)` runs the action on the reactor's scheduler (cs 2.1). It is ordinary work: it records no reads. See [Schedulers](schedulers.md).
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Dispose](side-by-side/dispose.md).*
+
 ---
 
 *Spec references: §12; cs 2.1-2.17. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*

@@ -83,6 +83,8 @@ reactor.Add(() => nameLabel.Content = first.Value + " " + last.Value);
 
 See [Schedulers](schedulers.md).
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: First reaction](side-by-side/first-reaction.md).*
+
 ---
 
 *Spec references: semantics §2; cs 1.7, 2.2, 2.3, 2.7, 4.2, 3.11. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*

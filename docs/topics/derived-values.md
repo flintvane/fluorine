@@ -53,6 +53,8 @@ reactor.Add(() =>
 });
 ```
 
+*Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Derived values and self-writes](side-by-side/derived-and-self-writes.md).*
+
 ---
 
 *Spec references: §5.4, §6, §14.3; cs 7.4. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
