@@ -9,6 +9,9 @@ namespace Fluorine
         [ThreadStatic]
         static Reaction t_current;
 
+        [ThreadStatic]
+        static int t_pause;
+
         readonly Reactor _reactor;
         readonly Scheduler _scheduler;
         readonly Dictionary<Register, bool> _deps = new Dictionary<Register, bool>();
@@ -16,7 +19,6 @@ namespace Fluorine
         int _queued;
         int _disposed;
         int _disposeOnce;
-        int _pauseCount;
         int _executionCount;
 
         internal Reaction(Reactor reactor, Scheduler scheduler, string name, Action lambda)
@@ -34,11 +36,7 @@ namespace Fluorine
 
         public static bool Recording
         {
-            get
-            {
-                var current = t_current;
-                return current != null && current._pauseCount == 0;
-            }
+            get { return t_current != null && t_pause == 0; }
         }
 
         public string Name { get; set; }
@@ -50,23 +48,21 @@ namespace Fluorine
 
         public static void PauseRecording()
         {
-            var current = t_current;
-            if (current == null)
+            if (t_current == null)
                 return;
-            current._pauseCount++;
+            t_pause++;
         }
 
         public static void ContinueRecording()
         {
-            var current = t_current;
-            if (current == null)
+            if (t_current == null)
                 return;
-            if (current._pauseCount <= 0)
+            if (t_pause <= 0)
             {
                 Reactive.Raise(new ReactiveException("ContinueRecording called with a pause count of zero."));
                 return;
             }
-            current._pauseCount--;
+            t_pause--;
         }
 
         public static IDisposable Pause()
@@ -183,8 +179,8 @@ namespace Fluorine
             }
 
             MarkDeletionCandidates();
+            t_pause = 0;
             t_current = this;
-            _pauseCount = 0;
             try
             {
                 lambda();
@@ -195,7 +191,7 @@ namespace Fluorine
             }
             finally
             {
-                _pauseCount = 0;
+                t_pause = 0;
                 t_current = null;
                 if (Volatile.Read(ref _disposed) != 0)
                     DisconnectFromRegisters();

@@ -38,7 +38,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 ## Pause
 
-- **Section:** semantics-cs.md 2.20 vs 2.21. **Unclear:** does `ContinueRecording` at count zero outside a reaction log? **Choice:** outside a reaction there is no pause count, so both `PauseRecording` and `ContinueRecording` are no-ops and do not log. Inside a reaction, count zero logs a programming error and leaves the count at zero; it does not throw.
+- **Section:** semantics-cs.md 2.20 vs 2.21. **Unclear:** does `ContinueRecording` at count zero outside a reaction log? **Choice:** outside a reaction there is no pause count, so both `PauseRecording` and `ContinueRecording` are no-ops and do not log. Inside a reaction, count zero logs a programming error and leaves the count at zero; it does not throw. The counter is thread-static, zeroed at the start and end of each run, and only mutated while `Current` is set (9.3, 2.21).
 
 - **Section:** semantics-cs.md 2.24. **Unclear:** disposing `Reaction.Pause()` twice; null delegates. **Choice:** the `IDisposable` continues at most once. Null `Action`/`Func<T>` is treated as no action (12.9).
 
