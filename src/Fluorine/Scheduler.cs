@@ -86,18 +86,13 @@ namespace Fluorine
 
         internal void RequestShutdown()
         {
-            // TODO - what is this for construct ?
-            var first = false;
             lock (Gate)
             {
                 if (_state >= StateShuttingDown)
                     return;
                 _state = StateShuttingDown;
-                first = true;
             }
-
-            if (first)
-                OnShutdownRequested();
+            OnShutdownRequested();
         }
 
         internal void WaitUntilFinished()
