@@ -1,1 +1,6 @@
 site/
+.idea/
+/[Bb]in/
+/[Bb]in/
+obj/Debug
+obj/Release

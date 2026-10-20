@@ -5,15 +5,9 @@ namespace Fluorine
 {
     public class Register
     {
-        readonly object _sync = new object();
         readonly HashSet<Reaction> _listeners = new HashSet<Reaction>();
 
         public string Name { get; set; }
-
-        internal object Sync
-        {
-            get { return _sync; }
-        }
 
         public void RecordRead()
         {
@@ -28,7 +22,7 @@ namespace Fluorine
         public void TriggerReactions()
         {
             Reaction[] snapshot;
-            lock (_sync)
+            lock (this)
             {
                 snapshot = new Reaction[_listeners.Count];
                 _listeners.CopyTo(snapshot);
@@ -41,7 +35,7 @@ namespace Fluorine
         {
             if (reaction == null)
                 return;
-            lock (_sync)
+            lock (this)
                 _listeners.Add(reaction);
         }
 
@@ -49,7 +43,7 @@ namespace Fluorine
         {
             if (reaction == null)
                 return;
-            lock (_sync)
+            lock (this)
                 _listeners.Remove(reaction);
         }
     }
@@ -72,12 +66,12 @@ namespace Fluorine
         {
             get
             {
-                lock (Sync)
+                lock (this)
                     return _value;
             }
             set
             {
-                lock (Sync)
+                lock (this)
                     _value = value;
             }
         }
@@ -87,7 +81,7 @@ namespace Fluorine
             get
             {
                 RecordRead();
-                lock (Sync)
+                lock (this)
                     return _value;
             }
             set
@@ -103,7 +97,7 @@ namespace Fluorine
 
         public bool SetValue(T newValue, out T oldValue)
         {
-            lock (Sync)
+            lock (this)
                 oldValue = _value;
             return Write(newValue, oldValue);
         }
@@ -111,7 +105,7 @@ namespace Fluorine
         bool Write(T newValue)
         {
             T snapshot;
-            lock (Sync)
+            lock (this)
                 snapshot = _value;
             return Write(newValue, snapshot);
         }
@@ -120,7 +114,7 @@ namespace Fluorine
         {
             if (object.Equals(newValue, snapshot))
                 return false;
-            lock (Sync)
+            lock (this)
                 _value = newValue;
             TriggerReactions();
             return true;
