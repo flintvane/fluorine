@@ -68,7 +68,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 - **Section:** semantics-cs.md 3.3 / 12.9. **Unclear:** `Queue(Action)` with a null action. **Choice:** treated as no action, not an error.
 
-- **Section:** semantics-cs.md 7.1. **Unclear:** console stream; multicast handler failures. **Choice:** `Console.WriteLine`. Each handler is invoked separately so one throwing handler cannot stop the others.
+- **Section:** semantics-cs.md 7.1. **Unclear:** console stream; multicast handler failures. **Choice:** `Console.WriteLine`. The multicast is invoked as one call. If it throws, both exceptions are written to the console and the scheduler loop continues. Remaining subscribers are not invoked.
 
 - **Section:** semantics-cs.md 4.2 / 5.2 / 7.1–7.2. **Unclear:** logging of a throwing `CreateNew` initial action, which is neither a reaction nor a queued action. **Choice:** raise `ReactiveException` with the original as `InnerException`, then rethrow the original to the caller of `CreateNew`.
 

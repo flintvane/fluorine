@@ -4,7 +4,6 @@ namespace Fluorine
 {
     public static class Reactive
     {
-        // TODO -  Why is this called in such retarded manner?
         public static event Action<Exception> UnhandledException;
 
         public static void Shutdown()
@@ -40,19 +39,14 @@ namespace Fluorine
                 return;
             }
 
-            var list = handler.GetInvocationList();
-            foreach (var t in list)
+            try
             {
-                var action = (Action<Exception>)t;
-                try
-                {
-                    action(exception);
-                }
-                catch (Exception handlerEx)
-                {
-                    Console.WriteLine("Fluorine warning: " + exception);
-                    Console.WriteLine("Fluorine warning: handler threw: " + handlerEx);
-                }
+                handler(exception);
+            }
+            catch (Exception handlerEx)
+            {
+                Console.WriteLine("Fluorine warning: " + exception);
+                Console.WriteLine("Fluorine warning: handler threw: " + handlerEx);
             }
         }
     }

@@ -446,21 +446,21 @@ namespace Fluorine.Tests
         {
             var n = 0;
             Action<Exception> bad = e => { n++; throw new InvalidOperationException("handler"); };
-            Action<Exception> good = e => { n++; };
             Reactive.UnhandledException += bad;
-            Reactive.UnhandledException += good;
             try
             {
                 using (var host = new ThreadHost())
                 {
                     host.NewReactor().Add(() => { throw new InvalidOperationException("rx"); });
-                    WaitUntil.True(() => n >= 2, "both handlers");
+                    WaitUntil.True(() => n >= 1, "handler ran");
+                    var later = 0;
+                    host.NewReactor().Add(() => Interlocked.Increment(ref later));
+                    WaitUntil.True(() => later == 1, "loop continues");
                 }
             }
             finally
             {
                 Reactive.UnhandledException -= bad;
-                Reactive.UnhandledException -= good;
             }
         }
     }
