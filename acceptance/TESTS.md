@@ -1,6 +1,6 @@
 # Fluorine acceptance tests (spec-derived, independent of Grok Build)
 
-Sources: `spec/semantics-cs.md` draft 0.5 (2026-10-19, primary) and `spec/semantics.md` (header says 0.9, last edited 2026-10-19 11:11). Non-goals from `spec/ideas.md` are not tested (no flush/wait API, no listener hooks, no pool scheduler, no cycle detection, no nested-pump support, no reactor pause, no WinForms reattach after shutdown).
+Sources: `spec/semantics-cs.md` draft 0.5 (2026-10-19, primary) and `spec/semantics.md` (header says 0.9, last edited 2026-10-19 11:11). Re-checked 2026-10-21 against the spec in repo flintvane/fluorine @ a6b9cbd (exception changes of 2026-10-21, `IsRecording`, s14.7, cs8 Computed, async moved to cs9.1, cs9.2). Non-goals from `spec/ideas.md` are not tested (no flush/wait API, no listener hooks, no pool scheduler, no cycle detection, no nested-pump support, no reactor pause, no WinForms reattach after shutdown).
 
 IDs: `csN.M-xx` = rule in semantics-cs.md; `sN.M-xx` = rule only in semantics.md. IDs are stable: never renumber. Retire a test by marking it `retired` and keep the row.
 Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
@@ -10,7 +10,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 - **S** = a scheduler made with `ThreadScheduler.CreateNew()` unless stated. **T(S)** is its thread.
 - **Barrier(S)**: `S.Queue(() => evt.Set())`, then wait on `evt` with a timeout (5 s). Because actions and reaction runs share one FIFO (cs3.3, s11.9) this proves everything queued earlier has run. It is a test helper, not a library flush API.
 - **Barrier2(S)**: Barrier twice, for runs queued by runs.
-- **Log**: a handler on `Reactive.UnhandledException` collecting exceptions. "logged" = exactly one `ReactiveException` arrives there (cs7.1, cs7.2).
+- **Log**: a handler on `Reactive.UnhandledException` collecting exceptions. "logged" = exactly one exception arrives there (cs7.1). For an error Fluorine detects itself it is a `ReactiveException`; for user code (a reaction, a queued action) it is the thrown exception itself, unwrapped (cs7.2, changed 2026-10-21).
 - **Console**: capture `Console.Out` and `Console.Error` together (stream is unspecified, see SPEC-GAPS G12).
 - Run counts are observed through a counter incremented inside the lambda, not through `ExecutionCount` (cs7.4 may be DEBUG-only).
 - Every test ends with `Reactive.Shutdown()` unless the test itself shuts down.
@@ -88,11 +88,11 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs2.19-01 | PauseRecording stops recording | P | lambda: `PauseRecording(); reg.Value; ContinueRecording()` | write reg | no rerun | not yet checked |
 | cs2.20-01 | ContinueRecording resumes | P | lambda: Pause; Continue; read reg | write reg | reruns | not yet checked |
 | cs2.20-02 | Extra ContinueRecording logs, count stays 0 | N | lambda: `ContinueRecording()`; then read reg | Barrier; write reg; Barrier | logged once; read after it IS recorded (reruns) | not yet checked |
-| cs2.21-01 | Pause/Continue outside reaction no effect | E | test thread / queued action | `PauseRecording(); ContinueRecording(); ContinueRecording()` | no exception; `Reaction.Recording` false; see G8 for logging | not yet checked |
-| cs2.22-01 | Recording true in unpaused run | P | – | read `Reaction.Recording` in lambda | true | not yet checked |
-| cs2.22-02 | Recording false paused / outside | P | – | inside Pause; in action; on test thread | false, false, false | not yet checked |
+| cs2.21-01 | Pause/Continue outside reaction no effect | E | test thread / queued action | `PauseRecording(); ContinueRecording(); ContinueRecording()` | no exception; `Reaction.IsRecording` false; see G8 for logging | changed 2026-10-21; not yet checked |
+| cs2.22-01 | IsRecording true in unpaused run | P | – | read `Reaction.IsRecording` in lambda | true | changed 2026-10-21; not yet checked |
+| cs2.22-02 | IsRecording false paused / outside | P | – | inside Pause; in action; on test thread | false, false, false | changed 2026-10-21; not yet checked |
 | cs2.23-01 | Unbalanced pause ends with run | E | lambda run 1: `PauseRecording()` only, reads nothing; triggered manually; run 2 reads reg | write reg after run 2 | run 3 happens (run 2 recorded) | not yet checked |
-| cs2.24-01 | Pause() IDisposable | P | `using (Reaction.Pause()) reg.Value` | write reg | no rerun; Recording true after using | not yet checked |
+| cs2.24-01 | Pause() IDisposable | P | `using (Reaction.Pause()) reg.Value` | write reg | no rerun; `IsRecording` true after using | changed 2026-10-21; not yet checked |
 | cs2.24-02 | Pause(Action) and Pause<T>(Func<T>) | P | – | `Reaction.Pause(() => a.Value)`; `var v = Reaction.Pause(() => b.Value)` | v correct; neither a nor b triggers | not yet checked |
 | cs2.24-03 | Pause(Action) restores on throw | E | Pause(() => throw X) caught in lambda; then read reg | write reg | reruns (recording restored) | not yet checked |
 | cs2.24-04 | Reentrant pauses | P | nested Pause twice; after inner end read c; after outer end read d | write c; then write d | c no rerun; d reruns | not yet checked |
@@ -104,14 +104,14 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs3.3-01 | Queue(Action) runs on scheduler thread | P | – | `S.Queue(a)`; Barrier | ran on T(S) | not yet checked |
 | cs3.3-02 | Actions and runs share FIFO | E | S gated | Add r1; Queue a1; trigger r2; Queue a2; open | order r1,a1,r2,a2 | not yet checked |
 | cs3.3-03 | Action records no reads | P | action reads reg | write reg; Barrier | nothing runs; `Reaction.Current` null in action | not yet checked |
-| cs3.3-04 | Action exception logged with inner, loop survives | N | `S.Queue(() => throw X)`; then Queue b | Barrier | one ReactiveException with InnerException X; b ran | not yet checked |
+| cs3.3-04 | Action exception logged unwrapped, loop survives | N | `S.Queue(() => throw X)`; then Queue b | Barrier | exactly X (same instance, not a ReactiveException) logged once; b ran (cs7.2) | changed 2026-10-21; not yet checked |
 | cs3.3-05 | Queue(Action) never inline | E | from within an action on S | `S.Queue(a)` then check | a not yet run | not yet checked |
 | cs3.3-06 | Queue(null action) | E | – | `S.Queue((Action)null)` | no throw; nothing logged (s12.9) | not yet checked |
 | cs3.3-07 | Actions queued before shutdown run | P | S gated; Queue a ×3 | `Shutdown()` from test thread (open gate) | all 3 ran before Shutdown returned | not yet checked |
 | cs3.3-08 | Action queued after shutdown began ignored | N | action a1 queued; a1 queues a2 during drain | `S.Shutdown()` | a2 never runs; silent | not yet checked |
 | cs3.4-01 | Reaction.Run not public | P | reflection | – | no public `Run` on Reaction; `RunReaction` is protected on Scheduler | not yet checked |
 | cs3.5-01 | Dependencies rediscovered each run | P | lambda: `if (a.Value) b.Value` ; a=true | Barrier; a=false; Barrier; write b; Barrier | no run from b after branch dropped; writing a=true reattaches b | not yet checked |
-| cs3.5-02 | Exception in lambda logged, keeps reads before | N | lambda: read a; throw X; read b | Barrier; write b; Barrier; write a; Barrier | logged (inner X) each throwing run; b no rerun; a reruns (s8.1) | not yet checked |
+| cs3.5-02 | Exception in lambda logged, keeps reads before | N | lambda: read a; throw X; read b | Barrier; write b; Barrier; write a; Barrier | X itself logged (unwrapped, cs7.2) each throwing run; b no rerun; a reruns (s8.1) | changed 2026-10-21; not yet checked |
 | cs3.5-03 | Throw before any read → no rerun without trigger | E | lambda: throw first | write anything; `r.Trigger()` | no rerun until Trigger; Trigger reruns | not yet checked |
 | cs3.6-01 | Scheduler.Current on own thread | P | – | read in action | == S | not yet checked |
 | cs3.6-02 | Scheduler.Current null elsewhere | P | test thread | read | null | not yet checked |
@@ -145,25 +145,25 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs3.13-04 | Second scheduler type throws | N | WinForms thread with WinFormsScheduler attached (and WPF dispatcher present) | `DispatcherScheduler.AttachToCurrent()` | ReactiveException; logged; ForThread still WinForms one | not yet checked |
 | cs3.13-05 | Reverse direction | N | DispatcherScheduler on thread with WinForms context | `WinFormsScheduler.AttachToCurrent()` | ReactiveException; logged | not yet checked |
 | cs3.14-01 | Same object for thread life | P | – | `AttachToCurrent()` twice; ForThread; Current | all same instance | not yet checked |
-| cs3.15-01 | Nested pump in reaction is detected | N | WPF thread: lambda runs a nested `DispatcherFrame` while r2 is queued | – | r2 not started inside; logged; r2 runs after r1 ends | not yet checked |
-| cs3.16-01 | RunReaction with running reaction throws | N | user scheduler subclass; inside a reaction run, call `RunReaction(other)` | – | other not started; logged; ReactiveException to caller; other runs later, after current run | not yet checked |
-| cs3.16-02 | Requeue preserves at-most-once | E | as cs3.16-01, other also triggered meanwhile | – | other runs exactly once afterwards | not yet checked |
+| cs3.15-01 | Nested pump in reaction is detected | N | WPF thread: lambda runs a nested `DispatcherFrame` while r2 is queued | – | r2 does not start inside r1; the start attempt raises `ReactiveException` (fatal, s10.4/cs3.16); Fluorine itself logs nothing for it (see SPEC-GAPS G20 for where the exception ends up) | changed 2026-10-21; not yet checked |
+| cs3.16-01 | RunReaction with running reaction throws, fatal | N | user scheduler subclass; inside a reaction run, call `RunReaction(other)` | – | other not started; `ReactiveException` to the caller of RunReaction; nothing logged by Fluorine; other is not requeued (does not run later unless triggered again) (s10.4, cs3.16) | changed 2026-10-21; not yet checked |
+| cs3.16-02 | Refused nested start adds no run | E | as cs3.16-01, but other also has a pending trigger queued normally before the nested call | pump the queue; Barrier | other runs exactly once (its pending trigger); the refused RunReaction neither ran it nor queued an extra run (replaces old "requeue" expectation; run 4 saw 3 runs) | changed 2026-10-21; not yet checked |
 | **cs4 Thread scheduler** |||||||
 | cs4.1-01 | No public ctor, no AttachToCurrent | P | reflection | – | none | not yet checked |
 | cs4.2-01 | CreateNew runs initial on new thread first | P | – | `CreateNew(() => {t=CurrentThread; cur=Scheduler.Current;})` | returns after action; t ≠ caller; cur == returned S | not yet checked |
 | cs4.2-02 | CreateNew loop runs after initial | P | initial adds reaction | Barrier | reaction ran on T(S), after CreateNew returned | not yet checked |
 | cs4.2-03 | CreateNew(null) | E | – | `CreateNew()` | valid scheduler | not yet checked |
-| cs4.2-04 | Initial throws: logged and rethrown, no scheduler | N | initial throws X | `CreateNew(...)` | exception propagates to caller (X or wrapper, see G7); logged once; thread ends; `Reactive.Shutdown()` returns promptly | not yet checked |
+| cs4.2-04 | Initial throws: logged and rethrown, no scheduler | N | initial throws X | `CreateNew(...)` | X itself propagates to caller (user code, not wrapped, cs7.2; resolves G7); X logged once; thread ends; `Reactive.Shutdown()` returns promptly | changed 2026-10-21; not yet checked |
 | cs4.3-01 | Queue never blocks | E | S action blocked on gate | `S.Queue(a)` ×1000 from test thread | returns quickly | not yet checked |
 | cs4.3-02 | Thread ends after Shutdown | P | – | Shutdown; `T(S).Join(5s)` | thread ended | not yet checked |
 | **cs5 WPF Dispatcher scheduler** |||||||
 | cs5.1-01 | No public ctor | P | reflection | – | none | not yet checked |
 | cs5.2-01 | CreateNew initial then dispatcher | P | – | `CreateNew(init)`; Barrier | init on new thread with `Dispatcher.CurrentDispatcher` and Scheduler.Current == S; queued work runs via dispatcher | not yet checked |
-| cs5.2-02 | CreateNew initial throws | N | init throws X | CreateNew | rethrown; logged; thread ends without running dispatcher | not yet checked |
+| cs5.2-02 | CreateNew initial throws | N | init throws X | CreateNew | X itself rethrown (unwrapped, cs7.2); X logged once; thread ends without running dispatcher | changed 2026-10-21; not yet checked |
 | cs5.3-01 | AttachToCurrent on dispatcher thread | P | STA thread with Dispatcher | `AttachToCurrent()`; queue work; run dispatcher | work runs on that thread | not yet checked |
 | cs5.3-02 | AttachToCurrent idempotent | P | – | call twice | same instance | not yet checked |
 | cs5.4-01 | Queue hands to dispatcher, non-blocking | E | dispatcher busy in a long message | `S.Queue(a)` from other thread | returns immediately; a runs later on dispatcher thread | not yet checked |
-| cs5.4-02 | UI messages not starved | E | self-retriggering reaction (s6.2) | post `Dispatcher.BeginInvoke` input-priority item | item runs within 1 s (s11.9a) | not yet checked |
+| cs5.4-02 | UI messages not starved | E | self-retriggering reaction (s6.2) | post `Dispatcher.BeginInvoke` input-priority item | item runs within 1 s (s11.9a) | not yet checked (1 s bound is a heuristic, no bound in spec; see s14.7-01) |
 | **cs6 WinForms scheduler** |||||||
 | cs6.1-01 | AttachToCurrent on WinForms thread | P | STA thread with `WindowsFormsSynchronizationContext` installed and `Application.Run` | attach; queue work | runs on that thread | not yet checked |
 | cs6.1-02 | AttachToCurrent idempotent | P | – | twice | same instance | not yet checked |
@@ -177,19 +177,42 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs7.1-03 | Throwing handler → console warning with both, loop continues | N | handler throws H | reaction throws X; then Queue b | console text mentions X and H (message or type); b runs | not yet checked |
 | cs7.1-04 | Multiple handlers | E | two handlers | one error | each called once | not yet checked |
 | cs7.2-01 | ReactiveException ctors | P | – | three ctors | Message/InnerException set; derives from Exception | not yet checked |
-| cs7.2-02 | Reaction exception wrapped | P | lambda throws X | – | handler gets ReactiveException, InnerException == X | not yet checked |
-| cs7.3-01 | All listed programming errors are logged | N | one sub-case per item of 7.3 (covered by cs2.2-02, cs3.13-04, cs3.8-06, cs3.16-01, cs2.20-02, cs7.2-02) | – | each produces exactly one ReactiveException via event | not yet checked |
+| cs7.2-02 | Reaction exception logged unwrapped | P | lambda throws X | – | handler gets X itself (same instance); no `ReactiveException` wrapper (cs7.2) | changed 2026-10-21; not yet checked |
+| cs7.3-01 | All listed programming errors are logged | N | one sub-case per item of 7.3 (covered by cs2.2-02, cs3.13-04, cs3.8-06, cs2.20-02, cs7.2-02) | – | each produces exactly one logged exception: a `ReactiveException` for the Fluorine-detected ones, X unwrapped for cs7.2-02. cs3.16-01 removed: not in the 7.3 list and not logged (see G19) | changed 2026-10-21; not yet checked |
 | cs7.4-01 | ExecutionCount counts runs (if present) | P | skip if member absent in release | 3 runs | ExecutionCount == 3 | not yet checked |
 | cs7.4-02 | ExecutionCount readable from any thread, no side effects | E | – | read from test thread during runs | no exception; no subscription created | not yet checked |
-| **cs8 Async (discussion, informative)** |||||||
-| cs8.1-01 | Reads before first suspending await recorded | P | `async () => { a.Value; await Task.Delay(50); b.Value; }` | write a; then write b | a reruns; b does not | not yet checked |
-| cs8.1-02 | Continuation has no Current | E | as above, capture `Reaction.Current` after await | – | null | not yet checked |
-| cs8.1-03 | Exception after await not handled by reaction | E | Func<Task> lambda throws after await | – | no ReactiveException via UnhandledException from the reaction | not yet checked |
+| **cs8 Computed values** (cs8.1-01..03 retired, async now cs9.1) |||||||
+| cs8.1-01 | Reads before first suspending await recorded | P | `async () => { a.Value; await Task.Delay(50); b.Value; }` | write a; then write b | a reruns; b does not | retired 2026-10-21: async moved to cs9.1, ID reused by section 8 Computed; see cs9.1-01 |
+| cs8.1-02 | Continuation has no Current | E | as above, capture `Reaction.Current` after await | – | null | retired 2026-10-21: async moved to cs9.1, ID reused by section 8 Computed; see cs9.1-02 |
+| cs8.1-03 | Exception after await not handled by reaction | E | Func<Task> lambda throws after await | – | no ReactiveException via UnhandledException from the reaction | retired 2026-10-21: async moved to cs9.1, ID reused by section 8 Computed; see cs9.1-03 |
+| cs8.1-04 | Computed returns a reaction and writes the result | P | R on S; `dest = new Register<int>(0)`; `a = new Register<int>(2)` | `var r = R.Computed(dest, () => a.Value * 10)`; Barrier | r != null; `dest.Value == 20` | not yet checked |
+| cs8.1-05 | Computed follows its inputs | P | as cs8.1-04 | `a.Value = 3`; Barrier2 | `dest.Value == 30`; func ran on T(S) | not yet checked |
+| cs8.1-06 | Computed reaction is an ordinary reaction | P | as cs8.1-04 | `r.Trigger()`; Barrier; then `r.Dispose()` | func reruns once on Trigger; after Dispose, writes to a no longer change dest; `R.Dispose()` also stops it (s12.3) | not yet checked |
+| cs8.2-01 | Equal result does not trigger downstream | P | `dest` computed as `a.Value > 0`; reaction d reads dest; count d runs | Barrier2; `a.Value = 5`; `a.Value = 7`; Barrier2 | d ran once (initial) + once for false→true only; `a = 7` does not rerun d | not yet checked |
+| cs8.2-02 | Register stays caller-owned and writable | P | computed dest | user writes `dest.Value = 99` from test thread; then `a` changes; Barrier2 | 99 visible after the user write; next computation overwrites it with the new result | not yet checked |
+| cs8.2-03 | Equality is object.Equals | E | T with `object.Equals` true for distinct instances; func returns a new equal instance each run | trigger input; Barrier2 | dest keeps the first instance; downstream not triggered (cs1.16) | not yet checked |
+| cs8.3-01 | First run queued, not inline | E | inside an action on S; `dest = new Register<int>(5)` | `R.Computed(dest, () => 1)`; read dest immediately; Barrier | 5 right after Computed; 1 after Barrier | not yet checked |
+| cs8.4-01 | Null function writes default(T) | E | `dest = new Register<int>(7)` | `R.Computed(dest, null)`; Barrier | returns non-null reaction; `dest.Value == 0`; nothing logged | not yet checked |
+| cs8.4-02 | Function fixed | P | reflection | – | no public member on Reaction to replace the func; a second `Computed` call creates a second reaction | not yet checked |
+| cs8.5-01 | Throwing function logged, register unchanged | N | `dest = new Register<int>(4)`; func reads a, throws X when a == 1 | `a.Value = 1`; Barrier2 | X logged once, unwrapped (cs7.2); `dest.Value == 4`; downstream not triggered | not yet checked |
+| cs8.5-02 | Throwing function stays subscribed to reads before the throw | N | as cs8.5-01 | `a.Value = 2`; Barrier2 | func reran (s8.1); dest updated | not yet checked |
+| cs8.6-01 | disposeOld disposes replaced IDisposable | P | `Register<D>` with D : IDisposable; computed with `disposeOld: true`; input switches value | switch; Barrier2 | old instance disposed once; new instance not disposed | not yet checked |
+| cs8.6-02 | Dispose after store and trigger | E | as cs8.6-01; old D.Dispose() records `dest.Value` and whether a downstream reaction has been queued/run | switch; Barrier2 | at Dispose time dest already holds the new value and downstream was already triggered | not yet checked |
+| cs8.6-03 | No dispose when unchanged, false, or not IDisposable | N | (a) disposeOld true, func returns equal value; (b) disposeOld false; (c) T not IDisposable | rerun func | (a) nothing disposed; (b) nothing disposed; (c) no exception | not yet checked |
+| cs8.7-01 | Computed on disposed reactor returns null | N | R disposed (and separately: R on shut-down scheduler, cs2.4) | `R.Computed(dest, f)`; Barrier | null; f never runs; dest unchanged; nothing logged | not yet checked |
+| cs8.7-02 | Stopping keeps last value | P | computed dest = 10 | dispose reaction (and separately the reactor); change input; Barrier2 | dest stays 10 | not yet checked |
+| **cs9 Discussions (informative)** ||||||| |
+| cs9.1-01 | Reads before first suspending await recorded | P | `async () => { a.Value; await Task.Delay(50); b.Value; }` | write a; then write b | a reruns; b does not (was cs8.1-01) | not yet checked |
+| cs9.1-02 | Continuation has no Current | E | as above, capture `Reaction.Current` after await | – | null (was cs8.1-02) | not yet checked |
+| cs9.1-03 | Exception after await not handled by reaction | E | Func<Task> lambda throws after await | – | nothing arrives at UnhandledException from the reaction (was cs8.1-03) | not yet checked |
+| cs9.2-01 | Shutdown detaches without a queued run | E | r reads reg; user calls `R.Dispose()` from a drained action during Shutdown (detach run refused) | Shutdown; then inspect via a new scheduler: write reg | r never runs; no exception (cs9.2, resolves G4) | not yet checked |
 | **s1 Threading model** |||||||
 | s1.2-01 | Runs never parallel with themselves | E stress | lambda increments in-flight counter, sleeps, decrements; triggered from 8 threads | – | in-flight never >1 | not yet checked |
 | s1.4-01 | Coalescing | P | S gated; r reads reg | 100 writes; open; Barrier | r ran exactly once after the writes | not yet checked |
 | s1.5-01 | Different schedulers in parallel | E | r1 on S1 waits on E set by r2 on S2 | – | both complete (no serialisation) | not yet checked |
-| s1.8-01 | Trigger/queue never throws | N | after shutdown, on disposed, null action | Trigger/Queue/write | no throw anywhere | not yet checked |
+| s1.8-01 | Trigger/queue never throws | N | after shutdown, on disposed, null action | Trigger/Queue/write | no exception of Fluorine's own anywhere (s1.8) | changed 2026-10-21; not yet checked |
+| s1.8-02 | Platform exceptions propagate | N | user Scheduler subclass whose platform queue call throws P (e.g. queue into a shut-down WPF Dispatcher, or a throwing subclass) | `r.Trigger()`, `reg.Value = x` for a register r read, `S.Queue(a)` | P propagates to the caller unchanged; not caught, not wrapped, not logged by Fluorine (s1.8; see G21 for the subclass hook) | not yet checked |
+| s1.8-03 | Refused run is silent | N | S shut down; reactor R captured earlier, reaction r of R | `r.Trigger()`, `S.Queue(a)`, `R.Queue(a)` | no exception; nothing logged; nothing runs (s1.8, s11.15) | not yet checked |
 | s1.9-01 | Tracking per thread | P | reaction on S1 synchronously invokes code on S2/plain thread reading reg (waits for it) | write reg | reaction on S1 does not rerun | not yet checked |
 | **s2 Normal flow** |||||||
 | s2-01 | End-to-end full-name example | P | spec §2 steps 1–9 | follow steps | label values and runs as described in each step | not yet checked |
@@ -234,5 +257,6 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | s13.8-01 | Writers never wait for runs | E | reaction blocks 2 s on S | write its register from test thread | write returns within 100 ms | not yet checked |
 | **s14 Discussions** |||||||
 | s14.1-01 | Shadow register pattern | P | value-less sig next to a plain field; accessor reads sig then field; setter changes field then triggers sig | reaction reads via accessor; set | reaction reruns, sees new field value | not yet checked |
+| s14.7-01 | Self-requeue goes to end of queue | E | S gated; r1 writes a register it reads (bounded to 3 self-triggers); r2, r3 triggered while r1 waits | open gate; Barrier2 | order r1, r2, r3, r1, …: each self-requeued r1 run comes after everything queued before its run started (s14.7, s1.4, s11.9) | not yet checked |
 | **s15 Logging** |||||||
 | s15.2-01 | Logged before thrown | N | handler records a flag; Reactor() on no-scheduler thread | catch | flag set before catch block runs | not yet checked |
