@@ -104,8 +104,6 @@ namespace Fluorine
         {
             if (register == null)
                 return;
-            if (Volatile.Read(ref _lambda) == null)
-                return;
 
             if (_deps.TryGetValue(register, out _))
             {
