@@ -2,7 +2,7 @@
 
 # 9. Threads and consistency
 
-Registers can be read and written from any thread (§1.3). Reactions stay on their own scheduler. This page explains what a reaction can see.
+Registers can be read and written from any thread (§1.3). Reactions stay on their own scheduler, and a thread has at most one scheduler, of any type (cs 3.13). This page explains what a reaction can see.
 
 ## Writes from any thread
 

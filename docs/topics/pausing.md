@@ -20,7 +20,7 @@ Reaction.Pause(() => RaiseSelectionChanged());
 int limit = Reaction.Pause(() => maxItems.Value);
 ```
 
-`Pause()` returns an `IDisposable` that continues recording when disposed. `Pause(Action)` and `Pause<T>(Func<T>)` pause, call the delegate and continue in a `finally` block (cs 2.24). Pauses nest (§9.2).
+`Pause()` returns `Reaction.PauseScope`, a struct that implements `IDisposable` and continues recording when disposed; as a struct, a `using` block costs no allocation. `Pause(Action)` and `Pause<T>(Func<T>)` pause, call the delegate and continue in a `finally` block (cs 2.24). Pauses nest (§9.2).
 
 ## A typical use
 

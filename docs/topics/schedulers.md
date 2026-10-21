@@ -55,7 +55,7 @@ The calling thread must have the WinForms `SynchronizationContext`; otherwise th
 - `Scheduler.Current`: the scheduler of the calling thread, or `null` (cs 3.6).
 - `Scheduler.ForThread(thread)`: the scheduler of another thread, or `null` (cs 3.13).
 
-A thread has at most one scheduler, and it stays the same object for the life of the thread (cs 3.14). Attaching a scheduler of another type to a thread that has one is a programming error (cs 3.13).
+A thread has at most one scheduler, of any type, and it stays the same object for the life of the thread (cs 3.13, 3.14). Creating or attaching a second scheduler on a thread that has one throws `ReactiveException`; `AttachToCurrent()` of the same type returns the existing one.
 
 ## Queueing your own work
 
@@ -86,9 +86,7 @@ ui.Add(() => resultLabel.Text = result.Value);
 - takes part in shutdown through the overridable `OnShutdownRequested()`, `DrainOnOwnerThread()` and `OnShutdownFinished()`, and uses `AcceptWork()` and `CompleteShutdown()` to follow the rules of [Shutting down](shutdown.md);
 - runs user actions through `RunUserAction(Action)`, which logs their exceptions.
 
-`ThreadScheduler` in the source is a compact example of all of these.
-
-> **TODO** (cs 3.4): the spec names a protected `Scheduler.RunReaction(Reaction)`; the source runs reactions through the action passed to `Schedule`.
+The scheduler runs a reaction by calling `Reaction.Run()`, synchronously, on its own thread (cs 3.4). `Queue(Reaction)` passes exactly that call to `Schedule`. `ThreadScheduler` in the source is a compact example of all of these.
 
 ---
 
