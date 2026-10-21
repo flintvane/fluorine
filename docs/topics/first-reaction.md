@@ -87,6 +87,6 @@ See [Schedulers](schedulers.md).
 
 ---
 
-*Spec references: semantics §2; cs 1.7, 2.2, 2.3, 2.7, 4.2, 3.11. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: semantics §2; cs 1.7, 2.2, 2.3, 2.7, 4.2, 3.11. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← What Fluorine is](introduction.md) · [Topics](../index.md) · [Registers →](registers.md)

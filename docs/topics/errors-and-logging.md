@@ -51,6 +51,6 @@ Triggering and queueing raise no exceptions of their own (§1.8). An exception f
 
 ---
 
-*Spec references: §8, §15; cs 7. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §8, §15; cs 7. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Computed values](computed.md) · [Topics](../index.md) · [Shutting down →](shutdown.md)

@@ -56,6 +56,6 @@ reactor.Add(() =>
 
 ---
 
-*Spec references: §6.3, §7.3a, §9; cs 2.18-2.24. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §6.3, §7.3a, §9; cs 2.18-2.24. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Threads and consistency](threads-and-consistency.md) · [Topics](../index.md) · [Signal registers and shadow registers →](signal-registers.md)

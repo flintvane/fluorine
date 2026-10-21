@@ -59,6 +59,6 @@ A read always returns a whole value, also for large structs and for 64-bit value
 
 ---
 
-*Spec references: §1.3, §5, §7.6, §11.10-11.13, §13; cs 1.18. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §1.3, §5, §7.6, §11.10-11.13, §13; cs 1.18. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Schedulers](schedulers.md) · [Topics](../index.md) · [Pausing: reads that do not subscribe →](pausing.md)

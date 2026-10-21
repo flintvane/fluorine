@@ -51,6 +51,6 @@ This is the purpose of the manual trigger. Objects whose state changes inside th
 
 ---
 
-*Spec references: §4.5, §12.8, §14.1, §14.2, §14.4; cs 1.1-1.5. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §4.5, §12.8, §14.1, §14.2, §14.4; cs 1.1-1.5. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Pausing: reads that do not subscribe](pausing.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)

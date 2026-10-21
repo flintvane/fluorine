@@ -47,6 +47,6 @@ reactor.Computed(thumbnail, () => Render(image.Value, size.Value), disposeOld: t
 
 ---
 
-*Spec references: §5.4; cs 8. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §5.4; cs 8. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Derived values, self-writes and cycles](derived-values.md) · [Topics](../index.md) · [Errors and logging →](errors-and-logging.md)

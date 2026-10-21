@@ -90,6 +90,6 @@ Eight small programs, written in Fluorine and in seven of these frameworks and r
 
 ---
 
-*Spec references: §1–§12; cs 1.16, 2.24, 7.1, 8.1. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5). Sources: research/landscape.md (2026-10-17), research/dotnet-demo/RESULT.md (2026-10-18).*
+*Spec references: §1–§12; cs 1.16, 2.24, 7.1, 8.1. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6). Sources: research/landscape.md (2026-10-17), research/dotnet-demo/RESULT.md (2026-10-18).*
 
 [← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md)

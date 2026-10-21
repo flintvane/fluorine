@@ -51,6 +51,6 @@ A reaction cannot wait for its own loop to finish. Calling a shutdown from a rea
 
 ---
 
-*Spec references: §11.15-11.17; cs 2.4, 3.6, 3.8, 3.11, 4.3, 6.3. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §11.15-11.17; cs 2.4, 3.6, 3.8, 3.11, 4.3, 6.3. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Errors and logging](errors-and-logging.md) · [Topics](../index.md) · [Async code inside a reaction →](async.md)

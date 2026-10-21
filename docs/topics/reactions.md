@@ -56,6 +56,6 @@ How and when the runs happen is the subject of [When reactions run](when-reactio
 
 ---
 
-*Spec references: §1.9, §7.3, §10.1, §11.10; cs 2.6-2.18. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §1.9, §7.3, §10.1, §11.10; cs 2.6-2.18. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Registers](registers.md) · [Topics](../index.md) · [When reactions run →](when-reactions-run.md)

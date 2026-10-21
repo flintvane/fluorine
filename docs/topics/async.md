@@ -49,6 +49,6 @@ Writing a register after the `await` is ordinary threading: it triggers the reac
 
 ---
 
-*Spec references: §10.2; cs 9.1. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §10.2; cs 9.1. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Shutting down](shutdown.md) · [Topics](../index.md) · [Rules of thumb →](rules-of-thumb.md)

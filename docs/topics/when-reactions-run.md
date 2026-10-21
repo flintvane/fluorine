@@ -57,6 +57,6 @@ A queued reaction always gets its run, and a scheduler gives other work of its l
 
 ---
 
-*Spec references: §1.4, §1.8, §4, §11.5-11.9a; cs 2.15. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §1.4, §1.8, §4, §11.5-11.9a; cs 2.15. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Reactions and dependencies](reactions.md) · [Topics](../index.md) · [Equality: what counts as a change →](equality.md)

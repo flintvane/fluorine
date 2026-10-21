@@ -66,6 +66,6 @@ reactor.Queue(() => statusBar.Text = "Saved");
 
 ---
 
-*Spec references: §12; cs 2.1-2.17. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §12; cs 2.1-2.17. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Equality: what counts as a change](equality.md) · [Topics](../index.md) · [Schedulers →](schedulers.md)

@@ -90,6 +90,6 @@ The scheduler runs a reaction by calling `Reaction.Run()`, synchronously, on its
 
 ---
 
-*Spec references: §11.1-11.4, §11.7a; cs 3, 4, 5, 6. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §11.1-11.4, §11.7a; cs 3, 4, 5, 6. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Reactors and lifetimes](reactors.md) · [Topics](../index.md) · [Threads and consistency →](threads-and-consistency.md)

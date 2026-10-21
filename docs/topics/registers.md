@@ -68,6 +68,6 @@ title.Name = "page title";
 
 ---
 
-*Spec references: §3.1a, §7, §12.8; cs 1.1-1.15. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §3.1a, §7, §12.8; cs 1.1-1.15. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Your first reaction](first-reaction.md) · [Topics](../index.md) · [Reactions and dependencies →](reactions.md)

@@ -14,8 +14,8 @@ User documentation for the C# implementation of Fluorine (.NET Framework 4.8).
 
 The pages follow, in this order of authority:
 
-1. `spec/semantics-cs.md` (C# realisation, draft 0.5): the API as users see it.
-2. `spec/semantics.md` (platform-neutral semantics, draft 0.9).
+1. `spec/semantics-cs.md` (C# realisation, draft 0.6): the API as users see it.
+2. `spec/semantics.md` (platform-neutral semantics, draft 0.10).
 
 References such as *(cs 2.7)* point to `semantics-cs.md`; *(§4.1)* points to `semantics.md`. Points the spec leaves open are marked **TODO** with a spec reference.
 

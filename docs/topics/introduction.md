@@ -45,6 +45,6 @@ Fluorine suits programs built around event loops, such as desktop UIs: view mode
 
 ---
 
-*Spec references: §Purpose, §0. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §Purpose, §0. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [Topics](../index.md) · [Your first reaction →](first-reaction.md)
