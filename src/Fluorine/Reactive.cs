@@ -12,8 +12,8 @@ namespace Fluorine
                 throw new ReactiveException("Cannot shut down from inside a reaction.");
 
             var schedulers = Scheduler.SnapshotAll();
-            for (var i = 0; i < schedulers.Length; i++)
-                schedulers[i].RequestShutdown();
+            foreach (var t in schedulers)
+                t.RequestShutdown();
 
             var current = Scheduler.Current;
             current?.DrainAndFinishOnOwnerThread();

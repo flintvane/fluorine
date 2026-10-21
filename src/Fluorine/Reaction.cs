@@ -20,8 +20,8 @@ namespace Fluorine
 
         internal Reaction(Reactor reactor, string name, Action lambda)
         {
-            _reactor = reactor;
             Name = name;
+            _reactor = reactor;
             _lambda = lambda ?? (() => { });
         }
 
@@ -69,8 +69,6 @@ namespace Fluorine
             PauseRecording();
             try
             {
-                if (func == null)
-                    return default(T);
                 return func();
             }
             finally
@@ -102,9 +100,6 @@ namespace Fluorine
 
         internal void Subscribe(Register register)
         {
-            if (register == null)
-                return;
-
             if (_deps.TryGetValue(register, out _))
             {
                 _deps[register] = _executionCount;
@@ -135,31 +130,26 @@ namespace Fluorine
             }
             finally
             {
+                UnsubscribeStale(_executionCount);
                 t_pause = 0;
                 t_current = null;
-                UnsubscribeStale(_executionCount);
             }
         }
 
         internal void UnsubscribeStale(int keep)
         {
-            if (_deps.Count == 0)
-                return;
+            if (_deps.Count == 0) return;
             List<Register> stale = null;
             foreach (var pair in _deps)
-            {
-                if (pair.Value == keep)
-                    continue;
-                if (stale == null)
-                    stale = new List<Register>();
-                stale.Add(pair.Key);
-            }
+                if (pair.Value != keep)
+                {
+                    stale = stale ?? new List<Register>();
+                    stale.Add(pair.Key);
+                }
 
-            if (stale == null)
-                return;
-            for (var i = 0; i < stale.Count; i++)
+            if (stale == null) return;
+            foreach (var register in stale)
             {
-                var register = stale[i];
                 _deps.Remove(register);
                 register.RemoveListener(this);
             }
