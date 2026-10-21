@@ -121,7 +121,7 @@ namespace Fluorine.Tests
 
         public void ForceRun(Reaction reaction)
         {
-            RunReaction(reaction);
+            reaction.Run();
         }
     }
 

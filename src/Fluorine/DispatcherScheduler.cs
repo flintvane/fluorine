@@ -38,8 +38,7 @@ namespace Fluorine
                 catch (Exception ex)
                 {
                     error = ex;
-                    if (scheduler != null)
-                        scheduler.AbandonBeforeStart();
+                    scheduler?.AbandonBeforeStart();
                 }
                 finally
                 {
@@ -56,12 +55,8 @@ namespace Fluorine
             thread.Start();
             ready.Wait();
             if (error != null)
-            {
-                var wrapped = error as ReactiveException ??
-                              new ReactiveException("CreateNew initial action failed.", error);
-                Reactive.Raise(wrapped);
-                throw error;
-            }
+                throw error as ReactiveException ??
+                      new ReactiveException("CreateNew initial action failed.", error);
 
             return created;
         }
@@ -71,11 +66,7 @@ namespace Fluorine
             if (Current is DispatcherScheduler existing)
                 return existing;
             if (Current != null)
-            {
-                var ex = new ReactiveException("This thread already has a scheduler of another type.");
-                Reactive.Raise(ex);
-                throw ex;
-            }
+                throw new ReactiveException("This thread already has a scheduler of another type.");
 
             var dispatcher = Dispatcher.FromThread(Thread.CurrentThread) ?? Dispatcher.CurrentDispatcher;
             return new DispatcherScheduler(dispatcher, false);
@@ -151,12 +142,9 @@ namespace Fluorine
                 if (action != null)
                     action();
             }
-            catch (ReactiveException)
-            {
-            }
             catch (Exception ex)
             {
-                Reactive.Raise(new ReactiveException("Unhandled exception on scheduler thread.", ex));
+                Reactive.OnUnhandledException(ex);
             }
             finally
             {

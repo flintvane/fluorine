@@ -97,7 +97,6 @@ namespace Fluorine
             return Write(newValue, snapshot);
         }
         
-        
         public bool SetValue(T newValue, out T oldValue)
         {
             lock (this)

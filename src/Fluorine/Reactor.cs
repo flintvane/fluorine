@@ -17,14 +17,7 @@ namespace Fluorine
 
         public Reactor(Scheduler scheduler)
         {
-            if (scheduler == null)
-            {
-                var ex = new ReactiveException("A reactor requires a scheduler.");
-                Reactive.Raise(ex);
-                throw ex;
-            }
-
-            _scheduler = scheduler;
+            _scheduler = scheduler ?? throw new ReactiveException("A reactor requires a scheduler.");
             if (!scheduler.TryAddReactor(this))
                 _disposed = 1;
         }
@@ -94,8 +87,7 @@ namespace Fluorine
                 t.Dispose();
             }
 
-            if (_scheduler != null)
-                _scheduler.RemoveReactor(this);
+            _scheduler?.RemoveReactor(this);
         }
 
         internal void Remove(Reaction reaction)

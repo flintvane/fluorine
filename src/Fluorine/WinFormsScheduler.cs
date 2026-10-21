@@ -22,19 +22,11 @@ namespace Fluorine
             if (Current is WinFormsScheduler existing)
                 return existing;
             if (Current != null)
-            {
-                var ex = new ReactiveException("This thread already has a scheduler of another type.");
-                Reactive.Raise(ex);
-                throw ex;
-            }
+                throw new ReactiveException("This thread already has a scheduler of another type.");
 
             var context = SynchronizationContext.Current as WindowsFormsSynchronizationContext;
             if (context == null)
-            {
-                var ex = new ReactiveException("WinFormsScheduler requires a WindowsFormsSynchronizationContext on the calling thread.");
-                Reactive.Raise(ex);
-                throw ex;
-            }
+                throw new ReactiveException("WinFormsScheduler requires a WindowsFormsSynchronizationContext on the calling thread.");
             return new WinFormsScheduler(context);
         }
 
@@ -104,15 +96,11 @@ namespace Fluorine
             t_executing++;
             try
             {
-                if (action != null)
-                    action();
-            }
-            catch (ReactiveException)
-            {
+                action?.Invoke();
             }
             catch (Exception ex)
             {
-                Reactive.Raise(new ReactiveException("Unhandled exception on scheduler thread.", ex));
+                Reactive.OnUnhandledException(ex);
             }
             finally
             {

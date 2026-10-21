@@ -30,8 +30,7 @@ namespace Fluorine
                 catch (Exception ex)
                 {
                     error = ex;
-                    if (scheduler != null)
-                        scheduler.AbandonBeforeStart();
+                    scheduler?.AbandonBeforeStart();
                 }
                 finally
                 {
@@ -47,11 +46,7 @@ namespace Fluorine
             thread.Start();
             ready.Wait();
             if (error != null)
-            {
-                var wrapped = error as ReactiveException ?? new ReactiveException("CreateNew initial action failed.", error);
-                Reactive.Raise(wrapped);
-                throw error;
-            }
+                throw new ReactiveException("CreateNew initial action failed.", error);
             return created;
         }
 
@@ -113,13 +108,9 @@ namespace Fluorine
             {
                 work?.Invoke();
             }
-            catch (ReactiveException)
-            {
-                // TODO - why is this here ? 
-            }
             catch (Exception ex)
             {
-                Reactive.Raise(new ReactiveException("Unhandled exception on scheduler thread.", ex));
+                Reactive.OnUnhandledException(ex);
             }
         }
 

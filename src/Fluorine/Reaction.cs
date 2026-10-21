@@ -47,10 +47,7 @@ namespace Fluorine
             if (t_current == null)
                 return;
             if (t_pause <= 0)
-            {
-                Reactive.Raise(new ReactiveException("ContinueRecording called with a pause count of zero."));
-                return;
-            }
+                throw new ReactiveException("ContinueRecording called with a pause count of zero.");
             t_pause--;
         }
 
@@ -141,6 +138,9 @@ namespace Fluorine
 
         internal void Run()
         {
+            if (Current != null)
+                throw new ReactiveException(
+                    "A second reaction cannot start while another reaction is running on this thread.");
             Interlocked.Exchange(ref _queued, 0);
             var lambda = _lambda;
             if (lambda == null)
@@ -158,7 +158,7 @@ namespace Fluorine
             }
             catch (Exception ex)
             {
-                Reactive.Raise(new ReactiveException("Unhandled exception from reaction.", ex));
+                Reactive.OnUnhandledException(ex);
             }
             finally
             {

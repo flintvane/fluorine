@@ -8,13 +8,11 @@ namespace Fluorine
         {
         }
 
-        public ReactiveException(string message)
-            : base(message)
+        public ReactiveException(string message) : base(message)
         {
         }
 
-        public ReactiveException(string message, Exception inner)
-            : base(message, inner)
+        public ReactiveException(string message, Exception inner) : base(message, inner)
         {
         }
     }

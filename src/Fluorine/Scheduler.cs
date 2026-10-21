@@ -16,7 +16,6 @@ namespace Fluorine
 
         protected readonly object Gate = new object();
         readonly HashSet<Reactor> _reactors = new HashSet<Reactor>();
-        readonly List<Reaction> _deferred = new List<Reaction>();
         readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
 
         const int StateRunning = 0;
@@ -64,7 +63,7 @@ namespace Fluorine
         {
             if (reaction == null)
                 return;
-            Schedule(() => RunReaction(reaction));
+            Schedule(reaction.Run);
         }
 
         public void Shutdown()
@@ -161,31 +160,7 @@ namespace Fluorine
             }
             catch (Exception ex)
             {
-                Reactive.Raise(new ReactiveException("Unhandled exception from queued action.", ex));
-            }
-        }
-
-        protected void RunReaction(Reaction reaction)
-        {
-            if (reaction == null)
-                return;
-            if (Reaction.Current != null)
-            {
-                var ex = new ReactiveException(
-                    "A second reaction cannot start while another reaction is running on this thread.");
-                Reactive.Raise(ex);
-                lock (_deferred)
-                    _deferred.Add(reaction);
-                throw ex;
-            }
-
-            try
-            {
-                reaction.Run();
-            }
-            finally
-            {
-                FlushDeferred();
+                Reactive.OnUnhandledException(ex);
             }
         }
 
@@ -214,48 +189,25 @@ namespace Fluorine
         {
             var existing = t_current;
             if (existing != null && existing != this)
-            {
-                var ex = new ReactiveException(
+                throw new ReactiveException(
                     existing.GetType() == GetType()
                         ? "This thread already has a scheduler."
                         : "This thread already has a scheduler of another type.");
-                Reactive.Raise(ex);
-                throw ex;
-            }
 
             _ownerThread = Thread.CurrentThread;
             t_current = this;
             lock (StaticLock)
             {
                 if (ByThread.TryGetValue(_ownerThread, out var previous) && previous != this)
-                {
-                    var ex = new ReactiveException(
+                    throw new ReactiveException(
                         previous.GetType() == GetType()
                             ? "This thread already has a scheduler."
                             : "This thread already has a scheduler of another type.");
-                    Reactive.Raise(ex);
-                    throw ex;
-                }
 
                 ByThread[_ownerThread] = this;
                 if (!All.Contains(this))
                     All.Add(this);
             }
-        }
-
-        void FlushDeferred()
-        {
-            Reaction[] snapshot;
-            lock (_deferred)
-            {
-                if (_deferred.Count == 0)
-                    return;
-                snapshot = _deferred.ToArray();
-                _deferred.Clear();
-            }
-
-            for (var i = 0; i < snapshot.Length; i++)
-                Queue(snapshot[i]);
         }
 
         void DisposeAllReactors()
@@ -268,8 +220,8 @@ namespace Fluorine
                 _reactors.Clear();
             }
 
-            for (var i = 0; i < snapshot.Length; i++)
-                snapshot[i].DisposeFromShutdown();
+            foreach (var t in snapshot)
+                t.DisposeFromShutdown();
         }
 
         void Uninstall()
@@ -288,9 +240,7 @@ namespace Fluorine
         {
             if (Reaction.Current == null)
                 return;
-            var ex = new ReactiveException("Cannot shut down from inside a reaction.");
-            Reactive.Raise(ex);
-            throw ex;
+            throw new ReactiveException("Cannot shut down from inside a reaction.");
         }
     }
 }
