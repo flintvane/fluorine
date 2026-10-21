@@ -79,9 +79,16 @@ ui.Add(() => resultLabel.Text = result.Value);
 
 ## Writing your own scheduler
 
-`Scheduler` is abstract and can be derived from; a scheduler runs a reaction through the protected `RunReaction(Reaction)` (cs 3.4).
+`Scheduler` is abstract and can be derived from (cs 3.1). A custom scheduler:
 
-> **TODO** (cs 3.1, 3.4, 3.7): the members a custom scheduler implements are not yet listed in semantics-cs.md (run 3 chose `protected abstract void Post(Action)`, try3 GAPS 17). This page will show an example once they are.
+- is constructed on the thread it owns: the protected constructor installs it there, so `Scheduler.Current` and `Scheduler.ForThread` find it;
+- implements `protected abstract void Schedule(Action action)`, which hands the work to its loop and never runs it inline. `Queue(Reaction)` and `Queue(Action)` both go through it;
+- takes part in shutdown through the overridable `OnShutdownRequested()`, `DrainOnOwnerThread()` and `OnShutdownFinished()`, and uses `AcceptWork()` and `CompleteShutdown()` to follow the rules of [Shutting down](shutdown.md);
+- runs user actions through `RunUserAction(Action)`, which logs their exceptions.
+
+`ThreadScheduler` in the source is a compact example of all of these.
+
+> **TODO** (cs 3.4): the spec names a protected `Scheduler.RunReaction(Reaction)`; the source runs reactions through the action passed to `Schedule`.
 
 ---
 

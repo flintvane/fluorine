@@ -60,13 +60,11 @@ title.Name = "page title";
 
 ## Deriving from a register
 
-`Register<T>` can be inherited. `Value`, `RecordRead()` and `TriggerReactions()` keep their behaviour; the backing value is protected and available to inheritors that specialize further (cs 1.11, 1.12).
-
-> **TODO** (cs 1.12): the name of the protected backing field is not given in the spec.
+`Register<T>` can be inherited. `Value`, `RecordRead()` and `TriggerReactions()` keep their behaviour. The backing value is the protected property `StoredValue`, available to inheritors that specialize further (cs 1.11, 1.12). It is read and written without tearing; it records no read and triggers nothing.
 
 ## Registers without a value
 
-`Register` (without a type argument) is the base class: a register that only remembers its readers and can be triggered. It is covered in [Signal registers and shadow registers](signal-registers.md).
+`Register` (without a type argument, created with `new Register()`) is the base class: a register that only remembers its readers and can be triggered. It is covered in [Signal registers and shadow registers](signal-registers.md).
 
 ---
 
