@@ -1,8 +1,8 @@
-# Fluorine: C# Realisation (DRAFT 0.5)
+# Fluorine: C# Realisation (DRAFT 0.6)
 
 Author: Werner Van Belle, with help from the latest xAI LLM models.
 
-Status: draft (2026-10-19). This document refines `semantics.md` for C# / .NET. Rule numbers in parentheses, such as (3.1b), refer to `semantics.md`. Everything in `semantics.md` applies; this document only adds detail and stricter rules.
+Status: draft (2026-10-21). This document refines `semantics.md` for C# / .NET. Rule numbers in parentheses, such as (3.1b), refer to `semantics.md`. Everything in `semantics.md` applies; this document only adds detail and stricter rules.
 
 The target framework is .NET Framework 4.8.
 
@@ -42,8 +42,8 @@ The classes below are the standard realisation of a register. Other storage mode
 
 **Reactors**
 2.1 A reactor is associated with exactly one scheduler. It offers the same queueing interface as a scheduler (12.4). `Reactor.Queue(Action)` queues the action on the reactor's scheduler (3.3). On a disposed reactor it does nothing.
-2.2 `Reactor()` creates a reactor on `Scheduler.Current`, captured at creation (11.2). When the calling thread has no scheduler, it logs a programming error and throws `ReactiveException` (11.4, 15.2).
-2.3 `Reactor(Scheduler scheduler)` creates a reactor on the given scheduler. Passing null logs a programming error and throws `ReactiveException` (15.2).
+2.2 `Reactor()` creates a reactor on `Scheduler.Current`, captured at creation (11.2). When the calling thread has no scheduler, it throws `ReactiveException` (11.4, 15.2).
+2.3 `Reactor(Scheduler scheduler)` creates a reactor on the given scheduler. Passing null throws `ReactiveException` (15.2).
 2.4 A reactor created on a scheduler that has started its shutdown or has shut down is created without an error, and it behaves as a disposed reactor: `Add` creates nothing and returns null (2.9, 11.15).
 2.5 `Reactor.Name` is a settable property, for logs and diagnostics. There is no constructor that takes a name.
 
@@ -68,7 +68,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 **Pause**
 2.19 `Reaction.PauseRecording()` increments the pause count of the running reaction on this thread. While the count is above zero, the reaction is paused and reads on that thread are not recorded (1.3, 9.1).
-2.20 `Reaction.ContinueRecording()` decrements the count. Recording resumes when the count is zero again. Calling it while the count is zero logs a programming error (9.3, 15.5) and leaves the count at zero.
+2.20 `Reaction.ContinueRecording()` decrements the count. Recording resumes when the count is zero again. Calling it while the count is zero throws `ReactiveException` and leaves the count at zero (9.3, 15.5).
 2.21 The pause count is logically associated with a reaction. Outside a running reaction there is no pause count, so `PauseRecording()` and `ContinueRecording()` have no effect there.
 2.22 `Reaction.IsRecording` is a public static property. It returns true when a reaction is running on this thread and its pause count is zero, that is, when a read on this thread is recorded now. It returns false outside a reaction and while the pause count is above zero.
 2.23 The count ends with the running reaction (9.3).
@@ -79,21 +79,21 @@ The classes below are the standard realisation of a register. Other storage mode
 3.1 `Scheduler` is an abstract class. Every scheduler, whether supplied by the library or written by a user, derives from it. Schedulers and reactors offer a common queueing interface (12.4).
 3.2 `Scheduler.Queue(Reaction)` queues one run of the reaction and returns nothing. It never runs the reaction inline (13.5, 13.7) and raises no exception of its own (1.8). After the shutdown has begun, the run is not queued, silently (11.15).
 3.3 `Scheduler.Queue(Action)` queues an arbitrary action of the user, in the same order as the reaction runs. It returns nothing, never runs the action inline and raises no exception of its own (1.8). Actions queued before the shutdown began still run; an action that arrives after the shutdown began is ignored, silently (11.15). The action is not a reaction: no reads are recorded. Every exception thrown by the action is logged (7.1).
-3.4 The scheduler runs a queued reaction on its own thread by calling the protected method `Scheduler.RunReaction(Reaction)`. This is the only way for a scheduler to run a reaction. `Reaction.Run()` is internal.
+3.4 The scheduler runs a queued reaction on its own thread by calling `Reaction.Run()`, which runs the reaction synchronously. This is the only way for a scheduler to run a reaction.
 3.5 `Reaction.Run()` runs the lambda, during which all reads are recorded. Afterwards, the reaction is disconnected from all registers that it no longer read (7.3). An exception from the lambda is handled as in 8.1.
 3.6 The scheduler of a thread is a thread-static, `Scheduler.Current`. A scheduler installs itself on its own thread (11.3). When its shutdown has finished, it removes itself from that thread, so `Scheduler.Current` is null there afterwards. During the shutdown it stays installed, because the reactions that are drained still run on it.
 3.7 Starting the event loop is done explicitly by the user. A scheduler that owns its loop offers its own `Run()`, and a Dispatcher-based scheduler defers to the Dispatcher. A scheduler that joins an existing loop has no `Run()`. The base class has no `Run()`.
-3.8 `Scheduler.Shutdown()` returns when all queued reactions and all queued actions have run, and all reactors of the scheduler have been disposed (11.15, 11.16), so that their reactions are disconnected (2.11). It can be called from any thread. Called from inside a reaction, paused or not, it logs a programming error and throws `ReactiveException` (15.2). Called on the thread of the scheduler itself, outside a reaction, it processes what is still open before it returns. A second call to `Shutdown()` on the same scheduler starts nothing new and returns when the shutdown has finished.
+3.8 `Scheduler.Shutdown()` returns when all queued reactions and all queued actions have run, and all reactors of the scheduler have been disposed (11.15, 11.16), so that their reactions are disconnected (2.11). It can be called from any thread. Called from inside a reaction, paused or not, it throws `ReactiveException` (15.2). Called on the thread of the scheduler itself, outside a reaction, it processes what is still open before it returns. A second call to `Shutdown()` on the same scheduler starts nothing new and returns when the shutdown has finished.
 3.9 The base class `Scheduler` announces every scheduler to the static class `Reactive`. The user does not register schedulers manually.
 3.10 Schedulers are not light-weight. Their lifetime is intended to be the lifetime of the application, and one scheduler may serve many reactors.
 3.11 The static class `Reactive` knows all schedulers. A scheduler whose shutdown has finished is removed from that list. `Reactive.Shutdown()` informs every scheduler that it should finish, without waiting between them, and then waits until all of them have reached the finished state (11.17). The restrictions of `Scheduler.Shutdown()` apply to it (3.8).
 3.12 Schedulers work together and never interfere with each other (11.7a). Any reactor can be given any scheduler.
-3.13 `Scheduler.ForThread(Thread)` returns the scheduler of that thread, or null when it has none or its scheduler has shut down. A scheduler that has shut down is no longer kept in the list of schedulers per thread. `Scheduler.Current` is the scheduler of the calling thread (3.6). Attaching or creating a scheduler on a thread that already has a scheduler of another type logs a programming error and throws a `ReactiveException` (15.2).
+3.13 `Scheduler.ForThread(Thread)` returns the scheduler of that thread, or null when it has none or its scheduler has shut down. A scheduler that has shut down is no longer kept in the list of schedulers per thread. `Scheduler.Current` is the scheduler of the calling thread (3.6). A thread has at most one scheduler, of any type. Attaching or creating a second scheduler on a thread that already has one throws `ReactiveException` (15.2), except that `AttachToCurrent` returns the scheduler of the same type that is already attached (5.3, 6.1).
 3.14 The scheduler of a thread is the same object for as long as the thread lives (3.13, 5.3, 6.1).
 
 **Nesting**
 3.15 Nested message pumps are prohibited on every scheduler. A reaction runs no message pump (10.3). At most one reaction runs per thread (10.4).
-3.16 `Scheduler.RunReaction` on a thread where another reaction is running does not start the reaction and throws `ReactiveException` (10.4).
+3.16 `Reaction.Run()` on a thread where another reaction is running does not start the reaction and throws `ReactiveException` (10.4).
 
 ## 4. Thread scheduler
 
@@ -110,15 +110,15 @@ The classes below are the standard realisation of a register. Other storage mode
 
 ## 6. WinForms scheduler
 
-6.1 `WinFormsScheduler` is the scheduler for the WinForms message loop of a thread. It has no public constructor, and `WinFormsScheduler.AttachToCurrent()` attaches it to the `SynchronizationContext` of the calling thread, which must be the WinForms context. A thread has at most one scheduler: when one is already attached, that one is returned. When the calling thread has no WinForms context, the call logs a programming error and throws `ReactiveException`.
+6.1 `WinFormsScheduler` is the scheduler for the WinForms message loop of a thread. It has no public constructor, and `WinFormsScheduler.AttachToCurrent()` attaches it to the `SynchronizationContext` of the calling thread, which must be the WinForms context. A thread has at most one scheduler: when one is already attached, that one is returned. When the calling thread has no WinForms context, the call throws `ReactiveException`.
 6.2 A `WinFormsScheduler` uses the synchronisation context that WinForms has installed on the thread. A context passed in by the user is not supported, and a scheduler cannot be created for a context that is not the WinForms one.
 6.3 `Queue` of a `WinFormsScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8. It does not end the message loop, because the application owns that loop.
 
 ## 7. Logging and monitoring
 
 7.1 "Logged" (15.1) means that the error is raised through `Reactive.UnhandledException`, a public static event of type `Action<Exception>`. When no handler is attached, a warning is written to the console. When a handler itself throws, a warning with both the original error and the handler's exception is written to the console, and the loop continues, so a faulty handler cannot stop a loop.
-7.2 `ReactiveException` is used only for errors that Fluorine itself detects: the programming errors of 7.3 other than an exception from a reaction, such as creating a reactor without a scheduler (2.2, 2.3), a second scheduler of another type on a thread (3.13, 6.1), a shutdown from inside a reaction (3.8), a reaction starting while another one is running (3.16), and `ContinueRecording()` with a pause count of zero (2.20). It derives from `Exception` and has the usual constructors: `ReactiveException()`, `ReactiveException(string message)` and `ReactiveException(string message, Exception inner)`. An exception thrown by a reaction or by a queued action is user code and is logged as it is, without wrapping.
-7.3 The following are logged as programming errors: an unhandled exception from a reaction (15.1), creating a reactor without a scheduler (15.2), attaching a scheduler to a thread that already has one of another type (15.2), requesting a shutdown from inside a reaction (15.2), and calling `ContinueRecording()` with a pause count of zero (15.5).
+7.2 `ReactiveException` is used only for errors in how the library is used, which Fluorine detects itself: creating a reactor without a scheduler (2.2, 2.3), a second scheduler on a thread (3.13, 6.1), a shutdown from inside a reaction (3.8), a reaction starting while another one is running (3.16), and `ContinueRecording()` with a pause count of zero (2.20). It is thrown to the caller as an ordinary exception and is not logged. It derives from `Exception` and has the usual constructors: `ReactiveException()`, `ReactiveException(string message)` and `ReactiveException(string message, Exception inner)`. An exception thrown by a reaction or by a queued action is user code and is logged as it is, without wrapping.
+7.3 Only exceptions from user code that has no caller to receive them are logged: an unhandled exception from a reaction or from a queued action (15.1, 3.3).
 7.4 `Reaction.ExecutionCount` returns how often the reaction has run (15.3). It is for monitoring only: it can be read at any time, and it never changes how anything behaves. The library may compile it only into debug builds (`#if DEBUG`), so code that must also build against a release library does not rely on it.
 7.5 What diagnostics mode is, and how it is switched on, is up to the implementation.
 
