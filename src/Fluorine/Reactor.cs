@@ -61,6 +61,26 @@ namespace Fluorine
             return reaction;
         }
 
+        public Reaction Computed<T>(Register<T> register, Func<T> func, bool disposeOld = false)
+        {
+            return Add(() =>
+            {
+                var result = func != null ? func() : default(T);
+                if (!disposeOld)
+                {
+                    register.SetValue(result);
+                    return;
+                }
+
+                T oldValue;
+                if (!register.SetValue(result, out oldValue))
+                    return;
+                var disposable = oldValue as IDisposable;
+                if (disposable != null)
+                    disposable.Dispose();
+            });
+        }
+
         public void Dispose()
         {
             DisposeCore(false);
