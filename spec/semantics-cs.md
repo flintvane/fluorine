@@ -15,7 +15,7 @@ The classes below are the standard realisation of a register. Other storage mode
 1.2 `Register<T>` derives from `Register`. It adds the typed value and the equality.
 
 **Reading and triggering**
-1.3 `Register.RecordRead()` subscribes `Reaction.Current` (2.18) to the register. If `Reaction.Recording` is false, it does nothing.
+1.3 `Register.RecordRead()` subscribes `Reaction.Current` (2.18) to the register. If `Reaction.IsRecording` is false, it does nothing.
 1.4 `Register.TriggerReactions()` triggers every reaction connected to the register. It can also be called by the user.
 1.5 `RecordRead()` and `TriggerReactions()` can both be called from any thread (13.2).
 
@@ -64,13 +64,13 @@ The classes below are the standard realisation of a register. Other storage mode
 2.15 `Reaction.Trigger()` queues a run on the scheduler of the reaction and returns immediately (4.6). It never throws, and on a disposed reaction it does nothing (12.6).
 2.16 `Reaction.Name` is the name given to `Add` (15.4). The name need not be retained when the library does not run in diagnostics mode.
 2.17 `Reaction.Dispose()` sets the lambda to null and queues the reaction as a normal run. The run with the null lambda reads nothing, so dependency maintenance (7.3) detaches the reaction from all its registers (14.5). It can be called from any thread, and disposing twice is harmless (12.6).
-2.18 `Reaction.Current` is a public static property. It returns the reaction that is running on this thread, whether it is paused or not, or null when none is running. Reads are attributed to it while `Reaction.Recording` is true (1.3).
+2.18 `Reaction.Current` is a public static property. It returns the reaction that is running on this thread, whether it is paused or not, or null when none is running. Reads are attributed to it while `Reaction.IsRecording` is true (1.3).
 
 **Pause**
 2.19 `Reaction.PauseRecording()` increments the pause count of the running reaction on this thread. While the count is above zero, the reaction is paused and reads on that thread are not recorded (1.3, 9.1).
 2.20 `Reaction.ContinueRecording()` decrements the count. Recording resumes when the count is zero again. Calling it while the count is zero logs a programming error (9.3, 15.5) and leaves the count at zero.
 2.21 The pause count is logically associated with a reaction. Outside a running reaction there is no pause count, so `PauseRecording()` and `ContinueRecording()` have no effect there.
-2.22 `Reaction.Recording` is a public static property. It returns true when a reaction is running on this thread and its pause count is zero, that is, when a read on this thread is recorded now. It returns false outside a reaction and while the pause count is above zero.
+2.22 `Reaction.IsRecording` is a public static property. It returns true when a reaction is running on this thread and its pause count is zero, that is, when a read on this thread is recorded now. It returns false outside a reaction and while the pause count is above zero.
 2.23 The count ends with the running reaction (9.3).
 2.24 The count is wrapped in the following forms: `Reaction.Pause()` returns an `IDisposable` that continues recording when disposed; `Reaction.Pause(Action)` and `Reaction.Pause<T>(Func<T>)` pause, run the delegate and continue in a `finally` block. Pauses are reentrant (9.2).
 
