@@ -23,8 +23,7 @@ namespace Fluorine
                 try
                 {
                     scheduler = new ThreadScheduler();
-                    if (initial != null)
-                        initial();
+                    initial?.Invoke();
                     created = scheduler;
                 }
                 catch (Exception ex)
@@ -46,7 +45,7 @@ namespace Fluorine
             thread.Start();
             ready.Wait();
             if (error != null)
-                throw new ReactiveException("CreateNew initial action failed.", error);
+                throw error;
             return created;
         }
 

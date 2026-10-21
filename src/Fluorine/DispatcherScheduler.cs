@@ -55,9 +55,7 @@ namespace Fluorine
             thread.Start();
             ready.Wait();
             if (error != null)
-                throw error as ReactiveException ??
-                      new ReactiveException("CreateNew initial action failed.", error);
-
+                throw error;
             return created;
         }
 
