@@ -19,8 +19,7 @@ namespace Fluorine
 
         public static WinFormsScheduler AttachToCurrent()
         {
-            var existing = Current as WinFormsScheduler;
-            if (existing != null)
+            if (Current is WinFormsScheduler existing)
                 return existing;
             if (Current != null)
             {
@@ -39,15 +38,9 @@ namespace Fluorine
             return new WinFormsScheduler(context);
         }
 
-        protected override int ExecutingWorkDepth
-        {
-            get { return t_executing; }
-        }
+        protected override int ExecutingWorkDepth => t_executing;
 
-        protected override int PendingWork
-        {
-            get { return _pending; }
-        }
+        protected override int PendingWork => _pending;
 
         protected override void Schedule(Action action)
         {

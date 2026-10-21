@@ -323,7 +323,7 @@ namespace Fluorine.Tests
         {
             Reaction.PauseRecording();
             Reaction.ContinueRecording();
-            Assert.False(Reaction.Recording);
+            Assert.False(Reaction.IsRecording);
             Assert.Null(Reaction.Current);
         }
 
@@ -336,12 +336,12 @@ namespace Fluorine.Tests
                 var paused = true;
                 host.NewReactor().Add(() =>
                 {
-                    rec = Reaction.Recording;
-                    Reaction.Pause(() => paused = Reaction.Recording);
+                    rec = Reaction.IsRecording;
+                    Reaction.Pause(() => paused = Reaction.IsRecording);
                 });
                 WaitUntil.True(() => rec, "recorded");
                 Assert.False(paused);
-                Assert.False(Reaction.Recording);
+                Assert.False(Reaction.IsRecording);
             }
         }
 
@@ -357,7 +357,7 @@ namespace Fluorine.Tests
                     Interlocked.Increment(ref n);
                 });
                 WaitUntil.True(() => n == 1, "ran");
-                Assert.False(Reaction.Recording);
+                Assert.False(Reaction.IsRecording);
                 Assert.Null(Reaction.Current);
             }
         }
@@ -374,9 +374,9 @@ namespace Fluorine.Tests
                     using (Reaction.Pause())
                     using (Reaction.Pause())
                     {
-                        inner = Reaction.Recording;
+                        inner = Reaction.IsRecording;
                     }
-                    Assert.True(Reaction.Recording);
+                    Assert.True(Reaction.IsRecording);
                     var v = Reaction.Pause(() => 7);
                     Assert.Equal(7, v);
                     Interlocked.Increment(ref ran);

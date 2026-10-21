@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace Fluorine
@@ -11,20 +10,17 @@ namespace Fluorine
 
         public void RecordRead()
         {
-            if (!Reaction.Recording)
+            if (!Reaction.IsRecording)
                 return;
             var current = Reaction.Current;
-            if (current == null)
-                return;
-            current.Subscribe(this);
+            current?.Subscribe(this);
         }
 
         public void TriggerReactions()
         {
-            Reaction[] snapshot;
             lock (this)
             {
-                snapshot = new Reaction[_listeners.Count];
+                var snapshot = new Reaction[_listeners.Count];
                 _listeners.CopyTo(snapshot);
                 for (var i = 0; i < snapshot.Length; i++)
                     snapshot[i].Trigger();
@@ -84,10 +80,7 @@ namespace Fluorine
                 lock (this)
                     return _value;
             }
-            set
-            {
-                Write(value);
-            }
+            set => Write(value);
         }
 
         public bool SetValue(T newValue)
@@ -95,12 +88,6 @@ namespace Fluorine
             return Write(newValue);
         }
 
-        public bool SetValue(T newValue, out T oldValue)
-        {
-            lock (this)
-                oldValue = _value;
-            return Write(newValue, oldValue);
-        }
 
         bool Write(T newValue)
         {
@@ -109,10 +96,18 @@ namespace Fluorine
                 snapshot = _value;
             return Write(newValue, snapshot);
         }
-
-        bool Write(T newValue, T snapshot)
+        
+        
+        public bool SetValue(T newValue, out T oldValue)
         {
-            if (object.Equals(newValue, snapshot))
+            lock (this)
+                oldValue = _value;
+            return Write(newValue, oldValue);
+        }
+
+        private bool Write(T newValue, T snapshot)
+        {
+            if (Equals(newValue, snapshot))
                 return false;
             lock (this)
                 _value = newValue;

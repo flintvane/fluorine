@@ -6,8 +6,7 @@ namespace Fluorine
 {
     public sealed class DispatcherScheduler : Scheduler
     {
-        [ThreadStatic]
-        static int t_executing;
+        [ThreadStatic] static int t_executing;
 
         readonly Dispatcher _dispatcher;
         readonly bool _ownsDispatcher;
@@ -58,17 +57,18 @@ namespace Fluorine
             ready.Wait();
             if (error != null)
             {
-                var wrapped = error as ReactiveException ?? new ReactiveException("CreateNew initial action failed.", error);
+                var wrapped = error as ReactiveException ??
+                              new ReactiveException("CreateNew initial action failed.", error);
                 Reactive.Raise(wrapped);
                 throw error;
             }
+
             return created;
         }
 
         public static DispatcherScheduler AttachToCurrent()
         {
-            var existing = Current as DispatcherScheduler;
-            if (existing != null)
+            if (Current is DispatcherScheduler existing)
                 return existing;
             if (Current != null)
             {
@@ -77,21 +77,13 @@ namespace Fluorine
                 throw ex;
             }
 
-            var dispatcher = Dispatcher.FromThread(Thread.CurrentThread);
-            if (dispatcher == null)
-                dispatcher = Dispatcher.CurrentDispatcher;
+            var dispatcher = Dispatcher.FromThread(Thread.CurrentThread) ?? Dispatcher.CurrentDispatcher;
             return new DispatcherScheduler(dispatcher, false);
         }
 
-        protected override int ExecutingWorkDepth
-        {
-            get { return t_executing; }
-        }
+        protected override int ExecutingWorkDepth => t_executing;
 
-        protected override int PendingWork
-        {
-            get { return _pending; }
-        }
+        protected override int PendingWork => _pending;
 
         protected override void Schedule(Action action)
         {
@@ -103,6 +95,7 @@ namespace Fluorine
                     return;
                 _pending++;
             }
+
             try
             {
                 _dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => InvokeWork(action)));
@@ -121,6 +114,7 @@ namespace Fluorine
                 if (_pending == 0 && !IsOwnerThread)
                     postSentinel = true;
             }
+
             if (!postSentinel)
                 return;
             try
@@ -145,13 +139,7 @@ namespace Fluorine
                 frame.Continue = false;
             if (_ownsDispatcher)
             {
-                try
-                {
-                    _dispatcher.BeginInvokeShutdown(DispatcherPriority.Normal);
-                }
-                catch
-                {
-                }
+                _dispatcher.BeginInvokeShutdown(DispatcherPriority.Normal);
             }
         }
 
@@ -192,6 +180,7 @@ namespace Fluorine
                         _drainFrame.Continue = false;
                 }
             }
+
             if (complete)
                 CompleteShutdown();
         }
@@ -206,6 +195,7 @@ namespace Fluorine
                         return;
                     _drainFrame = new DispatcherFrame();
                 }
+
                 Dispatcher.PushFrame(_drainFrame);
                 lock (Gate)
                 {

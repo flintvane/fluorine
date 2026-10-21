@@ -1,10 +1,10 @@
 using System;
-using System.Collections.Generic;
 
 namespace Fluorine
 {
     public static class Reactive
     {
+        // TODO -  Why is this called in such retarded manner?
         public static event Action<Exception> UnhandledException;
 
         public static void Shutdown()
@@ -41,9 +41,9 @@ namespace Fluorine
             }
 
             var list = handler.GetInvocationList();
-            for (var i = 0; i < list.Length; i++)
+            foreach (var t in list)
             {
-                var action = (Action<Exception>)list[i];
+                var action = (Action<Exception>)t;
                 try
                 {
                     action(exception);

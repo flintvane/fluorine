@@ -9,7 +9,7 @@ namespace StructTearing
     {
         public long A, B, C, D;
 
-        public Quad(long x)
+        public Quad(int x)
         {
             A = x;
             B = x;
@@ -19,7 +19,7 @@ namespace StructTearing
 
         public bool Torn
         {
-            get { return A != B || A != C || A != D; }
+            get { return A != B  || A != C/* || A != D*/; }
         }
     }
 
@@ -81,9 +81,9 @@ namespace StructTearing
                 _lockedReads, _lockedTears);
         }
 
-        static void UnlockedWriter(long sign)
+        static void UnlockedWriter(int sign)
         {
-            long n = 0;
+            int n = 0;
             while (!_stop)
             {
                 n++;
@@ -102,9 +102,9 @@ namespace StructTearing
             }
         }
 
-        static void LockedWriter(long sign)
+        static void LockedWriter(int sign)
         {
-            long n = 0;
+            int n = 0;
             while (!_stop)
             {
                 n++;

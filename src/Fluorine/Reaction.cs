@@ -8,9 +8,11 @@ namespace Fluorine
     {
         [ThreadStatic]
         static Reaction t_current;
+        public static Reaction Current => t_current;
 
         [ThreadStatic]
         static int t_pause;
+        public static bool IsRecording => t_current != null && t_pause == 0;
 
         readonly Reactor _reactor;
         readonly Scheduler _scheduler;
@@ -26,25 +28,12 @@ namespace Fluorine
             _reactor = reactor;
             _scheduler = scheduler;
             Name = name;
-            _lambda = lambda ?? new Action(() => { });
-        }
-
-        public static Reaction Current
-        {
-            get { return t_current; }
-        }
-
-        public static bool Recording
-        {
-            get { return t_current != null && t_pause == 0; }
+            _lambda = lambda ?? (() => { });
         }
 
         public string Name { get; set; }
 
-        public int ExecutionCount
-        {
-            get { return Volatile.Read(ref _executionCount); }
-        }
+        public int ExecutionCount => Volatile.Read(ref _executionCount);
 
         public static void PauseRecording()
         {
@@ -76,8 +65,7 @@ namespace Fluorine
             PauseRecording();
             try
             {
-                if (action != null)
-                    action();
+                action?.Invoke();
             }
             finally
             {
@@ -102,15 +90,9 @@ namespace Fluorine
 
         public void Trigger()
         {
-            try
-            {
                 if (Volatile.Read(ref _disposed) != 0)
                     return;
                 RequestRun();
-            }
-            catch
-            {
-            }
         }
 
         public void Dispose()
@@ -119,26 +101,16 @@ namespace Fluorine
                 return;
             _lambda = null;
             Volatile.Write(ref _disposed, 1);
-            if (_reactor != null)
-                _reactor.Remove(this);
+            _reactor?.Remove(this);
             RequestRun();
         }
 
-        internal bool IsDisposed
-        {
-            get { return Volatile.Read(ref _disposed) != 0; }
-        }
+        internal bool IsDisposed => Volatile.Read(ref _disposed) != 0;
 
         internal void RequestRun()
         {
-            try
-            {
-                if (Interlocked.CompareExchange(ref _queued, 1, 0) == 0)
-                    _scheduler.Queue(this);
-            }
-            catch
-            {
-            }
+            if (Interlocked.CompareExchange(ref _queued, 1, 0) == 0)
+                _scheduler.Queue(this);
         }
 
         internal void Subscribe(Register register)
@@ -147,8 +119,7 @@ namespace Fluorine
                 return;
             if (Volatile.Read(ref _disposed) != 0)
                 return;
-            bool marked;
-            if (_deps.TryGetValue(register, out marked))
+            if (_deps.TryGetValue(register, out _))
             {
                 _deps[register] = false;
                 return;

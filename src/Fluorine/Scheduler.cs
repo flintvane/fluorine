@@ -6,11 +6,9 @@ namespace Fluorine
 {
     public abstract class Scheduler
     {
-        [ThreadStatic]
-        static Scheduler t_current;
+        [ThreadStatic] static Scheduler t_current;
 
-        [ThreadStatic]
-        static int t_drainDepth;
+        [ThreadStatic] static int t_drainDepth;
 
         static readonly object StaticLock = new object();
         static readonly Dictionary<Thread, Scheduler> ByThread = new Dictionary<Thread, Scheduler>();
@@ -33,10 +31,7 @@ namespace Fluorine
             InstallOnCurrentThread();
         }
 
-        public static Scheduler Current
-        {
-            get { return t_current; }
-        }
+        public static Scheduler Current => t_current;
 
         public static Scheduler ForThread(Thread thread)
         {
@@ -44,57 +39,32 @@ namespace Fluorine
                 return null;
             lock (StaticLock)
             {
-                Scheduler scheduler;
-                if (ByThread.TryGetValue(thread, out scheduler))
+                if (ByThread.TryGetValue(thread, out var scheduler))
                     return scheduler;
                 return null;
             }
         }
 
-        protected Thread OwnerThread
-        {
-            get { return _ownerThread; }
-        }
+        protected Thread OwnerThread => _ownerThread;
 
-        protected bool IsOwnerThread
-        {
-            get { return _ownerThread != null && Thread.CurrentThread == _ownerThread; }
-        }
+        protected bool IsOwnerThread => _ownerThread != null && Thread.CurrentThread == _ownerThread;
 
-        internal bool HasStartedShutdown
-        {
-            get { return Volatile.Read(ref _state) >= StateShuttingDown; }
-        }
+        internal bool HasStartedShutdown => Volatile.Read(ref _state) >= StateShuttingDown;
 
-        internal bool IsFinished
-        {
-            get { return Volatile.Read(ref _state) == StateFinished; }
-        }
+        internal bool IsFinished => Volatile.Read(ref _state) == StateFinished;
 
         public void Queue(Action action)
         {
-            try
-            {
-                if (action == null)
-                    return;
-                Schedule(() => RunUserAction(action));
-            }
-            catch
-            {
-            }
+            if (action == null)
+                return;
+            Schedule(() => RunUserAction(action));
         }
 
         public void Queue(Reaction reaction)
         {
-            try
-            {
-                if (reaction == null)
-                    return;
-                Schedule(() => RunReaction(reaction));
-            }
-            catch
-            {
-            }
+            if (reaction == null)
+                return;
+            Schedule(() => RunReaction(reaction));
         }
 
         public void Shutdown()
@@ -116,6 +86,7 @@ namespace Fluorine
 
         internal void RequestShutdown()
         {
+            // TODO - what is this for construct ?
             var first = false;
             lock (Gate)
             {
@@ -124,6 +95,7 @@ namespace Fluorine
                 _state = StateShuttingDown;
                 first = true;
             }
+
             if (first)
                 OnShutdownRequested();
         }
@@ -182,22 +154,15 @@ namespace Fluorine
         {
         }
 
-        protected virtual int ExecutingWorkDepth
-        {
-            get { return 0; }
-        }
+        protected virtual int ExecutingWorkDepth => 0;
 
-        protected virtual int PendingWork
-        {
-            get { return 0; }
-        }
+        protected virtual int PendingWork => 0;
 
         protected void RunUserAction(Action action)
         {
             try
             {
-                if (action != null)
-                    action();
+                action?.Invoke();
             }
             catch (Exception ex)
             {
@@ -211,7 +176,8 @@ namespace Fluorine
                 return;
             if (Reaction.Current != null)
             {
-                var ex = new ReactiveException("A second reaction cannot start while another reaction is running on this thread.");
+                var ex = new ReactiveException(
+                    "A second reaction cannot start while another reaction is running on this thread.");
                 Reactive.Raise(ex);
                 lock (_deferred)
                     _deferred.Add(reaction);
@@ -245,13 +211,7 @@ namespace Fluorine
 
             DisposeAllReactors();
             Uninstall();
-            try
-            {
-                OnShutdownFinished();
-            }
-            catch
-            {
-            }
+            OnShutdownFinished();
             _finished.Set();
         }
 
@@ -272,8 +232,7 @@ namespace Fluorine
             t_current = this;
             lock (StaticLock)
             {
-                Scheduler previous;
-                if (ByThread.TryGetValue(_ownerThread, out previous) && previous != this)
+                if (ByThread.TryGetValue(_ownerThread, out var previous) && previous != this)
                 {
                     var ex = new ReactiveException(
                         previous.GetType() == GetType()
@@ -282,6 +241,7 @@ namespace Fluorine
                     Reactive.Raise(ex);
                     throw ex;
                 }
+
                 ByThread[_ownerThread] = this;
                 if (!All.Contains(this))
                     All.Add(this);
@@ -298,16 +258,9 @@ namespace Fluorine
                 snapshot = _deferred.ToArray();
                 _deferred.Clear();
             }
+
             for (var i = 0; i < snapshot.Length; i++)
-            {
-                try
-                {
-                    Queue(snapshot[i]);
-                }
-                catch
-                {
-                }
-            }
+                Queue(snapshot[i]);
         }
 
         void DisposeAllReactors()
@@ -319,6 +272,7 @@ namespace Fluorine
                 _reactors.CopyTo(snapshot);
                 _reactors.Clear();
             }
+
             for (var i = 0; i < snapshot.Length; i++)
                 snapshot[i].DisposeFromShutdown();
         }
@@ -329,8 +283,7 @@ namespace Fluorine
                 t_current = null;
             lock (StaticLock)
             {
-                Scheduler mapped;
-                if (_ownerThread != null && ByThread.TryGetValue(_ownerThread, out mapped) && mapped == this)
+                if (_ownerThread != null && ByThread.TryGetValue(_ownerThread, out var mapped) && mapped == this)
                     ByThread.Remove(_ownerThread);
                 All.Remove(this);
             }

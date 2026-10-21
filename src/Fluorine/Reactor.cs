@@ -33,15 +33,9 @@ namespace Fluorine
 
         public void Queue(Action action)
         {
-            try
-            {
-                if (_disposed != 0)
-                    return;
-                _scheduler.Queue(action);
-            }
-            catch
-            {
-            }
+            if (_disposed != 0)
+                return;
+            _scheduler.Queue(action);
         }
 
         public Reaction Add(Action lambda)
@@ -56,7 +50,7 @@ namespace Fluorine
             if (_scheduler != null && _scheduler.HasStartedShutdown)
                 return null;
 
-            var reaction = new Reaction(this, _scheduler, name, lambda ?? new Action(() => { }));
+            var reaction = new Reaction(this, _scheduler, name, lambda ?? (() => { }));
             lock (_sync)
             {
                 if (_disposed != 0)
@@ -93,11 +87,11 @@ namespace Fluorine
                 _reactions.Clear();
             }
 
-            for (var i = 0; i < snapshot.Length; i++)
+            foreach (var t in snapshot)
             {
                 if (fromShutdown)
-                    snapshot[i].DisconnectFromRegisters();
-                snapshot[i].Dispose();
+                    t.DisconnectFromRegisters();
+                t.Dispose();
             }
 
             if (_scheduler != null)

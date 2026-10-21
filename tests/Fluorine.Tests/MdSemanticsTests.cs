@@ -583,7 +583,7 @@ namespace Fluorine.Tests
                 {
                     Reaction.Pause(() =>
                     {
-                        Reaction.Pause(() => rec = Reaction.Recording);
+                        Reaction.Pause(() => rec = Reaction.IsRecording);
                     });
                 });
                 Thread.Sleep(50);
@@ -631,7 +631,7 @@ namespace Fluorine.Tests
                 host.NewReactor().Add(() => Reaction.PauseRecording());
                 Thread.Sleep(40);
                 Assert.Null(Reaction.Current);
-                Assert.False(Reaction.Recording);
+                Assert.False(Reaction.IsRecording);
             }
         }
     }

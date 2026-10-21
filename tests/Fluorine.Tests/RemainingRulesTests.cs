@@ -117,7 +117,7 @@ namespace Fluorine.Tests
             using (var host = new ThreadHost())
             {
                 var rec = true;
-                host.Scheduler.Queue(() => rec = Reaction.Recording);
+                host.Scheduler.Queue(() => rec = Reaction.IsRecording);
                 WaitUntil.True(() => rec == false, "no recording");
             }
         }

@@ -111,11 +111,11 @@ namespace Fluorine
         {
             try
             {
-                if (work != null)
-                    work();
+                work?.Invoke();
             }
             catch (ReactiveException)
             {
+                // TODO - why is this here ? 
             }
             catch (Exception ex)
             {
