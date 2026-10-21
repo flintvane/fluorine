@@ -1,8 +1,8 @@
-# Fluorine: Semantic Framework (DRAFT 0.9)
+# Fluorine: Semantic Framework (DRAFT 0.10)
 
 Author: Werner Van Belle, with help from the latest xAI LLM models.
 
-Status: working draft 0.9 (2026-10-18), not published.
+Status: working draft 0.10 (2026-10-21), not published.
 Scope: platform-neutral rules every Fluorine implementation must follow. Language-specific mappings (memory model, scheduler, member names, naming of the pause construct, how errors are logged) are left to each platform. The rules declare outcomes; they do not prescribe implementation mechanisms.
 
 ## Purpose
@@ -134,7 +134,7 @@ Example: a label on screen shows a person's full name. `first` and `last` are re
 11.1 A reaction stays on the thread (scheduler) it started on, for its whole life. It never moves.
 11.2 By default a reactor uses the scheduler of the creating thread. That scheduler is captured when the reactor is created. An explicit scheduler may be given to use another loop. A reaction runs on the scheduler of its reactor (12.4).
 11.3 Every platform must supply the necessary schedulers. A scheduler can queue work, tell whether the current thread is its own, and report that it is shutting down. The user can also queue arbitrary work of their own on a scheduler. Such work is not a reaction: it records no reads, and an exception from it is logged as in 8.3. Platforms without a single loop must provide their own. How a thread finds its scheduler, and the types and members involved, are left to the platform.
-11.4 Schedulers are created explicitly, never implicitly: if no scheduler was set up in advance, reactors, and therefore reactions, cannot be created. Creating a reactor on a thread without a scheduler, and without being given one, is a programming error. It is first logged (15.2), and then an exception is thrown to the creator.
+11.4 Schedulers are created explicitly, never implicitly: if no scheduler was set up in advance, reactors, and therefore reactions, cannot be created. Creating a reactor on a thread without a scheduler, and without being given one, is a programming error, and an exception is thrown to the creator (15.2).
 
 **Start-up ordering**
 11.5 Same loop: when a reaction is created on the creator's own loop, the creator's current run finishes before the new reaction's first run starts. Initialisation can therefore be written safely: create all reactions, write the variables, and nothing runs in between.
@@ -158,7 +158,7 @@ Example: a label on screen shows a person's full name. `first` and `last` are re
 
 **Shutdown**
 11.15 When a loop is shut down, first all reactions already queued on the loop are run. Reactions queued after the shutdown began, including those queued by the reactions that are being drained, are no longer queued. The same holds for work the user queued (11.3): work already queued runs, and work that arrives after the shutdown began is ignored. Then all reactors associated with the loop are disposed. Disposing a reactor disconnects its reactions from their registers, and they never run again. This does not depend on a reaction being triggered, because a reaction that only waits on a register is never triggered. No new work is accepted. A refused run, including the first run of a newly created reaction, is silent and raises no exception (1.8), and a reaction whose run was refused simply never runs. How the loop tracks its reactions is up to the implementation.
-11.16 A shutdown is synchronous: the call returns only when all queued reactions have run and all reactors of the scheduler have been disposed (11.15). A shutdown can be requested from any thread. It cannot be requested from inside a reaction, because that reaction would have to wait for itself. This is a programming error, which is logged (15.2) and then an exception is thrown to the caller. When the shutdown is requested on the thread of the scheduler itself, outside a reaction, that call processes what is still open before it returns.
+11.16 A shutdown is synchronous: the call returns only when all queued reactions have run and all reactors of the scheduler have been disposed (11.15). A shutdown can be requested from any thread. It cannot be requested from inside a reaction, because that reaction would have to wait for itself. This is a programming error, and an exception is thrown to the caller (15.2). When the shutdown is requested on the thread of the scheduler itself, outside a reaction, that call processes what is still open before it returns.
 11.17 The platform offers one call that shuts down every scheduler it knows. It first tells all schedulers to finish, without waiting for one to complete before informing the next, and then waits until every one of them has reached the finished state. It returns when all of them are done. The rules of 11.16 apply to it.
 
 ## 12. Lifetimes and ownership
@@ -212,7 +212,7 @@ Example: a label on screen shows a person's full name. `first` and `last` are re
 ## 15. Logging and monitoring
 
 15.1 All unhandled exceptions from reactions must be logged. An exception that reaches the event loop is logged as a programming error. Where the log goes is left to the platform.
-15.2 Creating a reactor without a scheduler (11.4) and requesting a shutdown from inside a reaction (11.16) must be logged as programming errors, before the exception is thrown.
+15.2 Errors in how the library is used are programming errors that are thrown to the caller as ordinary exceptions and are not logged: creating a reactor without a scheduler (11.4), requesting a shutdown from inside a reaction (11.16), starting a reaction while another one is running (10.4), and ending a pause more often than it was started (15.5). Logging is for exceptions from user code that has no caller to receive them (15.1).
 15.3 An implementation may provide an execution counter per reaction (for example in debug mode). Its only purpose is to show how often something ran. It never stops anything.
 15.4 Reactions and registers may be named, for logs and diagnostics.
-15.5 Ending a pause more often than it was started is logged as a programming error (9.3).
+15.5 Ending a pause more often than it was started is a programming error, and an exception is thrown to the caller (9.3, 15.2).
