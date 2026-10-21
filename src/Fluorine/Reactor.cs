@@ -90,7 +90,10 @@ namespace Fluorine
             foreach (var t in snapshot)
             {
                 if (fromShutdown)
-                    t.DisconnectFromRegisters();
+                {
+                    t.MarkDeletionCandidates();
+                    t.UnsubscribeStale();
+                }
                 t.Dispose();
             }
 

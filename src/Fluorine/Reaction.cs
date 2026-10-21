@@ -6,20 +6,16 @@ namespace Fluorine
 {
     public sealed class Reaction : IDisposable
     {
-        [ThreadStatic]
-        static Reaction t_current;
+        [ThreadStatic] static Reaction t_current;
         public static Reaction Current => t_current;
 
-        [ThreadStatic]
-        static int t_pause;
+        [ThreadStatic] static int t_pause;
         public static bool IsRecording => t_current != null && t_pause == 0;
 
         readonly Reactor _reactor;
         readonly Dictionary<Register, bool> _deps = new Dictionary<Register, bool>();
         Action _lambda;
         int _queued;
-        int _disposed;
-        int _disposeOnce;
         int _executionCount;
 
         internal Reaction(Reactor reactor, string name, Action lambda)
@@ -85,22 +81,16 @@ namespace Fluorine
 
         public void Trigger()
         {
-                if (Volatile.Read(ref _disposed) != 0)
-                    return;
-                RequestRun();
+            RequestRun();
         }
 
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref _disposeOnce, 1) != 0)
-                return;
+            if (_lambda==null) return;
             _lambda = null;
-            Volatile.Write(ref _disposed, 1);
-            _reactor?.Remove(this);
+            _reactor.Remove(this);
             RequestRun();
         }
-
-        internal bool IsDisposed => Volatile.Read(ref _disposed) != 0;
 
         internal void RequestRun()
         {
@@ -112,26 +102,15 @@ namespace Fluorine
         {
             if (register == null)
                 return;
-            if (Volatile.Read(ref _disposed) != 0)
-                return;
+
             if (_deps.TryGetValue(register, out _))
             {
                 _deps[register] = false;
                 return;
             }
+
             _deps[register] = false;
             register.AddListener(this);
-        }
-
-        internal void DisconnectFromRegisters()
-        {
-            if (_deps.Count == 0)
-                return;
-            var keys = new Register[_deps.Count];
-            _deps.Keys.CopyTo(keys, 0);
-            _deps.Clear();
-            for (var i = 0; i < keys.Length; i++)
-                keys[i].RemoveListener(this);
         }
 
         internal void Run()
@@ -141,18 +120,12 @@ namespace Fluorine
                     "A second reaction cannot start while another reaction is running on this thread.");
             Interlocked.Exchange(ref _queued, 0);
             var lambda = _lambda;
-            if (lambda == null)
-            {
-                DisconnectFromRegisters();
-                return;
-            }
-
             MarkDeletionCandidates();
             t_pause = 0;
             t_current = this;
             try
             {
-                lambda();
+                lambda?.Invoke();
             }
             catch (Exception ex)
             {
@@ -162,25 +135,18 @@ namespace Fluorine
             {
                 t_pause = 0;
                 t_current = null;
-                if (Volatile.Read(ref _disposed) != 0)
-                    DisconnectFromRegisters();
-                else
-                    UnsubscribeStale();
+                UnsubscribeStale();
                 Interlocked.Increment(ref _executionCount);
             }
         }
 
-        void MarkDeletionCandidates()
+        internal void MarkDeletionCandidates()
         {
-            if (_deps.Count == 0)
-                return;
-            var keys = new Register[_deps.Count];
-            _deps.Keys.CopyTo(keys, 0);
-            for (var i = 0; i < keys.Length; i++)
-                _deps[keys[i]] = true;
+            foreach(var key in _deps.Keys)
+                _deps[key] = true;
         }
 
-        void UnsubscribeStale()
+        internal void UnsubscribeStale()
         {
             if (_deps.Count == 0)
                 return;
@@ -193,6 +159,7 @@ namespace Fluorine
                     stale = new List<Register>();
                 stale.Add(pair.Key);
             }
+
             if (stale == null)
                 return;
             for (var i = 0; i < stale.Count; i++)
