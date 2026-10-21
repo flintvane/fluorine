@@ -171,12 +171,8 @@ namespace Fluorine
 
         protected void CompleteShutdown()
         {
-            lock (this)
-            {
-                if (_state == StateFinished)
-                    return;
+            lock (this) 
                 _state = StateFinished;
-            }
 
             DisposeAllReactors();
             Uninstall();

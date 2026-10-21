@@ -71,11 +71,7 @@ namespace Fluorine
                     return;
                 }
 
-                T oldValue;
-                if (!register.SetValue(result, out oldValue))
-                    return;
-                var disposable = oldValue as IDisposable;
-                if (disposable != null)
+                if (register.SetValue(result, out var oldValue) && oldValue is IDisposable disposable)
                     disposable.Dispose();
             });
         }
