@@ -8,7 +8,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 - **Section:** semantics-cs.md 2.1, 3.1, 12.4. **Unclear:** whether the “common queueing interface” is a C# `interface` type. **Choice:** both `Scheduler` and `Reactor` expose `Queue(Action)` as ordinary methods; no named interface type.
 
-- **Section:** semantics-cs.md 3.2. **Unclear:** visibility of `Scheduler.Queue(Reaction)`. **Choice:** public, as written.
+- **Section:** semantics-cs.md 3.2. **Unclear:** visibility of `Scheduler.Queue(Reaction)`. **Choice:** public, as written. `Reactor.Queue(Reaction)` is internal. A reaction queues through its reactor (2.10) and does not store a scheduler pointer. That internal queue still forwards after the reactor is disposed, so `Dispose` can queue the null-lambda detach run while the reactor is tearing down (2.17).
 
 - **Section:** semantics-cs.md 3.4–3.6. **Unclear:** how a user-written scheduler installs itself on a thread. **Choice:** the protected `Scheduler` constructor installs on the calling thread. Custom schedulers must be constructed on the thread they own. Protected `Schedule(Action)` is the hook that posts work without running it inline.
 

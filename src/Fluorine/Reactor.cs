@@ -31,6 +31,13 @@ namespace Fluorine
             _scheduler.Queue(action);
         }
 
+        internal void Queue(Reaction reaction)
+        {
+            if (reaction == null)
+                return;
+            _scheduler.Queue(reaction);
+        }
+
         public Reaction Add(Action lambda)
         {
             return Add(null, lambda);
@@ -43,7 +50,7 @@ namespace Fluorine
             if (_scheduler != null && _scheduler.HasStartedShutdown)
                 return null;
 
-            var reaction = new Reaction(this, _scheduler, name, lambda ?? (() => { }));
+            var reaction = new Reaction(this, name, lambda ?? (() => { }));
             lock (_sync)
             {
                 if (_disposed != 0)

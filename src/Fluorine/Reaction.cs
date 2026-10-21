@@ -15,7 +15,6 @@ namespace Fluorine
         public static bool IsRecording => t_current != null && t_pause == 0;
 
         readonly Reactor _reactor;
-        readonly Scheduler _scheduler;
         readonly Dictionary<Register, bool> _deps = new Dictionary<Register, bool>();
         Action _lambda;
         int _queued;
@@ -23,10 +22,9 @@ namespace Fluorine
         int _disposeOnce;
         int _executionCount;
 
-        internal Reaction(Reactor reactor, Scheduler scheduler, string name, Action lambda)
+        internal Reaction(Reactor reactor, string name, Action lambda)
         {
             _reactor = reactor;
-            _scheduler = scheduler;
             Name = name;
             _lambda = lambda ?? (() => { });
         }
@@ -107,7 +105,7 @@ namespace Fluorine
         internal void RequestRun()
         {
             if (Interlocked.CompareExchange(ref _queued, 1, 0) == 0)
-                _scheduler.Queue(this);
+                _reactor.Queue(this);
         }
 
         internal void Subscribe(Register register)
