@@ -1,6 +1,6 @@
 [← Shutting down](shutdown.md) · [Topics](../index.md) · [Rules of thumb →](rules-of-thumb.md)
 
-# 15. Async code inside a reaction
+# 16. Async code inside a reaction
 
 A reaction's lambda is a synchronous call (§10.2). An `async` lambda is still allowed, and its first part belongs to the run (cs 9.1).
 

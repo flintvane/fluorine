@@ -1,6 +1,6 @@
-[← Derived values, self-writes and cycles](derived-values.md) · [Topics](../index.md) · [Shutting down →](shutdown.md)
+[← Computed values](computed.md) · [Topics](../index.md) · [Shutting down →](shutdown.md)
 
-# 13. Errors and logging
+# 14. Errors and logging
 
 A reaction never stops its event loop (§8.2). Errors are reported through one event.
 
@@ -54,4 +54,4 @@ Triggering and queueing raise no exceptions of their own (§1.8). An exception f
 
 *Spec references: §8, §15; cs 7. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
 
-[← Derived values, self-writes and cycles](derived-values.md) · [Topics](../index.md) · [Shutting down →](shutdown.md)
+[← Computed values](computed.md) · [Topics](../index.md) · [Shutting down →](shutdown.md)

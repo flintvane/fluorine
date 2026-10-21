@@ -1,6 +1,6 @@
 [← Async code inside a reaction](async.md) · [Topics](../index.md) · [Comparison with other frameworks →](comparison.md)
 
-# 16. Rules of thumb
+# 17. Rules of thumb
 
 A short checklist, with the reasons behind each rule.
 

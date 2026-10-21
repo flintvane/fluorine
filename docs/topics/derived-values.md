@@ -1,4 +1,4 @@
-[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Errors and logging →](errors-and-logging.md)
+[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Computed values →](computed.md)
 
 # 12. Derived values, self-writes and cycles
 
@@ -15,7 +15,7 @@ reactor.Add(() => total.Value = price.Value * amount.Value);
 reactor.Add(() => totalLabel.Text = total.Value.ToString("C"));
 ```
 
-`total` is correct after its reaction has had its turn on the scheduler (§5.4). Until then it holds the previous total. Thanks to equality, a recomputation that gives the same total triggers nothing further.
+`total` is correct after its reaction has had its turn on the scheduler (§5.4). [Computed values](computed.md) offer the same pattern as one call, `reactor.Computed(total, () => price.Value * amount.Value)`. Until then it holds the previous total. Thanks to equality, a recomputation that gives the same total triggers nothing further.
 
 ## Self-writes
 
@@ -59,4 +59,4 @@ reactor.Add(() =>
 
 *Spec references: §5.4, §6, §14.3; cs 7.4. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
 
-[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Errors and logging →](errors-and-logging.md)
+[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Computed values →](computed.md)

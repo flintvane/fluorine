@@ -1,6 +1,6 @@
 [← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md)
 
-# 17. Comparison with other frameworks
+# 18. Comparison with other frameworks
 
 Fluorine shares its central idea with several well-known libraries: dependencies are found by recording reads while code runs. This page maps each of them onto Fluorine's three parts:
 
