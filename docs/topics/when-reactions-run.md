@@ -47,7 +47,7 @@ r.Trigger();   // queue a run of this reaction
 
 `Reaction.Trigger()` queues a run and returns immediately (cs 2.15). Triggering a register by hand is covered in [Signal registers](signal-registers.md).
 
-Triggering and queueing never throw an exception (§1.8). When a loop no longer accepts work, the run is dropped silently.
+Triggering and queueing raise no exceptions of their own (§1.8). When a loop no longer accepts work, the run is dropped silently. Exceptions from the platform underneath a scheduler propagate.
 
 ## Liveness
 

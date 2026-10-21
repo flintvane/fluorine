@@ -63,7 +63,7 @@ A thread has at most one scheduler, and it stays the same object for the life of
 io.Queue(() => File.WriteAllText(path, text.Value));
 ```
 
-`Scheduler.Queue(Action)` runs the action on the loop, in order with the reaction runs (cs 3.3). It never runs inline and never throws. The action is not a reaction, so its reads subscribe nothing; an exception from it is logged. `Reactor.Queue(Action)` does the same through a reactor.
+`Scheduler.Queue(Action)` runs the action on the loop, in order with the reaction runs (cs 3.3). It never runs inline and raises no exception of its own (§1.8). The action is not a reaction, so its reads subscribe nothing; an exception from it is logged. `Reactor.Queue(Action)` does the same through a reactor.
 
 ## Schedulers side by side
 

@@ -23,7 +23,7 @@ reactor.Add(() =>
 
 ## One reaction per thread
 
-At most one reaction runs per thread (§10.4, cs 3.15). If a second one starts while another is running, a nested pump was run. This is logged as a programming error, the second reaction is queued again for after the first, and a `ReactiveException` is thrown (cs 3.16).
+At most one reaction runs per thread (§10.4, cs 3.15). A reaction starting while another is running is a fatal error: it means a nested pump was run. The second reaction does not start, and a `ReactiveException` is thrown (§10.4, cs 3.16).
 
 ## Checklist
 
