@@ -44,7 +44,7 @@ reactor.Add(() =>
 
 `Reaction.PauseRecording()` and `Reaction.ContinueRecording()` raise and lower the pause count of the running reaction (cs 2.19, 2.20). Prefer the shapes above, which always balance.
 
-- Calling `ContinueRecording()` at count zero logs a programming error and leaves the count at zero (cs 2.20).
+- Calling `ContinueRecording()` at count zero throws `ReactiveException` and leaves the count at zero (cs 2.20).
 - The count belongs to the run and ends with it, so a forgotten `ContinueRecording()` never leaks into the next run (§9.3, cs 2.23).
 - Outside a reaction both calls have no effect (cs 2.21).
 

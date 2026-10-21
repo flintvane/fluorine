@@ -29,16 +29,15 @@ An exception thrown by a reaction or by a queued action is passed as it is, unwr
 
 ## Programming errors
 
-The following are programming errors. Where noted, a `ReactiveException` is thrown to the caller (cs 7.2, 7.3, §15.2):
+Errors in how the library is used throw `ReactiveException` to the caller, as ordinary exceptions. They are not logged; the caller receives them (cs 7.2, §15.2):
 
-| Situation | Logged | Thrown to the caller |
-|---|---|---|
-| Unhandled exception in a reaction or queued action | yes | — |
-| `new Reactor()` on a thread without a scheduler | yes | yes |
-| Attaching a scheduler of another type to a thread that has one | yes | yes |
-| `Shutdown()` from inside a reaction | yes | yes |
-| A reaction starting while another runs on the same thread | fatal error, see [Rules of thumb](rules-of-thumb.md) | yes |
-| `ContinueRecording()` with a pause count of zero | yes | — |
+- `new Reactor()` on a thread without a scheduler, or `new Reactor(null)`;
+- a second scheduler on a thread that already has one;
+- `Shutdown()` from inside a reaction;
+- a reaction starting while another runs on the same thread (see [Rules of thumb](rules-of-thumb.md));
+- `ContinueRecording()` with a pause count of zero.
+
+Logging through `Reactive.UnhandledException` is for exceptions from user code that has no caller to receive them: an unhandled exception from a reaction or from a queued action (cs 7.3).
 
 ## Writes and triggers
 

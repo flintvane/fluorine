@@ -48,7 +48,7 @@ public partial class App : Application
 WinFormsScheduler.AttachToCurrent();
 ```
 
-The calling thread must have the WinForms `SynchronizationContext`; otherwise a programming error is logged and a `ReactiveException` is thrown (cs 6.1). The application keeps owning its message loop (cs 6.3).
+The calling thread must have the WinForms `SynchronizationContext`; otherwise the call throws `ReactiveException` (cs 6.1). The application keeps owning its message loop (cs 6.3).
 
 ## Finding the scheduler of a thread
 

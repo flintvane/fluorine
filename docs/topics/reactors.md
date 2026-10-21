@@ -12,7 +12,7 @@ var worker  = new Reactor(backgroundLoop);   // an explicit scheduler
 reactor.Name = "customer view";
 ```
 
-- `Reactor()` captures `Scheduler.Current` (cs 2.2). On a thread without a scheduler this is a programming error: it is logged and a `ReactiveException` is thrown.
+- `Reactor()` captures `Scheduler.Current` (cs 2.2). On a thread without a scheduler it throws `ReactiveException`.
 - `Reactor(Scheduler)` uses the scheduler you pass (cs 2.3).
 - All reactions of a reactor run on its scheduler (§12.4). Reactions for another loop go into another reactor.
 
