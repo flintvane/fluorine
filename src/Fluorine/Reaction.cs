@@ -45,7 +45,7 @@ namespace Fluorine
             t_pause--;
         }
 
-        public static IDisposable Pause()
+        public static PauseScope Pause()
         {
             PauseRecording();
             return new PauseScope();
@@ -176,7 +176,7 @@ namespace Fluorine
             }
         }
 
-        sealed class PauseScope : IDisposable
+        public struct PauseScope : IDisposable
         {
             int _done;
 
