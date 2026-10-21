@@ -24,4 +24,4 @@ Things that were removed from the platform-neutral spec because they belong in a
 
 ## Nested pumps (investigation, 2026-10-18)
 - Grok Build tried about 54 approaches to detect nested pumps from .NET code: message loop hooks, a custom synchronisation context, and finally a per-thread pump depth that every pump has to bracket with a scope (`PumpScope`). The depth idea works only if the programmer marks every pump (`ShowDialog`, `DoEvents`, `Dispatcher.PushFrame`, OLE waits, private `GetMessage` loops), so it does not detect anything by itself. Nested pumps are therefore prohibited (`semantics.md` 10.3, 14.6).
-- A reaction is never re-entered by a nested pump without the second start being visible: the check in 10.4 reports it.
+- A reaction is never re-entered by a nested pump without the second start being visible: it is the fatal error of 10.4.
