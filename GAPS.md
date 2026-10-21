@@ -22,7 +22,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 - **Section:** semantics.md 3.1 vs semantics-cs.md 1.16. **Unclear:** the core spec allows another default equality and per-register equality; the C# spec requires `object.Equals`. **Choice:** follow the C# spec (`object.Equals`). `IEquatable<T>` alone does not count. No per-register comparer API.
 
-- **Section:** semantics-cs.md 1.12. **Unclear:** the name and shape of the protected backing value. **Choice:** protected property `StoredValue` with tear-free get/set under the register’s own lock (`lock (this)`), with no private sync object. Direct writes to it do not record a read and do not trigger.
+- **Section:** semantics-cs.md 1.12. **Unclear:** the name and shape of the protected backing value. **Choice:** protected property `StoredValue` with tear-free get/set under the register’s own lock (`lock (this)`), with no private sync object. Direct writes to it do not record a read and do not trigger. The same choice applies to `Reactor` and `Scheduler`: their critical section is the instance (`lock (this)`), including `Monitor.Wait`/`Pulse` on a `ThreadScheduler`. The process-wide scheduler table still uses a dedicated static lock.
 
 - **Section:** semantics-cs.md 1.15. **Unclear:** if equality throws, is `oldValue` still assigned? **Choice:** `oldValue` is assigned from a snapshot taken before equality; the exception still propagates and nothing is stored or triggered.
 

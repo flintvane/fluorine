@@ -54,19 +54,19 @@ namespace Fluorine
         {
             if (action == null)
                 return;
-            lock (Gate)
+            lock (this)
             {
                 if (HasStartedShutdown)
                     return;
                 _queue.Enqueue(action);
-                Monitor.Pulse(Gate);
+                Monitor.Pulse(this);
             }
         }
 
         protected override void OnShutdownRequested()
         {
-            lock (Gate)
-                Monitor.PulseAll(Gate);
+            lock (this)
+                Monitor.PulseAll(this);
         }
 
         protected override void DrainOnOwnerThread()
@@ -74,7 +74,7 @@ namespace Fluorine
             while (true)
             {
                 Action work;
-                lock (Gate)
+                lock (this)
                 {
                     if (_queue.Count == 0)
                         return;
@@ -89,10 +89,10 @@ namespace Fluorine
             while (true)
             {
                 Action work;
-                lock (Gate)
+                lock (this)
                 {
                     while (_queue.Count == 0 && !HasStartedShutdown)
-                        Monitor.Wait(Gate);
+                        Monitor.Wait(this);
                     if (_queue.Count == 0)
                         break;
                     work = _queue.Dequeue();

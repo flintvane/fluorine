@@ -14,7 +14,6 @@ namespace Fluorine
         static readonly Dictionary<Thread, Scheduler> ByThread = new Dictionary<Thread, Scheduler>();
         static readonly List<Scheduler> All = new List<Scheduler>();
 
-        protected readonly object Gate = new object();
         readonly HashSet<Reactor> _reactors = new HashSet<Reactor>();
         readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
 
@@ -85,7 +84,7 @@ namespace Fluorine
 
         internal void RequestShutdown()
         {
-            lock (Gate)
+            lock (this)
             {
                 if (_state >= StateShuttingDown)
                     return;
@@ -119,7 +118,7 @@ namespace Fluorine
 
         internal bool TryAddReactor(Reactor reactor)
         {
-            lock (Gate)
+            lock (this)
             {
                 if (_state >= StateShuttingDown)
                     return false;
@@ -130,7 +129,7 @@ namespace Fluorine
 
         internal void RemoveReactor(Reactor reactor)
         {
-            lock (Gate)
+            lock (this)
                 _reactors.Remove(reactor);
         }
 
@@ -166,13 +165,13 @@ namespace Fluorine
 
         protected bool AcceptWork()
         {
-            lock (Gate)
+            lock (this)
                 return _state < StateShuttingDown;
         }
 
         protected void CompleteShutdown()
         {
-            lock (Gate)
+            lock (this)
             {
                 if (_state == StateFinished)
                     return;
@@ -213,7 +212,7 @@ namespace Fluorine
         void DisposeAllReactors()
         {
             Reactor[] snapshot;
-            lock (Gate)
+            lock (this)
             {
                 snapshot = new Reactor[_reactors.Count];
                 _reactors.CopyTo(snapshot);

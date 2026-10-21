@@ -79,7 +79,7 @@ namespace Fluorine
         {
             if (action == null)
                 return;
-            lock (Gate)
+            lock (this)
             {
                 if (HasStartedShutdown)
                     return;
@@ -99,7 +99,7 @@ namespace Fluorine
         protected override void OnShutdownRequested()
         {
             var postSentinel = false;
-            lock (Gate)
+            lock (this)
             {
                 if (_pending == 0 && !IsOwnerThread)
                     postSentinel = true;
@@ -155,7 +155,7 @@ namespace Fluorine
         void NoteWorkFinished()
         {
             var complete = false;
-            lock (Gate)
+            lock (this)
             {
                 if (_pending > 0)
                     _pending--;
@@ -176,7 +176,7 @@ namespace Fluorine
         {
             while (true)
             {
-                lock (Gate)
+                lock (this)
                 {
                     if (_pending <= target)
                         return;
@@ -184,7 +184,7 @@ namespace Fluorine
                 }
 
                 Dispatcher.PushFrame(_drainFrame);
-                lock (Gate)
+                lock (this)
                 {
                     if (_pending <= target)
                         return;

@@ -7,7 +7,6 @@ namespace Fluorine
     {
         readonly Scheduler _scheduler;
         readonly HashSet<Reaction> _reactions = new HashSet<Reaction>();
-        readonly object _sync = new object();
         int _disposed;
 
         public Reactor()
@@ -51,7 +50,7 @@ namespace Fluorine
                 return null;
 
             var reaction = new Reaction(this, name, lambda ?? (() => { }));
-            lock (_sync)
+            lock (this)
             {
                 if (_disposed != 0)
                     return null;
@@ -100,7 +99,7 @@ namespace Fluorine
             }
 
             Reaction[] snapshot;
-            lock (_sync)
+            lock (this)
             {
                 snapshot = new Reaction[_reactions.Count];
                 _reactions.CopyTo(snapshot);
@@ -119,7 +118,7 @@ namespace Fluorine
 
         internal void Remove(Reaction reaction)
         {
-            lock (_sync)
+            lock (this)
                 _reactions.Remove(reaction);
         }
     }

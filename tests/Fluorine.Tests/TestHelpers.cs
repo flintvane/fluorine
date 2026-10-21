@@ -91,7 +91,7 @@ namespace Fluorine.Tests
 
         protected override void Schedule(Action action)
         {
-            lock (Gate)
+            lock (this)
             {
                 if (HasStartedShutdown)
                     return;
@@ -109,7 +109,7 @@ namespace Fluorine.Tests
             while (true)
             {
                 Action work;
-                lock (Gate)
+                lock (this)
                 {
                     if (_queue.Count == 0)
                         return;
