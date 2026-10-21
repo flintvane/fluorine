@@ -29,7 +29,7 @@ reactor.Add(() =>
 });
 ```
 
-The reaction runs again after each step, until `position` reaches `target`. Each step is a separate run, so the loop's other work (UI messages, other reactions) gets its turn in between (§11.9a).
+The reaction runs again after each step, until `position` reaches `target`. Each step is a separate run. The new run goes to the end of the queue, so everything already waiting, such as UI messages and other reactions, runs before the next step (§11.9a, §14.7).
 
 ## Cycles
 

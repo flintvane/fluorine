@@ -23,7 +23,7 @@ After the last change of a register, every reaction that read it runs at least o
 
 ## Order
 
-Queued reactions run first come, first served (§11.9). Because runs coalesce, a reaction's place in the queue comes from its *first* pending trigger. Two reactions on the same scheduler never run at the same time, and one never runs inside another (§11.7, §11.8).
+Queued reactions run first come, first served (§11.9). Because runs coalesce, a reaction's place in the queue comes from its *first* pending trigger. A reaction that triggers itself during its run goes to the end of the queue (§14.7). Two reactions on the same scheduler never run at the same time, and one never runs inside another (§11.7, §11.8).
 
 ## Start-up on the same loop
 
