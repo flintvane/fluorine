@@ -13,7 +13,7 @@ namespace Fluorine
         public static bool IsRecording => t_current != null && t_pause == 0;
 
         readonly Reactor _reactor;
-        readonly Dictionary<Register, bool> _deps = new Dictionary<Register, bool>();
+        readonly Dictionary<Register, int> _deps = new Dictionary<Register, int>();
         Action _lambda;
         int _queued;
         int _executionCount;
@@ -107,11 +107,11 @@ namespace Fluorine
 
             if (_deps.TryGetValue(register, out _))
             {
-                _deps[register] = false;
+                _deps[register] = _executionCount;
                 return;
             }
 
-            _deps[register] = false;
+            _deps.Add(register, _executionCount);
             register.AddListener(this);
         }
 
@@ -121,8 +121,8 @@ namespace Fluorine
                 throw new ReactiveException(
                     "A second reaction cannot start while another reaction is running on this thread.");
             Interlocked.Exchange(ref _queued, 0);
+            Interlocked.Increment(ref _executionCount);
             var lambda = Volatile.Read(ref _lambda);
-            MarkDeletionCandidates();
             t_pause = 0;
             t_current = this;
             try
@@ -137,29 +137,18 @@ namespace Fluorine
             {
                 t_pause = 0;
                 t_current = null;
-                UnsubscribeStale();
-                Interlocked.Increment(ref _executionCount);
+                UnsubscribeStale(_executionCount);
             }
         }
 
-        internal void MarkDeletionCandidates()
-        {
-            if (_deps.Count == 0)
-                return;
-            var keys = new Register[_deps.Count];
-            _deps.Keys.CopyTo(keys, 0);
-            for (var i = 0; i < keys.Length; i++)
-                _deps[keys[i]] = true;
-        }
-
-        internal void UnsubscribeStale()
+        internal void UnsubscribeStale(int keep)
         {
             if (_deps.Count == 0)
                 return;
             List<Register> stale = null;
             foreach (var pair in _deps)
             {
-                if (!pair.Value)
+                if (pair.Value == keep)
                     continue;
                 if (stale == null)
                     stale = new List<Register>();

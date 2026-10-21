@@ -90,10 +90,7 @@ namespace Fluorine
             foreach (var t in snapshot)
             {
                 if (fromShutdown)
-                {
-                    t.MarkDeletionCandidates();
-                    t.UnsubscribeStale();
-                }
+                    t.UnsubscribeStale(0); // stamps are run counts, never 0
                 t.Dispose();
             }
 
