@@ -93,7 +93,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 **Nesting**
 3.15 Nested message pumps are prohibited on every scheduler. A reaction runs no message pump (10.3). At most one reaction runs per thread (10.4).
-3.16 `Scheduler.RunReaction` on a thread where another reaction is running does not start the reaction, logs a programming error (10.4, 15.2), queues the reaction again once the running reaction has finished, and throws `ReactiveException` to its caller.
+3.16 `Scheduler.RunReaction` on a thread where another reaction is running does not start the reaction and throws `ReactiveException` (10.4).
 
 ## 4. Thread scheduler
 
@@ -118,7 +118,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 7.1 "Logged" (15.1) means that the error is raised through `Reactive.UnhandledException`, a public static event of type `Action<Exception>`. When no handler is attached, a warning is written to the console. When a handler itself throws, a warning with both the original error and the handler's exception is written to the console, and the loop continues, so a faulty handler cannot stop a loop.
 7.2 `ReactiveException` is used only for errors that Fluorine itself detects: the programming errors of 7.3 other than an exception from a reaction, such as creating a reactor without a scheduler (2.2, 2.3), a second scheduler of another type on a thread (3.13, 6.1), a shutdown from inside a reaction (3.8), a reaction starting while another one is running (3.16), and `ContinueRecording()` with a pause count of zero (2.20). It derives from `Exception` and has the usual constructors: `ReactiveException()`, `ReactiveException(string message)` and `ReactiveException(string message, Exception inner)`. An exception thrown by a reaction or by a queued action is user code and is logged as it is, without wrapping.
-7.3 The following are logged as programming errors: an unhandled exception from a reaction (15.1), creating a reactor without a scheduler (15.2), attaching a scheduler to a thread that already has one of another type (15.2), requesting a shutdown from inside a reaction (15.2), starting a reaction while another one is running (15.2), and calling `ContinueRecording()` with a pause count of zero (15.5).
+7.3 The following are logged as programming errors: an unhandled exception from a reaction (15.1), creating a reactor without a scheduler (15.2), attaching a scheduler to a thread that already has one of another type (15.2), requesting a shutdown from inside a reaction (15.2), and calling `ContinueRecording()` with a pause count of zero (15.5).
 7.4 `Reaction.ExecutionCount` returns how often the reaction has run (15.3). It is for monitoring only: it can be read at any time, and it never changes how anything behaves. The library may compile it only into debug builds (`#if DEBUG`), so code that must also build against a release library does not rely on it.
 7.5 What diagnostics mode is, and how it is switched on, is up to the implementation.
 
