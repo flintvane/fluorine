@@ -81,13 +81,15 @@ namespace Fluorine
 
         public void Trigger()
         {
+            if (Volatile.Read(ref _lambda) == null)
+                return;
             RequestRun();
         }
 
         public void Dispose()
         {
-            if (_lambda==null) return;
-            _lambda = null;
+            if (Interlocked.Exchange(ref _lambda, null) == null)
+                return;
             _reactor.Remove(this);
             RequestRun();
         }
@@ -101,6 +103,8 @@ namespace Fluorine
         internal void Subscribe(Register register)
         {
             if (register == null)
+                return;
+            if (Volatile.Read(ref _lambda) == null)
                 return;
 
             if (_deps.TryGetValue(register, out _))
@@ -119,7 +123,7 @@ namespace Fluorine
                 throw new ReactiveException(
                     "A second reaction cannot start while another reaction is running on this thread.");
             Interlocked.Exchange(ref _queued, 0);
-            var lambda = _lambda;
+            var lambda = Volatile.Read(ref _lambda);
             MarkDeletionCandidates();
             t_pause = 0;
             t_current = this;
@@ -142,8 +146,12 @@ namespace Fluorine
 
         internal void MarkDeletionCandidates()
         {
-            foreach(var key in _deps.Keys)
-                _deps[key] = true;
+            if (_deps.Count == 0)
+                return;
+            var keys = new Register[_deps.Count];
+            _deps.Keys.CopyTo(keys, 0);
+            for (var i = 0; i < keys.Length; i++)
+                _deps[keys[i]] = true;
         }
 
         internal void UnsubscribeStale()
