@@ -1,6 +1,6 @@
 [← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md)
 
-# 17. Comparison with other frameworks
+# 18. Comparison with other frameworks
 
 Fluorine shares its central idea with several well-known libraries: dependencies are found by recording reads while code runs. This page maps each of them onto Fluorine's three parts:
 
@@ -37,7 +37,7 @@ Fluorine shares its central idea with several well-known libraries: dependencies
 
 **Compose snapshot state.** Snapshot state objects record their reads and carry an equality policy (`SnapshotMutationPolicy`), much like registers. `snapshotFlow` documents that its block "may run more than once for equal sets of inputs or only once after many rapid snapshot changes", which matches Fluorine's run guarantee. Compose makes several writes atomic with `Snapshot.withMutableSnapshot`; in Fluorine, state that must change together lives in one aggregate register.
 
-**MobX.** MobX "reacts to any observable property that is read during the execution of a tracked function". `autorun` and `reaction` return a disposer, comparable to `Reaction.Dispose()`. Reads after an `await` are not tracked in MobX, as in Fluorine (cs 8.1).
+**MobX.** MobX "reacts to any observable property that is read during the execution of a tracked function". `autorun` and `reaction` return a disposer, comparable to `Reaction.Dispose()`. Reads after an `await` are not tracked in MobX, as in Fluorine (cs 9.1).
 
 **Knockout.** A computed observable re-runs its evaluator when something it read changes, and disposes subscriptions it no longer uses, the same per-run rediscovery as Fluorine. `peek` and `ko.ignoreDependencies` correspond to a pause. Updates are synchronous by default, with `deferUpdates` and `rateLimit` for deferral; Fluorine always queues the run.
 

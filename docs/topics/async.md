@@ -1,8 +1,8 @@
 [← Shutting down](shutdown.md) · [Topics](../index.md) · [Rules of thumb →](rules-of-thumb.md)
 
-# 15. Async code inside a reaction
+# 16. Async code inside a reaction
 
-A reaction's lambda is a synchronous call (§10.2). An `async` lambda is still allowed, and its first part belongs to the run (cs 8.1).
+A reaction's lambda is a synchronous call (§10.2). An `async` lambda is still allowed, and its first part belongs to the run (cs 9.1).
 
 ## Which part is the run
 
@@ -49,6 +49,6 @@ Writing a register after the `await` is ordinary threading: it triggers the reac
 
 ---
 
-*Spec references: §10.2; cs 8.1. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
+*Spec references: §10.2; cs 9.1. (§ = spec/semantics.md 0.9, cs = spec/semantics-cs.md 0.5)*
 
 [← Shutting down](shutdown.md) · [Topics](../index.md) · [Rules of thumb →](rules-of-thumb.md)

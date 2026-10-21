@@ -37,7 +37,7 @@ class CustomerView : IDisposable
 
 Registers and reactions refer to each other strongly (§12.1). A reaction lives until it, or its reactor, is disposed.
 
-> **TODO** (cs 2.11, 2.17): the spec says "disposing"; that `Reactor` and `Reaction` implement `IDisposable` is the choice of the run-3 build (try3 GAPS 18) and should be confirmed in semantics-cs.md.
+`Reactor` and `Reaction` implement `IDisposable`, so an owner can hold them in a `using` block or dispose them with its own `Dispose()`.
 
 ## What disposal does
 

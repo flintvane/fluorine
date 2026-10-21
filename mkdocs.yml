@@ -47,6 +47,7 @@ nav:
       - "Pausing: reads that do not subscribe": topics/pausing.md
       - "Signal registers and shadow registers": topics/signal-registers.md
       - "Derived values, self-writes and cycles": topics/derived-values.md
+      - "Computed values": topics/computed.md
       - "Errors and logging": topics/errors-and-logging.md
       - "Shutting down": topics/shutdown.md
       - "Async code inside a reaction": topics/async.md

@@ -1,6 +1,6 @@
 [← Errors and logging](errors-and-logging.md) · [Topics](../index.md) · [Async code inside a reaction →](async.md)
 
-# 14. Shutting down
+# 15. Shutting down
 
 A shutdown lets a scheduler finish its queued work, disposes its reactors, and returns when that is done.
 
@@ -37,7 +37,7 @@ protected override void OnExit(ExitEventArgs e)   // WPF App
 }
 ```
 
-> **TODO** (cs 3.6, 3.8, 5.4): the spec does not yet say whether `DispatcherScheduler.Shutdown()` from the dispatcher thread inside `OnExit` interacts with the WPF shutdown; verify in the implementation.
+A `DispatcherScheduler` attached with `AttachToCurrent()` leaves the dispatcher running after its shutdown; the application ends it as usual. One created with `DispatcherScheduler.CreateNew` ends its dispatcher thread once the work is drained.
 
 ## After a shutdown
 

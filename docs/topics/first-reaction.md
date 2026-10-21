@@ -9,7 +9,7 @@ This page builds a complete console program. It shows every piece once; later pa
 ```csharp
 using System;
 using System.Threading;
-using Fluorine; // TODO: namespace name is not fixed in semantics-cs.md
+using Fluorine;
 
 class Program
 {

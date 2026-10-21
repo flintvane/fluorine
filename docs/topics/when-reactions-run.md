@@ -23,7 +23,7 @@ After the last change of a register, every reaction that read it runs at least o
 
 ## Order
 
-Queued reactions run first come, first served (§11.9). Because runs coalesce, a reaction's place in the queue comes from its *first* pending trigger. Two reactions on the same scheduler never run at the same time, and one never runs inside another (§11.7, §11.8).
+Queued reactions run first come, first served (§11.9). Because runs coalesce, a reaction's place in the queue comes from its *first* pending trigger. A reaction that triggers itself during its run goes to the end of the queue (§14.7). Two reactions on the same scheduler never run at the same time, and one never runs inside another (§11.7, §11.8).
 
 ## Start-up on the same loop
 
@@ -47,7 +47,7 @@ r.Trigger();   // queue a run of this reaction
 
 `Reaction.Trigger()` queues a run and returns immediately (cs 2.15). Triggering a register by hand is covered in [Signal registers](signal-registers.md).
 
-Triggering and queueing never throw an exception (§1.8). When a loop no longer accepts work, the run is dropped silently.
+Triggering and queueing raise no exceptions of their own (§1.8). When a loop no longer accepts work, the run is dropped silently. Exceptions from the platform underneath a scheduler propagate.
 
 ## Liveness
 
