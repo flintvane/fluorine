@@ -207,6 +207,8 @@ Example: a label on screen shows a person's full name. `first` and `last` are re
 
 14.6 **Why nested pumps are prohibited.** A nested pump runs other code on the same stack in the middle of a reaction: event handlers, other reactions, and queued work. Three things then no longer hold. The writes made by the reaction can no longer be processed as one, because other code runs between them. Reads made by that other code are attributed to the running reaction. And the reaction is not a simple call with one entry and one exit (10.1). Detecting every nested pump was investigated, with hooks on the message loop, a synchronisation context, and a depth counter that every pump has to increment. None of them catches all pumps, and the counter only works if the programmer remembers to mark each pump. Prohibiting them is the only rule that can be stated without exceptions. The fatal error of 10.4 makes the cases visible in which a second reaction starts.
 
+14.7 **A reaction that requeues itself goes to the end of the queue.** A reaction that triggers itself during its run, for example by writing a register it read, does not take back its original position. Its run has started, so the new run is queued after everything that is already waiting (1.4, 11.9). Every other queued reaction therefore runs before it again, and a reaction that keeps retriggering itself cannot starve the rest of the queue. This follows from the rules above, but it is the reason the loop stays live.
+
 ## 15. Logging and monitoring
 
 15.1 All unhandled exceptions from reactions must be logged. An exception that reaches the event loop is logged as a programming error. Where the log goes is left to the platform.
