@@ -68,8 +68,7 @@ namespace Fluorine
             if (Current != null)
                 throw new ReactiveException("This thread already has a scheduler of another type.");
 
-            var dispatcher = Dispatcher.FromThread(Thread.CurrentThread) ?? Dispatcher.CurrentDispatcher;
-            return new DispatcherScheduler(dispatcher, false);
+            return new DispatcherScheduler(Dispatcher.CurrentDispatcher, false);
         }
 
         protected override int ExecutingWorkDepth => t_executing;

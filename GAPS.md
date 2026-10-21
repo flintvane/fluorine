@@ -50,7 +50,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 - **Section:** semantics.md 3.13–3.14 vs 5.3 / 6.1. **Unclear:** after shutdown, `Current` is null. May a new scheduler be attached to that thread? 3.14 says the scheduler of a thread is the same object for as long as the thread lives. **Choice:** after shutdown the thread has no scheduler. A later `AttachToCurrent` / `CreateNew` on a new thread may install a new scheduler. A second scheduler on a live thread that still has one is a programming error.
 
-- **Section:** semantics-cs.md 5.3. **Unclear:** `AttachToCurrent` when the thread has no `Dispatcher` yet. **Choice:** `Dispatcher.FromThread`, then `Dispatcher.CurrentDispatcher` which creates one.
+- **Section:** semantics-cs.md 5.3. **Unclear:** `AttachToCurrent` when the thread has no `Dispatcher` yet. **Choice:** `Dispatcher.CurrentDispatcher`, which returns the existing dispatcher or creates one. `FromThread` then `CurrentDispatcher` is the same call.
 
 - **Section:** semantics-cs.md 6.1–6.2. **Unclear:** exact type check for “the WinForms one”. **Choice:** `SynchronizationContext.Current as WindowsFormsSynchronizationContext`. Derived contexts that do not inherit that type are rejected. No `CreateNew` (not specified).
 
