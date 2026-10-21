@@ -15,7 +15,7 @@ The classes below are the standard realisation of a register. Other storage mode
 1.2 `Register<T>` derives from `Register`. It adds the typed value and the equality.
 
 **Reading and triggering**
-1.3 `Register.RecordRead()` subscribes `Reaction.Current` (2.18) to the register. If `Reaction.Recording` is false, it does nothing.
+1.3 `Register.RecordRead()` subscribes `Reaction.Current` (2.18) to the register. If `Reaction.IsRecording` is false, it does nothing.
 1.4 `Register.TriggerReactions()` triggers every reaction connected to the register. It can also be called by the user.
 1.5 `RecordRead()` and `TriggerReactions()` can both be called from any thread (13.2).
 
@@ -61,24 +61,24 @@ The classes below are the standard realisation of a register. Other storage mode
 2.14 It is not expected that the lambda is executed solely as that reaction (12.11). The same code may be called as an ordinary call, in which case nothing is recorded.
 
 **Reaction**
-2.15 `Reaction.Trigger()` queues a run on the scheduler of the reaction and returns immediately (4.6). It never throws, and on a disposed reaction it does nothing (12.6).
+2.15 `Reaction.Trigger()` queues a run on the scheduler of the reaction and returns immediately (4.6). It raises no exception of its own (1.8), and on a disposed reaction it does nothing (12.6).
 2.16 `Reaction.Name` is the name given to `Add` (15.4). The name need not be retained when the library does not run in diagnostics mode.
 2.17 `Reaction.Dispose()` sets the lambda to null and queues the reaction as a normal run. The run with the null lambda reads nothing, so dependency maintenance (7.3) detaches the reaction from all its registers (14.5). It can be called from any thread, and disposing twice is harmless (12.6).
-2.18 `Reaction.Current` is a public static property. It returns the reaction that is running on this thread, whether it is paused or not, or null when none is running. Reads are attributed to it while `Reaction.Recording` is true (1.3).
+2.18 `Reaction.Current` is a public static property. It returns the reaction that is running on this thread, whether it is paused or not, or null when none is running. Reads are attributed to it while `Reaction.IsRecording` is true (1.3).
 
 **Pause**
 2.19 `Reaction.PauseRecording()` increments the pause count of the running reaction on this thread. While the count is above zero, the reaction is paused and reads on that thread are not recorded (1.3, 9.1).
 2.20 `Reaction.ContinueRecording()` decrements the count. Recording resumes when the count is zero again. Calling it while the count is zero logs a programming error (9.3, 15.5) and leaves the count at zero.
 2.21 The pause count is logically associated with a reaction. Outside a running reaction there is no pause count, so `PauseRecording()` and `ContinueRecording()` have no effect there.
-2.22 `Reaction.Recording` is a public static property. It returns true when a reaction is running on this thread and its pause count is zero, that is, when a read on this thread is recorded now. It returns false outside a reaction and while the pause count is above zero.
+2.22 `Reaction.IsRecording` is a public static property. It returns true when a reaction is running on this thread and its pause count is zero, that is, when a read on this thread is recorded now. It returns false outside a reaction and while the pause count is above zero.
 2.23 The count ends with the running reaction (9.3).
 2.24 The count is wrapped in the following forms: `Reaction.Pause()` returns an `IDisposable` that continues recording when disposed; `Reaction.Pause(Action)` and `Reaction.Pause<T>(Func<T>)` pause, run the delegate and continue in a `finally` block. Pauses are reentrant (9.2).
 
 ## 3. Schedulers
 
 3.1 `Scheduler` is an abstract class. Every scheduler, whether supplied by the library or written by a user, derives from it. Schedulers and reactors offer a common queueing interface (12.4).
-3.2 `Scheduler.Queue(Reaction)` queues one run of the reaction and returns nothing. It never runs the reaction inline (13.5, 13.7) and never throws (1.8). After the shutdown has begun, the run is not queued, silently (11.15).
-3.3 `Scheduler.Queue(Action)` queues an arbitrary action of the user, in the same order as the reaction runs. It returns nothing, never runs the action inline and never throws. Actions queued before the shutdown began still run; an action that arrives after the shutdown began is ignored, silently (11.15). The action is not a reaction: no reads are recorded. Every exception thrown by the action is logged (7.1).
+3.2 `Scheduler.Queue(Reaction)` queues one run of the reaction and returns nothing. It never runs the reaction inline (13.5, 13.7) and raises no exception of its own (1.8). After the shutdown has begun, the run is not queued, silently (11.15).
+3.3 `Scheduler.Queue(Action)` queues an arbitrary action of the user, in the same order as the reaction runs. It returns nothing, never runs the action inline and raises no exception of its own (1.8). Actions queued before the shutdown began still run; an action that arrives after the shutdown began is ignored, silently (11.15). The action is not a reaction: no reads are recorded. Every exception thrown by the action is logged (7.1).
 3.4 The scheduler runs a queued reaction on its own thread by calling the protected method `Scheduler.RunReaction(Reaction)`. This is the only way for a scheduler to run a reaction. `Reaction.Run()` is internal.
 3.5 `Reaction.Run()` runs the lambda, during which all reads are recorded. Afterwards, the reaction is disconnected from all registers that it no longer read (7.3). An exception from the lambda is handled as in 8.1.
 3.6 The scheduler of a thread is a thread-static, `Scheduler.Current`. A scheduler installs itself on its own thread (11.3). When its shutdown has finished, it removes itself from that thread, so `Scheduler.Current` is null there afterwards. During the shutdown it stays installed, because the reactions that are drained still run on it.
