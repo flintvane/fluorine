@@ -21,7 +21,7 @@ Read the topics in order; each one builds on the ones before it.
 7. [Reactors and lifetimes](docs/topics/reactors.md): Reactors own reactions; disposing a reactor or a reaction ends it cleanly.
 8. [Schedulers](docs/topics/schedulers.md): `ThreadScheduler`, `DispatcherScheduler` and `WinFormsScheduler`, `Scheduler.Current`, and queueing your own work.
 9. [Threads and consistency](docs/topics/threads-and-consistency.md): Writing from any thread, what reactions on other threads see, and aggregate values for consistent state.
-10. [Pausing: reads that do not subscribe](docs/topics/pausing.md): `Reaction.Pause` in its three shapes, and `Reaction.Current` / `Reaction.Recording`.
+10. [Pausing: reads that do not subscribe](docs/topics/pausing.md): `Reaction.Pause` in its three shapes, and `Reaction.Current` / `Reaction.IsRecording`.
 11. [Signal registers and shadow registers](docs/topics/signal-registers.md): A `Register` without a value, `TriggerReactions()`, and wrapping controls that hold their own data.
 12. [Derived values, self-writes and cycles](docs/topics/derived-values.md): Reactions that write registers, reactions that follow a state, and reactions that create reactions.
 13. [Errors and logging](docs/topics/errors-and-logging.md): Exceptions in reactions, `Reactive.UnhandledException`, `ReactiveException` and programming errors.
