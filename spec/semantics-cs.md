@@ -93,7 +93,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 **Nesting**
 3.15 Nested message pumps are prohibited on every scheduler. A reaction runs no message pump (10.3). At most one reaction runs per thread (10.4).
-3.16 `Reaction.Run()` on a thread where another reaction is running does not start the reaction and throws `ReactiveException` (10.4). This is a serious scheduler error with no recovery: the state of the refused reaction afterwards, and where the exception ends up when the running reaction does not catch it, are undefined.
+3.16 `Reaction.Run()` on a thread where another reaction is running does not start the reaction and throws `ReactiveException` (10.4). This is a programming error in the scheduler. Everything after the throw is undefined.
 
 ## 4. Thread scheduler
 
