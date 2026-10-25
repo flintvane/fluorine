@@ -295,7 +295,7 @@ namespace Fluorine
                     }
                     catch (Exception ex)
                     {
-                        error = AsInitializationFailure(ex);
+                        error = ex;
                         try
                         {
                             if (scheduler != null)
@@ -328,14 +328,14 @@ namespace Fluorine
 
                         if (!ready.IsSet)
                         {
-                            error = AsInitializationFailure(ex);
+                            error = ex;
                             ready.Set();
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    error = AsInitializationFailure(ex);
+                    error = ex;
                     ReleaseClaim();
                     ready.Set();
                 }
@@ -350,14 +350,6 @@ namespace Fluorine
             if (error != null)
                 throw error;
             return created;
-        }
-
-        static Exception AsInitializationFailure(Exception exception)
-        {
-            var reactive = exception as ReactiveException;
-            if (reactive != null)
-                return reactive;
-            return new ReactiveException("Could not create the scheduler.", exception);
         }
 
         static void ThrowIfOccupied(Type incoming)

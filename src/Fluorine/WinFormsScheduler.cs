@@ -59,6 +59,7 @@ namespace Fluorine
             catch
             {
                 NoteWorkFinished();
+                throw;
             }
         }
 
@@ -79,6 +80,7 @@ namespace Fluorine
             catch
             {
                 CompleteShutdown();
+                throw;
             }
         }
 
