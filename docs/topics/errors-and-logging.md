@@ -29,14 +29,18 @@ An exception thrown by a reaction or by a queued action is passed as it is, unwr
 
 ## Programming errors
 
-ReactiveException signals an issue with the usage of the Fluorine library. It is thrown to the caller as an ordinary exception and is not logged (cs 7.2, §15.2). The known cases are:
+ReactiveException signals an issue with the usage of the Fluorine library. It is thrown to the caller as an ordinary exception and is not logged (cs 7.2, §15.2). These are all the cases (cs 10):
 
-- `new Reactor()` on a thread without a scheduler, or `new Reactor(null)`;
-- a second scheduler on a thread that already has one;
-- `CreateNew` with a null or empty name (cs 5.2);
-- `Shutdown()` from inside a reaction;
-- a reaction starting while another runs on the same thread (see [Rules of thumb](rules-of-thumb.md));
-- `ContinueRecording()` with a pause count of zero.
+| Case | Thrown by | Rule |
+|---|---|---|
+| Creating a reactor on a thread without a scheduler | `new Reactor()` | cs 2.2 |
+| Passing a null scheduler to a reactor | `new Reactor(null)` | cs 2.3 |
+| Ending a pause that was not started | `ContinueRecording()` at a pause count of zero | cs 2.20 |
+| Shutting down a scheduler from inside a reaction | `Scheduler.Shutdown()` | cs 3.8 |
+| A second scheduler on a thread | `CreateNew`, or `AttachToCurrent` of another type | cs 3.13 |
+| Starting a reaction while another one runs on the same thread (see [Rules of thumb](rules-of-thumb.md)) | the nested reaction start | cs 3.16 |
+| A null or empty thread name | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | cs 4.2, 5.2 |
+| Attaching WinForms on a thread without a WinForms context | `WinFormsScheduler.AttachToCurrent()` | cs 6.1 |
 
 Every other exception, from the .NET libraries or from your own code, including an overridden `Schedule`, keeps its own type. It reaches its caller, or `Reactive.UnhandledException`, as it is (cs 7.2).
 

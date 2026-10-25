@@ -28,5 +28,6 @@ When `docs/index.md` changes:
 3. A reordered list: update the previous/next navigation line on the affected pages.
 4. A changed description: check that the page still covers it.
 5. A spec change: update the affected pages and their references.
+6. The `ReactiveException` table in `topics/errors-and-logging.md` mirrors cs 10, case for case, and is kept in sync with it.
 
 Style: state what is, positively and plainly. Code uses only API named in `semantics-cs.md`.
