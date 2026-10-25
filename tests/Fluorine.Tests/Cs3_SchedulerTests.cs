@@ -193,5 +193,45 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact]
+        public void Rule_3_16_NestedRunThrowsToCaller()
+        {
+            var scheduler = new ManualScheduler();
+            Exception logged = null;
+            Action<Exception> handler = e => logged = e;
+            Reactive.UnhandledException += handler;
+            try
+            {
+                var reactor = new Reactor(scheduler);
+                int otherStarts = 0;
+                int startedDuring = -1;
+                ReactiveException caught = null;
+                Reaction other = null;
+                reactor.Add(() =>
+                {
+                    int before = otherStarts;
+                    try
+                    {
+                        scheduler.ForceRun(other);
+                    }
+                    catch (ReactiveException ex)
+                    {
+                        caught = ex;
+                    }
+                    startedDuring = otherStarts - before;
+                });
+                other = reactor.Add(() => otherStarts++);
+                scheduler.Pump();
+                Assert.NotNull(caught);
+                Assert.Equal(0, startedDuring);
+                Assert.Null(logged);
+            }
+            finally
+            {
+                Reactive.UnhandledException -= handler;
+                scheduler.Shutdown();
+            }
+        }
+
     }
 }

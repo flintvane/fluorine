@@ -105,6 +105,80 @@ namespace Fluorine.Acceptance
             throw new TimeoutException("Shutdown caller did not block.");
         }
 
+        public static void AssertInitialIsFirst(Func<Action, Scheduler> create)
+        {
+            var gate = new ManualResetEvent(false);
+            var started = new ManualResetEvent(false);
+            int initialDone = 0;
+            bool reactionRanBeforeInitialDone = false;
+            Scheduler created = null;
+            Exception createError = null;
+            var createDone = new ManualResetEvent(false);
+            var creator = new Thread(() =>
+            {
+                try
+                {
+                    created = create(() =>
+                    {
+                        new Reactor().Add(() =>
+                        {
+                            if (Volatile.Read(ref initialDone) == 0)
+                                reactionRanBeforeInitialDone = true;
+                        });
+                        started.Set();
+                        gate.WaitOne();
+                        Volatile.Write(ref initialDone, 1);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    createError = ex;
+                }
+                finally
+                {
+                    createDone.Set();
+                }
+            });
+            creator.IsBackground = true;
+            creator.Start();
+            var shutdownStarted = new ManualResetEvent(false);
+            try
+            {
+                Wait(started, "initial started");
+                bool shutdownSawInitial = false;
+                var shutdownDone = new ManualResetEvent(false);
+                var caller = new Thread(() =>
+                {
+                    shutdownStarted.Set();
+                    Reactive.Shutdown();
+                    shutdownSawInitial = Volatile.Read(ref initialDone) == 1;
+                    shutdownDone.Set();
+                });
+                caller.IsBackground = true;
+                caller.Start();
+                WaitUntilBlocked(caller, shutdownStarted);
+                if (shutdownDone.WaitOne(0))
+                    throw new InvalidOperationException("Reactive.Shutdown returned before the initial action finished.");
+                gate.Set();
+                Wait(createDone, "CreateNew");
+                if (createError != null)
+                    throw new InvalidOperationException("CreateNew failed.", createError);
+                if (created == null)
+                    throw new InvalidOperationException("CreateNew returned null.");
+                if (Volatile.Read(ref initialDone) != 1)
+                    throw new InvalidOperationException("Initial action did not finish.");
+                if (reactionRanBeforeInitialDone)
+                    throw new InvalidOperationException("Other work ran before the initial action finished.");
+                Wait(shutdownDone, "Reactive.Shutdown");
+                if (!shutdownSawInitial)
+                    throw new InvalidOperationException("Reactive.Shutdown finished before the initial action.");
+            }
+            finally
+            {
+                gate.Set();
+            }
+        }
+
         public static Thread CallShutdown(Scheduler scheduler, ManualResetEvent started, ManualResetEvent returned)
         {
             var thread = new Thread(() =>
@@ -235,6 +309,12 @@ namespace Fluorine.Acceptance
     public sealed class ProbeScheduler : Scheduler
     {
         readonly Queue<Action> _queue = new Queue<Action>();
+        int _scheduleCalls;
+
+        public int ScheduleCalls
+        {
+            get { return Volatile.Read(ref _scheduleCalls); }
+        }
 
         protected override void Schedule(Action action)
         {
@@ -242,6 +322,7 @@ namespace Fluorine.Acceptance
                 return;
             if (!AcceptWork())
                 return;
+            Interlocked.Increment(ref _scheduleCalls);
             lock (_queue)
                 _queue.Enqueue(action);
         }
@@ -266,9 +347,42 @@ namespace Fluorine.Acceptance
             }
         }
 
-        public void RunNested(Reaction reaction)
+        public void RunDirect(Reaction reaction)
         {
-            RunReaction(reaction);
+            Run(reaction);
+        }
+    }
+
+    /// <summary>
+    /// Smallest user scheduler: only <see cref="Schedule"/> is overridden (cs3.1).
+    /// </summary>
+    public sealed class OnlyScheduleScheduler : Scheduler
+    {
+        readonly Queue<Action> _queue = new Queue<Action>();
+
+        protected override void Schedule(Action action)
+        {
+            if (action == null)
+                return;
+            if (!AcceptWork())
+                return;
+            lock (_queue)
+                _queue.Enqueue(action);
+        }
+
+        public void Pump()
+        {
+            while (true)
+            {
+                Action action;
+                lock (_queue)
+                {
+                    if (_queue.Count == 0)
+                        return;
+                    action = _queue.Dequeue();
+                }
+                action();
+            }
         }
     }
 }

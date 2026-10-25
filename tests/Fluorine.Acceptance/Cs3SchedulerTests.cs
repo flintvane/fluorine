@@ -20,18 +20,18 @@ namespace Fluorine.Acceptance
         [Fact(DisplayName = "cs3.1-02")]
         public void cs3_1_02()
         {
-            var scheduler = new ProbeScheduler();
-            Scheduler seen = null;
+            var scheduler = new OnlyScheduleScheduler();
+            Thread pumping = null;
             int runs = 0;
             new Reactor(scheduler).Add(() =>
             {
-                seen = Scheduler.Current;
+                pumping = Thread.CurrentThread;
                 runs++;
             });
             Assert.Equal(0, runs);
             scheduler.Pump();
             Assert.Equal(1, runs);
-            Assert.Same(scheduler, seen);
+            Assert.Equal(Thread.CurrentThread, pumping);
         }
 
         [Fact(DisplayName = "cs3.2-01")]
@@ -177,8 +177,8 @@ namespace Fluorine.Acceptance
                 Assert.True(b);
                 var items = log.Snapshot();
                 Assert.Single(items);
-                var wrapped = Assert.IsType<ReactiveException>(items[0]);
-                Assert.Same(x, wrapped.InnerException);
+                Assert.Same(x, items[0]);
+                Assert.IsNotType<ReactiveException>(items[0]);
             }
         }
 
@@ -261,10 +261,74 @@ namespace Fluorine.Acceptance
         public void cs3_4_01()
         {
             Assert.Null(typeof(Reaction).GetMethod("Run", BindingFlags.Public | BindingFlags.Instance));
-            var runReaction = typeof(Scheduler).GetMethod("RunReaction", BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.NotNull(runReaction);
-            Assert.True(runReaction.IsFamily);
-            Assert.False(runReaction.IsPublic);
+            Assert.Null(typeof(Scheduler).GetMethod(
+                "RunReaction",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+            var schedule = typeof(Scheduler).GetMethod(
+                "Schedule",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                new[] { typeof(Action) },
+                null);
+            Assert.NotNull(schedule);
+            Assert.True(schedule.IsAbstract);
+            Assert.True(schedule.IsFamily);
+            var run = typeof(Scheduler).GetMethod(
+                "Run",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                new[] { typeof(Reaction) },
+                null);
+            Assert.NotNull(run);
+            Assert.True(run.IsFamily);
+            Assert.False(run.IsPublic);
+        }
+
+        [Fact(DisplayName = "cs3.4-02")]
+        public void cs3_4_02()
+        {
+            var ts = new ProbeScheduler();
+            var order = new Order();
+            int runs = 0;
+            var reaction = new Reactor(ts).Add(() =>
+            {
+                order.Add("r");
+                runs++;
+            });
+            ts.Pump();
+            Assert.Equal(1, runs);
+            int before = ts.ScheduleCalls;
+            ts.Queue(() => order.Add("a"));
+            Assert.Equal(before + 1, ts.ScheduleCalls);
+            ts.Queue(reaction);
+            Assert.Equal(before + 2, ts.ScheduleCalls);
+            Assert.Equal(new[] { "r" }, order.Snapshot());
+            Assert.Equal(1, runs);
+            ts.Pump();
+            Assert.Equal(new[] { "r", "a", "r" }, order.Snapshot());
+            Assert.Equal(2, runs);
+        }
+
+        [Fact(DisplayName = "cs3.4-03")]
+        public void cs3_4_03()
+        {
+            var ts = new ProbeScheduler();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            Reaction seen = null;
+            var reaction = new Reactor(ts).Add(() =>
+            {
+                runs++;
+                seen = Reaction.Current;
+                var unused = reg.Value;
+            });
+            int beforeRun = ts.ScheduleCalls;
+            ts.RunDirect(reaction);
+            Assert.Equal(1, runs);
+            Assert.Same(reaction, seen);
+            Assert.Equal(beforeRun, ts.ScheduleCalls);
+            reg.Value = 1;
+            Assert.Equal(beforeRun + 1, ts.ScheduleCalls);
         }
 
         [Fact(DisplayName = "cs3.5-01")]
@@ -317,8 +381,8 @@ namespace Fluorine.Acceptance
                 });
                 Harness.Barrier(s);
                 Assert.Equal(1, runs);
-                var first = Assert.IsType<ReactiveException>(Assert.Single(log.Snapshot()));
-                Assert.IsType<InvalidOperationException>(first.InnerException);
+                var x = Assert.IsType<InvalidOperationException>(Assert.Single(log.Snapshot()));
+                Assert.Equal("x", x.Message);
                 b.Value = 1;
                 Harness.Barrier(s);
                 Assert.Equal(1, runs);
@@ -326,8 +390,9 @@ namespace Fluorine.Acceptance
                 Harness.Barrier(s);
                 Assert.Equal(2, runs);
                 Assert.Equal(2, log.Count);
-                var second = Assert.IsType<ReactiveException>(log.Snapshot()[1]);
-                Assert.IsType<InvalidOperationException>(second.InnerException);
+                Assert.IsType<InvalidOperationException>(log.Snapshot()[1]);
+                Assert.IsNotType<ReactiveException>(log.Snapshot()[0]);
+                Assert.IsNotType<ReactiveException>(log.Snapshot()[1]);
             }
         }
 
@@ -389,14 +454,27 @@ namespace Fluorine.Acceptance
         [Fact(DisplayName = "cs3.7-01")]
         public void cs3_7_01()
         {
-            foreach (var method in typeof(Scheduler).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
-                Assert.NotEqual("Run", method.Name);
+            var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+            MethodInfo run = null;
+            foreach (var method in typeof(Scheduler).GetMethods(flags))
+            {
+                if (method.Name != "Run")
+                    continue;
+                Assert.Null(run);
+                run = method;
+                Assert.Equal(1, method.GetParameters().Length);
+                Assert.Equal(typeof(Reaction), method.GetParameters()[0].ParameterType);
+                Assert.True(method.IsFamily);
+                Assert.False(method.IsPublic);
+            }
+            Assert.NotNull(run);
         }
 
         [Fact(DisplayName = "cs3.7-02")]
         public void cs3_7_02()
         {
-            foreach (var method in typeof(WinFormsScheduler).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+            foreach (var method in typeof(WinFormsScheduler).GetMethods(flags))
                 Assert.NotEqual("Run", method.Name);
         }
 
@@ -562,8 +640,7 @@ namespace Fluorine.Acceptance
                 });
                 Harness.Barrier(s);
                 Assert.True(caught);
-                Assert.Equal(1, log.Count);
-                Assert.IsType<ReactiveException>(log.Snapshot()[0]);
+                Assert.Equal(0, log.Count);
                 bool later = false;
                 s.Queue(() => later = true);
                 Harness.Barrier(s);
@@ -594,7 +671,7 @@ namespace Fluorine.Acceptance
                 });
                 Harness.Barrier(s);
                 Assert.True(caught);
-                Assert.Equal(1, log.Count);
+                Assert.Equal(0, log.Count);
                 bool later = false;
                 s.Queue(() => later = true);
                 Harness.Barrier(s);
@@ -623,7 +700,7 @@ namespace Fluorine.Acceptance
                 });
                 Harness.Barrier(s2);
                 Assert.True(caught);
-                Assert.Equal(1, log.Count);
+                Assert.Equal(0, log.Count);
                 bool later = false;
                 s1.Queue(() => later = true);
                 Harness.Barrier(s1);
@@ -906,8 +983,11 @@ namespace Fluorine.Acceptance
                 });
                 Harness.Barrier(s);
                 Assert.True(caught);
-                Assert.Equal(1, log.Count);
-                Assert.IsType<ReactiveException>(log.Snapshot()[0]);
+                Assert.Equal(0, log.Count);
+                bool later = false;
+                s.Queue(() => later = true);
+                Harness.Barrier(s);
+                Assert.True(later);
             }
         }
 
@@ -1037,6 +1117,17 @@ namespace Fluorine.Acceptance
             Assert.Null(Scheduler.ForThread(thread));
         }
 
+        [Fact(DisplayName = "cs3.13-06")]
+        public void cs3_13_06()
+        {
+            var threadScheduler = ThreadScheduler.CreateNew("cs3.13-06-thread");
+            var thread = Harness.ThreadOf(threadScheduler);
+            Assert.Same(threadScheduler, Scheduler.ForThread(thread));
+            var dispatcherScheduler = DispatcherScheduler.CreateNew("cs3.13-06-dispatcher");
+            var dispatcherThread = Harness.ThreadOf(dispatcherScheduler);
+            Assert.Same(dispatcherScheduler, Scheduler.ForThread(dispatcherThread));
+        }
+
         [Fact(DisplayName = "cs3.16-01")]
         public void cs3_16_01()
         {
@@ -1044,88 +1135,63 @@ namespace Fluorine.Acceptance
             {
                 var scheduler = new ProbeScheduler();
                 var reactor = new Reactor(scheduler);
-                int otherRuns = 0;
-                int depth = 0;
-                bool startedDuring = false;
+                int otherStarts = 0;
+                int startedDuring = -1;
+                bool completed = false;
                 ReactiveException caught = null;
                 Reaction other = null;
-                int selfRuns = 0;
-                int observedDuring = -1;
-                var self = reactor.Add(() =>
+                reactor.Add(() =>
                 {
-                    selfRuns++;
-                    if (selfRuns == 1)
-                        return;
-                    depth++;
+                    int before = Volatile.Read(ref otherStarts);
                     try
                     {
-                        scheduler.RunNested(other);
+                        scheduler.RunDirect(other);
                     }
                     catch (ReactiveException ex)
                     {
                         caught = ex;
                     }
-                    observedDuring = otherRuns;
-                    depth--;
+                    startedDuring = Volatile.Read(ref otherStarts) - before;
+                    completed = true;
                 });
-                other = reactor.Add(() =>
-                {
-                    if (depth > 0)
-                        startedDuring = true;
-                    otherRuns++;
-                });
-                scheduler.Pump();
-                Assert.Equal(1, selfRuns);
-                Assert.Equal(1, otherRuns);
-                log.Clear();
-                self.Trigger();
+                other = reactor.Add(() => Interlocked.Increment(ref otherStarts));
                 scheduler.Pump();
                 Assert.NotNull(caught);
-                Assert.False(startedDuring);
-                Assert.Equal(1, observedDuring);
-                Assert.Equal(1, log.Count);
-                Assert.IsType<ReactiveException>(log.Snapshot()[0]);
-                Assert.Equal(2, otherRuns);
+                Assert.Equal(0, startedDuring);
+                Assert.True(completed);
+                Assert.Equal(0, log.Count);
             }
         }
 
-        [Fact(DisplayName = "cs3.16-02")]
-        public void cs3_16_02()
+        [Fact(DisplayName = "cs3.16-03")]
+        public void cs3_16_03()
         {
-            var scheduler = new ProbeScheduler();
-            var reactor = new Reactor(scheduler);
-            int otherRuns = 0;
-            int depth = 0;
-            Reaction other = null;
-            int selfRuns = 0;
-            var self = reactor.Add(() =>
+            using (var log = new Log())
             {
-                selfRuns++;
-                if (selfRuns == 1)
-                    return;
-                depth++;
-                other.Trigger();
-                try
-                {
-                    scheduler.RunNested(other);
-                }
-                catch (ReactiveException)
-                {
-                }
-                depth--;
-            });
-            other = reactor.Add(() =>
-            {
-                if (depth > 0)
-                    otherRuns = -1000;
-                else
-                    otherRuns++;
-            });
-            scheduler.Pump();
-            Assert.Equal(1, otherRuns);
-            self.Trigger();
-            scheduler.Pump();
-            Assert.Equal(2, otherRuns);
+                var otherScheduler = Harness.Create();
+                bool otherWork = false;
+                otherScheduler.Queue(() => otherWork = true);
+                var scheduler = new ProbeScheduler();
+                var reactor = new Reactor(scheduler);
+                bool bRan = false;
+                Reaction other = null;
+                reactor.Add(() => scheduler.RunDirect(other));
+                other = reactor.Add(() => { });
+                scheduler.Queue(() => bRan = true);
+                scheduler.Pump();
+                Assert.Equal(1, log.Count);
+                var item = log.Snapshot()[0];
+                var carried = item as ReactiveException;
+                if (carried == null && item != null)
+                    carried = item.InnerException as ReactiveException;
+                Assert.NotNull(carried);
+                var wrapped = item as ReactiveException;
+                if (wrapped != null)
+                    Assert.Null(wrapped.InnerException);
+                Assert.True(bRan);
+                Harness.Barrier(otherScheduler);
+                Assert.True(otherWork);
+            }
         }
 
         static void FinishShutdown(Scheduler scheduler, Hold hold)

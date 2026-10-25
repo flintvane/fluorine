@@ -1,8 +1,8 @@
 # Build-test map
 
-Flagged: 28
+Flagged: 27
 
-Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test name and its assert statements. Flag is `unspecified behaviour` when the test maps to no acceptance ID, or when an assert goes beyond the Expected column of the IDs it covers.
+Each row is one `[Fact]` in `tests/Fluorine.Tests` (156). Mapping uses the test name and its assert statements. Flag is `unspecified behaviour` when the test maps to no acceptance ID, or when an assert goes beyond the Expected column of the IDs it covers.
 
 | build test | IDs covered | flag |
 | --- | --- | --- |
@@ -41,6 +41,7 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_2_17_DisposeNullsLambdaAndDetaches | cs2.17-01 | |
 | Rule_2_18_CurrentIsRunningReaction | cs2.18-01, cs2.18-02 | |
 | Rule_2_19_PauseRecordingIncrementsPauseCount | cs2.19-01 | |
+| Rule_2_20_ContinueRecordingAtZeroThrows | cs2.20-02 | |
 | Rule_2_21_PauseOutsideReactionHasNoEffect | cs2.21-01 | |
 | Rule_2_22_RecordingTrueOnlyWhenUnpausedReaction | cs2.22-01, cs2.22-02 | |
 | Rule_2_23_PauseCountEndsWithTheRunningReaction | cs2.23-01 | |
@@ -57,19 +58,32 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_3_13_ForThreadAndAttachOtherTypeThrows | cs3.13-01, cs3.13-04 | |
 | Rule_3_14_SchedulerOfAThreadStaysTheSame | cs3.14-01 | |
 | Rule_3_15_AtMostOneReactionPerThread | cs3.15-01 | |
+| Rule_3_16_NestedRunThrowsToCaller | cs3.16-01 | |
 | Rule_4_1_NoPublicConstructorAndNoAttachToCurrent | cs4.1-01 | |
 | Rule_4_2_CreateNewRunsInitialThenLoop | cs4.2-01, cs4.2-02, cs4.2-04 | cs4.2-04: the original exception is delivered once through UnhandledException; CreateNew returns the scheduler and the loop keeps running |
+| Rule_4_2_InitialActionIsFirstMessage | cs4.2-06 | |
+| Rule_4_2_ShutdownDuringInitialIsTheLoopPath | — | unspecified behaviour: no acceptance ID; Shutdown from inside ThreadScheduler's initial action, then internal IsFinished and the thread ending |
 | Rule_4_3_QueueNeverBlocksAndShutdownEndsThread | cs4.3-01, cs4.3-02 | |
 | Rule_5_1_NoPublicConstructor | cs5.1-01 | |
 | Rule_5_2_CreateNewRunsInitialThenDispatcher | cs5.2-01 | |
+| Rule_5_2_InitialThrowIsUnhandledAndLoopContinues | cs5.2-02 | |
+| Rule_5_2_ShutdownDuringInitialIsTheLoopPath | cs3.8-09 | unspecified behaviour: asserts internal IsFinished; cs3.8-09 only requires that Shutdown on the dispatcher thread processes open work and returns |
 | Rule_5_3_AttachToCurrentReturnsExisting | cs5.3-01, cs5.3-02 | |
 | Rule_5_4_QueueDoesNotBlockAndShutdownFollows38 | cs5.4-01 | |
 | Rule_6_1_AttachToCurrentRequiresWinFormsContext | cs6.1-01, cs6.1-02, cs6.1-03 | |
 | Rule_6_2_UserContextIsNotSupported | cs6.2-01 | |
 | Rule_6_3_QueueNeverBlocksAndShutdownDoesNotEndLoop | cs6.3-01, cs6.3-02 | |
-| Rule_7_1_UnhandledExceptionEventAndConsoleFallback | cs7.1-01, cs7.1-02 | |
+| Rule_7_1_UnhandledExceptionEventAndConsoleFallback | cs7.1-01 | |
+| Rule_7_1_NoHandlerWritesConsoleWarning | cs7.1-02 | |
 | Rule_7_2_ReactiveExceptionConstructorsAndInner | cs7.2-01 | |
 | Rule_7_4_ExecutionCountIncreasesAndDoesNotAffectBehaviour | cs7.4-01, cs7.4-02 | |
+| Rule_8_1_ComputedAddsReactionThatWritesTheRegister | cs8.1-04, cs8.1-05 | |
+| Rule_8_2_EqualResultDoesNotTriggerDownstream | cs8.2-01 | |
+| Rule_8_3_UntilFirstRunRegisterKeepsItsValue | cs8.3-01 | |
+| Rule_8_4_NullFunctionWritesDefaultAndFunctionIsFixed | cs8.4-01, cs8.4-02 | |
+| Rule_8_5_ExceptionLeavesRegisterUnchanged | cs8.5-01 | |
+| Rule_8_6_DisposeOldAfterStoreAndTrigger | cs8.6-01 | |
+| Rule_8_7_DisposedReactorReturnsNullAndKeepsLastValue | cs8.7-01, cs8.7-02 | |
 | Rule_7_5_DiagnosticsModeIsImplementationDefined | — | unspecified behaviour: no acceptance ID; asserts Name reads back "diag" |
 | Rule_1_1_EventLoopProcessesOneAtATime | s1.2-01, s11.7-01 | |
 | Rule_1_2_ReactionPinnedToCreatingScheduler | cs2.2-01 | |
@@ -78,6 +92,7 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_1_5_DifferentSchedulersRunInParallel | s1.5-01 | |
 | Rule_1_6_RunIsSynchronous | — | unspecified behaviour: no acceptance ID; requires synchronous order "12" |
 | Rule_1_8_TriggeringNeverThrows | s1.8-01 | |
+| Rule_1_8_ScheduleExceptionPassesThrough | s1.8-02 | |
 | Rule_1_9_TrackingIsPerThread | s1.9-01 | |
 | Rule_3_1_ObjectEquals | cs1.16-01 | |
 | Rule_3_1a_DefaultValue | cs1.6-01 | |
@@ -107,6 +122,7 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_11_5_SameLoopFirstRunAfterCreatorFinishes | s11.5-01 | |
 | Rule_11_7_TwoReactionsOnSameLoopNeverConcurrent | s11.7-01 | |
 | Rule_11_9_FirstComeFirstServed | s11.9-01 | |
+| Rule_14_7_SelfRequeueGoesToEndOfQueue | s14.7-01 | |
 | Rule_11_10_WritesTakeEffectImmediately | s11.10-01 | |
 | Rule_11_11_WritesOnOneLoopSeenTogether | s11.11-01 | |
 | Rule_11_15_ShutdownDrainsThenDisposesAndRefusesNew | cs3.8-02, cs3.8-04, s11.15-01 | |
@@ -143,6 +159,6 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_13_7_LambdaDoesNotRunUnderQueueLock | s13.7-01 | |
 | Rule_15_3_ExecutionCounter | cs7.4-01 | |
 | Rule_15_4_NamedReactionsAndRegisters | — | unspecified behaviour: no acceptance ID; asserts Register.Name "reg" and Reaction.Name "rx" outside diagnostics mode |
-| Rule_8_1_AsyncLambdaIsOrdinaryAfterAwait | cs8.1-01, cs8.1-02 | |
+| Rule_8_1_AsyncLambdaIsOrdinaryAfterAwait | cs9.1-01 | |
 | Rule_8_2_ShutdownDetachesWithoutQueuedRun | cs3.8-02, s11.15-01 | |
 | Rule_7_1_HandlerThrowWritesWarningAndContinues | cs7.1-03, cs7.1-04 | |

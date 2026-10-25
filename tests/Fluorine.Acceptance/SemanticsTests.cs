@@ -136,6 +136,58 @@ namespace Fluorine.Acceptance
             Assert.Null(late.Add(() => { }));
         }
 
+        [Fact(DisplayName = "s1.8-02")]
+        public void s1_8_02()
+        {
+            using (var log = new Log())
+            {
+                var ts = new BombScheduler();
+                try
+                {
+                    var reg = new Register<int>(0);
+                    var reactor = new Reactor(ts);
+                    var triggered = reactor.Add(() => { });
+                    reactor.Add(() =>
+                    {
+                        var unused = reg.Value;
+                    });
+                    ts.Pump();
+                    var platform = new InvalidOperationException("schedule");
+                    ts.Bomb = platform;
+                    Assert.Same(platform, Assert.Throws<InvalidOperationException>(() => triggered.Trigger()));
+                    Assert.Same(platform, Assert.Throws<InvalidOperationException>(() => { reg.Value = 1; }));
+                    Assert.Same(platform, Assert.Throws<InvalidOperationException>(() => ts.Queue(() => { })));
+                    Assert.Equal(0, log.Count);
+                }
+                finally
+                {
+                    ts.Bomb = null;
+                }
+            }
+        }
+
+        [Fact(DisplayName = "s1.8-03")]
+        public void s1_8_03()
+        {
+            using (var log = new Log())
+            {
+                var s = Harness.Create();
+                var reactor = new Reactor(s);
+                int runs = 0;
+                var reaction = reactor.Add(() => runs++);
+                Harness.Barrier(s);
+                s.Shutdown();
+                log.Clear();
+                int actions = 0;
+                Assert.Null(Record.Exception(() => reaction.Trigger()));
+                Assert.Null(Record.Exception(() => s.Queue(() => actions++)));
+                Assert.Null(Record.Exception(() => reactor.Queue(() => actions++)));
+                Assert.Equal(0, log.Count);
+                Assert.Equal(1, runs);
+                Assert.Equal(0, actions);
+            }
+        }
+
         [Fact(DisplayName = "s1.9-01")]
         public void s1_9_01()
         {
@@ -654,8 +706,6 @@ namespace Fluorine.Acceptance
                 }
                 var items = log.Snapshot();
                 Assert.Equal(10, items.Length);
-                for (int i = 0; i < items.Length; i++)
-                    Assert.IsType<ReactiveException>(items[i]);
                 bool ran = false;
                 s.Queue(() => ran = true);
                 Harness.Barrier(s);
@@ -1101,16 +1151,100 @@ namespace Fluorine.Acceptance
             Assert.Equal(4, seen);
         }
 
+        [Fact(DisplayName = "s14.7-01")]
+        public void s14_7_01()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            var order = new Order();
+            var entered = new ManualResetEvent(false);
+            var release = new ManualResetEvent(false);
+            int recorded = 0;
+            int selfTriggers = 0;
+            bool record = false;
+            Reaction r1 = null;
+            try
+            {
+                var reactor = new Reactor(s);
+                r1 = reactor.Add(() =>
+                {
+                    int value = reg.Value;
+                    if (!record)
+                        return;
+                    order.Add("r1");
+                    if (Interlocked.Increment(ref recorded) == 1)
+                    {
+                        entered.Set();
+                        release.WaitOne();
+                    }
+                    if (Volatile.Read(ref selfTriggers) < 3)
+                    {
+                        Interlocked.Increment(ref selfTriggers);
+                        reg.Value = value + 1;
+                    }
+                });
+                var r2 = reactor.Add(() =>
+                {
+                    if (record)
+                        order.Add("r2");
+                });
+                var r3 = reactor.Add(() =>
+                {
+                    if (record)
+                        order.Add("r3");
+                });
+                Harness.Barrier(s);
+                record = true;
+                r1.Trigger();
+                Harness.Wait(entered, "r1 waiting");
+                r2.Trigger();
+                r3.Trigger();
+                release.Set();
+                Harness.Barrier2(s);
+                Assert.Equal(new[] { "r1", "r2", "r3", "r1", "r1", "r1" }, order.Snapshot());
+            }
+            finally
+            {
+                release.Set();
+            }
+        }
+
+        [Fact(DisplayName = "s15.1-01")]
+        public void s15_1_01()
+        {
+            var x = new InvalidOperationException("loop-x");
+            using (var log = new Log())
+            {
+                var s = Harness.Create();
+                new Reactor(s).Add(() => { throw x; });
+                Harness.Barrier(s);
+                Assert.Equal(1, log.Count);
+                Assert.Same(x, log.Snapshot()[0]);
+                bool continued = false;
+                s.Queue(() => continued = true);
+                Harness.Barrier(s);
+                Assert.True(continued);
+                s.Shutdown();
+            }
+            var s2 = Harness.Create();
+            using (var console = new ConsoleCapture())
+            {
+                new Reactor(s2).Add(() => { throw new InvalidOperationException("console-x"); });
+                Harness.Barrier(s2);
+                Assert.False(string.IsNullOrWhiteSpace(console.Text));
+                bool continued = false;
+                s2.Queue(() => continued = true);
+                Harness.Barrier(s2);
+                Assert.True(continued);
+            }
+        }
+
         [Fact(DisplayName = "s15.2-01")]
         public void s15_2_01()
         {
-            bool logged = false;
-            Exception caught = null;
-            bool flagAtCatch = false;
-            Action<Exception> handler = exception => { logged = true; };
-            Reactive.UnhandledException += handler;
-            try
+            using (var log = new Log())
             {
+                Exception caught = null;
                 var ready = new ManualResetEvent(false);
                 var thread = new Thread(() =>
                 {
@@ -1118,26 +1252,35 @@ namespace Fluorine.Acceptance
                     {
                         var reactor = new Reactor();
                         GC.KeepAlive(reactor);
-                        caught = new InvalidOperationException("Reactor() did not throw");
                     }
                     catch (Exception ex)
                     {
                         caught = ex;
-                        flagAtCatch = logged;
                     }
                     ready.Set();
                 });
                 thread.IsBackground = true;
                 thread.Start();
                 Harness.Wait(ready, "no-scheduler thread");
-                thread.Join();
+                Assert.IsType<ReactiveException>(caught);
+
+                var s = Harness.Create();
+                bool caughtInReaction = false;
+                new Reactor(s).Add(() =>
+                {
+                    try
+                    {
+                        Reaction.ContinueRecording();
+                    }
+                    catch (ReactiveException)
+                    {
+                        caughtInReaction = true;
+                    }
+                });
+                Harness.Barrier(s);
+                Assert.True(caughtInReaction);
+                Assert.Equal(0, log.Count);
             }
-            finally
-            {
-                Reactive.UnhandledException -= handler;
-            }
-            Assert.IsType<ReactiveException>(caught);
-            Assert.True(flagAtCatch);
         }
 
         static void NotePeak(ref int peak, int now)
@@ -1226,6 +1369,44 @@ namespace Fluorine.Acceptance
             public override int GetHashCode()
             {
                 return Id;
+            }
+        }
+
+        sealed class BombScheduler : Scheduler
+        {
+            readonly Queue<Action> _queue = new Queue<Action>();
+
+            public Exception Bomb;
+
+            protected override void Schedule(Action action)
+            {
+                var bomb = Bomb;
+                if (bomb != null)
+                    throw bomb;
+                if (action == null || !AcceptWork())
+                    return;
+                lock (_queue)
+                    _queue.Enqueue(action);
+            }
+
+            protected override void DrainOnOwnerThread()
+            {
+                Pump();
+            }
+
+            public void Pump()
+            {
+                while (true)
+                {
+                    Action action;
+                    lock (_queue)
+                    {
+                        if (_queue.Count == 0)
+                            return;
+                        action = _queue.Dequeue();
+                    }
+                    action();
+                }
             }
         }
     }

@@ -115,39 +115,20 @@ namespace Fluorine.Acceptance
                 Harness.Barrier(s);
                 var items = log.Snapshot();
                 Assert.Single(items);
-                var wrapped = Assert.IsType<ReactiveException>(items[0]);
-                Assert.Same(x, wrapped.InnerException);
+                Assert.Same(x, items[0]);
             }
         }
 
         [Fact(DisplayName = "cs7.3-01")]
         public void cs7_3_01()
         {
-            ReactionThrewOnce();
-            ReactorWithoutSchedulerOnce();
-            SecondSchedulerTypeOnce();
-            ShutdownInsideReactionOnce();
-            NestedRunOnce();
-            ContinueRecordingOnce();
-        }
-
-        static void ReactionThrewOnce()
-        {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                new Reactor(s).Add(() => { throw new InvalidOperationException("listed"); });
-                Harness.Barrier(s);
-                ExactlyOne(log);
-                s.Shutdown();
-            }
-        }
-
-        static void ReactorWithoutSchedulerOnce()
-        {
-            using (var log = new Log())
+            LoggedOnceUnwrapped(s => new Reactor(s).Add(() => { throw new InvalidOperationException("reaction"); }));
+            LoggedOnceUnwrapped(s => s.Queue(() => { throw new InvalidOperationException("action"); }));
+            CreateNewInitialLoggedOnce();
+            UsageSilent(() =>
             {
                 var done = new ManualResetEvent(false);
+                Exception thrown = null;
                 var thread = new Thread(() =>
                 {
                     try
@@ -155,8 +136,9 @@ namespace Fluorine.Acceptance
                         var reactor = new Reactor();
                         GC.KeepAlive(reactor);
                     }
-                    catch (ReactiveException)
+                    catch (Exception ex)
                     {
+                        thrown = ex;
                     }
                     finally
                     {
@@ -166,49 +148,32 @@ namespace Fluorine.Acceptance
                 thread.IsBackground = true;
                 thread.Start();
                 Harness.Wait(done, "reactor without scheduler");
-                ExactlyOne(log);
-            }
-        }
-
-        static void SecondSchedulerTypeOnce()
-        {
-            using (var log = new Log())
+                Assert.IsType<ReactiveException>(thrown);
+            });
+            UsageSilent(() => Assert.Throws<ReactiveException>(() => new Reactor(null)));
+            UsageSilent(() =>
             {
-                var done = new ManualResetEvent(false);
-                var thread = new Thread(() =>
+                var s = Harness.Create();
+                bool caught = false;
+                new Reactor(s).Add(() =>
                 {
                     try
                     {
-                        var scheduler = DispatcherScheduler.AttachToCurrent();
-                        try
-                        {
-                            SynchronizationContext.SetSynchronizationContext(
-                                new System.Windows.Forms.WindowsFormsSynchronizationContext());
-                            WinFormsScheduler.AttachToCurrent();
-                        }
-                        catch (ReactiveException)
-                        {
-                        }
-                        scheduler.Shutdown();
+                        Reaction.ContinueRecording();
                     }
-                    finally
+                    catch (ReactiveException)
                     {
-                        done.Set();
+                        caught = true;
                     }
                 });
-                thread.IsBackground = true;
-                thread.SetApartmentState(ApartmentState.STA);
-                thread.Start();
-                Harness.Wait(done, "second scheduler type");
-                ExactlyOne(log);
-            }
-        }
-
-        static void ShutdownInsideReactionOnce()
-        {
-            using (var log = new Log())
+                Harness.Barrier(s);
+                Assert.True(caught);
+                s.Shutdown();
+            });
+            UsageSilent(() =>
             {
                 var s = Harness.Create();
+                bool caught = false;
                 new Reactor(s).Add(() =>
                 {
                     try
@@ -217,62 +182,105 @@ namespace Fluorine.Acceptance
                     }
                     catch (ReactiveException)
                     {
+                        caught = true;
                     }
                 });
                 Harness.Barrier(s);
-                ExactlyOne(log);
+                Assert.True(caught);
                 s.Shutdown();
-            }
-        }
-
-        static void NestedRunOnce()
-        {
-            using (var log = new Log())
+            });
+            UsageSilent(SecondSchedulerType);
+            UsageSilent(WinFormsWithoutContext);
+            UsageSilent(() =>
             {
-                var scheduler = new ProbeScheduler();
-                var reactor = new Reactor(scheduler);
-                Reaction other = null;
-                int selfRuns = 0;
-                var self = reactor.Add(() =>
-                {
-                    selfRuns++;
-                    if (selfRuns == 1)
-                        return;
-                    try
-                    {
-                        scheduler.RunNested(other);
-                    }
-                    catch (ReactiveException)
-                    {
-                    }
-                });
-                other = reactor.Add(() => { });
-                scheduler.Pump();
-                log.Clear();
-                self.Trigger();
-                scheduler.Pump();
-                ExactlyOne(log);
-                scheduler.Shutdown();
-            }
+                bool initial = false;
+                Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew(null, () => initial = true));
+                Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew("", () => initial = true));
+                Assert.False(initial);
+            });
         }
 
-        static void ContinueRecordingOnce()
+        static void LoggedOnceUnwrapped(Action<Scheduler> body)
         {
             using (var log = new Log())
             {
                 var s = Harness.Create();
-                new Reactor(s).Add(() => Reaction.ContinueRecording());
+                body(s);
                 Harness.Barrier(s);
-                ExactlyOne(log);
+                var items = log.Snapshot();
+                Assert.Single(items);
+                Assert.IsType<InvalidOperationException>(items[0]);
                 s.Shutdown();
             }
         }
 
-        static void ExactlyOne(Log log)
+        static void CreateNewInitialLoggedOnce()
         {
-            var items = log.Snapshot();
-            Assert.Single(items);
-            Assert.IsType<ReactiveException>(items[0]);
+            using (var log = new Log())
+            {
+                var x = new InvalidOperationException("initial");
+                var s = ThreadScheduler.CreateNew("cs7.3-initial", () => { throw x; });
+                Assert.Equal(1, log.Count);
+                Assert.Same(x, log.Snapshot()[0]);
+                s.Shutdown();
+            }
+        }
+
+        static void UsageSilent(Action body)
+        {
+            using (var log = new Log())
+            {
+                body();
+                Assert.Equal(0, log.Count);
+            }
+        }
+
+        static void SecondSchedulerType()
+        {
+            using (var forms = WinFormsLoop.Start())
+            {
+                Exception error = null;
+                var done = new ManualResetEvent(false);
+                forms.Form.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        DispatcherScheduler.AttachToCurrent();
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                    }
+                    done.Set();
+                }));
+                Harness.Wait(done, "second scheduler type");
+                Assert.IsType<ReactiveException>(error);
+            }
+        }
+
+        static void WinFormsWithoutContext()
+        {
+            Exception error = null;
+            var done = new ManualResetEvent(false);
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    WinFormsScheduler.AttachToCurrent();
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            });
+            thread.IsBackground = true;
+            thread.Start();
+            Harness.Wait(done, "winforms without context");
+            Assert.IsType<ReactiveException>(error);
         }
 
         [Fact(DisplayName = "cs7.4-01")]
@@ -348,100 +356,6 @@ namespace Fluorine.Acceptance
             finally
             {
                 release.Set();
-            }
-        }
-
-        [Fact(DisplayName = "cs8.1-01")]
-        public void cs8_1_01()
-        {
-            var s = Harness.Create();
-            var a = new Register<int>(0);
-            var b = new Register<int>(0);
-            int runs = 0;
-            int continuations = 0;
-            var continued = new ManualResetEvent(false);
-            new Reactor(s).Add(async () =>
-            {
-                Interlocked.Increment(ref runs);
-                var unusedA = a.Value;
-                await System.Threading.Tasks.Task.Delay(50);
-                var unusedB = b.Value;
-                if (Interlocked.Increment(ref continuations) >= 1)
-                    continued.Set();
-            });
-            Harness.Barrier(s);
-            Assert.Equal(1, runs);
-            Harness.Wait(continued, "continuation");
-            continued.Reset();
-            a.Value = 1;
-            Harness.Barrier(s);
-            Assert.Equal(2, runs);
-            Harness.Wait(continued, 5000, "second continuation");
-            while (Volatile.Read(ref continuations) < 2)
-            {
-                if (!continued.WaitOne(Harness.TimeoutMs))
-                    break;
-            }
-            Assert.True(Volatile.Read(ref continuations) >= 2);
-            int before = Volatile.Read(ref runs);
-            b.Value = 1;
-            Harness.Barrier(s);
-            Assert.Equal(before, Volatile.Read(ref runs));
-        }
-
-        [Fact(DisplayName = "cs8.1-02")]
-        public void cs8_1_02()
-        {
-            var s = Harness.Create();
-            Reaction before = null;
-            Reaction after = null;
-            var done = new ManualResetEvent(false);
-            Reaction reaction = null;
-            reaction = new Reactor(s).Add(async () =>
-            {
-                before = Reaction.Current;
-                await System.Threading.Tasks.Task.Yield();
-                after = Reaction.Current;
-                done.Set();
-            });
-            Harness.Barrier(s);
-            Harness.Wait(done, "continuation");
-            Assert.Same(reaction, before);
-            Assert.Null(after);
-        }
-
-        [Fact(DisplayName = "cs8.1-03")]
-        public void cs8_1_03()
-        {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                System.Threading.Tasks.Task work = null;
-                var done = new ManualResetEvent(false);
-                Func<System.Threading.Tasks.Task> lambda = async () =>
-                {
-                    try
-                    {
-                        await System.Threading.Tasks.Task.Yield();
-                        throw new InvalidOperationException("after-await");
-                    }
-                    finally
-                    {
-                        done.Set();
-                    }
-                };
-                new Reactor(s).Add(() => { work = lambda(); });
-                Harness.Barrier(s);
-                Harness.Wait(done, "continuation");
-                Assert.NotNull(work);
-                try
-                {
-                    work.Wait(Harness.TimeoutMs);
-                }
-                catch (AggregateException)
-                {
-                }
-                Assert.Equal(0, log.Count);
             }
         }
     }

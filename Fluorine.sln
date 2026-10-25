@@ -6,6 +6,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine", "src\Fluorine\Fl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine.Tests", "tests\Fluorine.Tests\Fluorine.Tests.csproj", "{B8D9F2C3-5E4A-4B02-8D3F-2C9E5F7A1B22}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine.Acceptance", "tests\Fluorine.Acceptance\Fluorine.Acceptance.csproj", "{A306A8F5-C1DA-4D1B-8879-A93D7285D757}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,5 +22,9 @@ Global
 		{B8D9F2C3-5E4A-4B02-8D3F-2C9E5F7A1B22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8D9F2C3-5E4A-4B02-8D3F-2C9E5F7A1B22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8D9F2C3-5E4A-4B02-8D3F-2C9E5F7A1B22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A306A8F5-C1DA-4D1B-8879-A93D7285D757}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A306A8F5-C1DA-4D1B-8879-A93D7285D757}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A306A8F5-C1DA-4D1B-8879-A93D7285D757}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A306A8F5-C1DA-4D1B-8879-A93D7285D757}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

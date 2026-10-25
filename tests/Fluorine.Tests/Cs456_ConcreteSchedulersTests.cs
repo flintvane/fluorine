@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Threading;
@@ -77,6 +79,92 @@ namespace Fluorine.Tests
             });
             Assert.True(s.IsFinished);
             Assert.True(owner.Join(TimeSpan.FromSeconds(5)));
+        }
+
+        [Fact]
+        public void Rule_4_2_InitialActionIsFirstMessage()
+        {
+            var gate = new ManualResetEvent(false);
+            var started = new ManualResetEvent(false);
+            int initialDone = 0;
+            bool reactionRanBeforeInitialDone = false;
+            Scheduler created = null;
+            Exception createError = null;
+            var createDone = new ManualResetEvent(false);
+            var creator = new Thread(() =>
+            {
+                try
+                {
+                    created = ThreadScheduler.CreateNew("cs4.2-06", () =>
+                    {
+                        new Reactor().Add(() =>
+                        {
+                            if (Volatile.Read(ref initialDone) == 0)
+                                reactionRanBeforeInitialDone = true;
+                        });
+                        started.Set();
+                        gate.WaitOne();
+                        Volatile.Write(ref initialDone, 1);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    createError = ex;
+                }
+                finally
+                {
+                    createDone.Set();
+                }
+            });
+            creator.IsBackground = true;
+            creator.Start();
+            var shutdownStarted = new ManualResetEvent(false);
+            try
+            {
+                if (!started.WaitOne(TimeSpan.FromSeconds(5)))
+                    throw new TimeoutException("initial started");
+                bool shutdownSawInitial = false;
+                var shutdownDone = new ManualResetEvent(false);
+                var caller = new Thread(() =>
+                {
+                    shutdownStarted.Set();
+                    Reactive.Shutdown();
+                    shutdownSawInitial = Volatile.Read(ref initialDone) == 1;
+                    shutdownDone.Set();
+                });
+                caller.IsBackground = true;
+                caller.Start();
+                WaitUntilBlocked(caller, shutdownStarted);
+                Assert.False(shutdownDone.WaitOne(0));
+                gate.Set();
+                if (!createDone.WaitOne(TimeSpan.FromSeconds(5)))
+                    throw new TimeoutException("CreateNew");
+                Assert.Null(createError);
+                Assert.NotNull(created);
+                Assert.Equal(1, Volatile.Read(ref initialDone));
+                Assert.False(reactionRanBeforeInitialDone);
+                if (!shutdownDone.WaitOne(TimeSpan.FromSeconds(5)))
+                    throw new TimeoutException("Reactive.Shutdown");
+                Assert.True(shutdownSawInitial);
+            }
+            finally
+            {
+                gate.Set();
+            }
+        }
+
+        static void WaitUntilBlocked(Thread thread, ManualResetEvent started)
+        {
+            if (!started.WaitOne(TimeSpan.FromSeconds(5)))
+                throw new TimeoutException("shutdown caller start");
+            var sw = Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < 5000)
+            {
+                if ((thread.ThreadState & System.Threading.ThreadState.WaitSleepJoin) != 0)
+                    return;
+                Thread.SpinWait(80);
+            }
+            throw new TimeoutException("Shutdown caller did not block.");
         }
 
         [Fact]
@@ -326,6 +414,32 @@ namespace Fluorine.Tests
             finally
             {
                 Reactive.UnhandledException -= h;
+            }
+        }
+
+        [Fact]
+        public void Rule_7_1_NoHandlerWritesConsoleWarning()
+        {
+            var stdout = Console.Out;
+            var stderr = Console.Error;
+            var writer = new StringWriter();
+            Console.SetOut(writer);
+            Console.SetError(writer);
+            try
+            {
+                using (var host = new ThreadHost())
+                {
+                    host.NewReactor().Add(() => { throw new InvalidOperationException("console"); });
+                    var ran = false;
+                    host.OnScheduler(() => ran = true);
+                    Assert.True(ran);
+                    Assert.False(string.IsNullOrWhiteSpace(writer.ToString()));
+                }
+            }
+            finally
+            {
+                Console.SetOut(stdout);
+                Console.SetError(stderr);
             }
         }
 

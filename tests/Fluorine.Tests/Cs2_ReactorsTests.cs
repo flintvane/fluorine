@@ -248,6 +248,50 @@ namespace Fluorine.Tests
         }
 
         [Fact]
+        public void Rule_2_20_ContinueRecordingAtZeroThrows()
+        {
+            using (var host = new ThreadHost())
+            {
+                Exception logged = null;
+                Action<Exception> handler = e => logged = e;
+                Reactive.UnhandledException += handler;
+                try
+                {
+                    var reg = new Register<int>(0);
+                    var n = 0;
+                    var caught = false;
+                    var recordingAfter = false;
+                    host.NewReactor().Add(() =>
+                    {
+                        Interlocked.Increment(ref n);
+                        try
+                        {
+                            Reaction.ContinueRecording();
+                        }
+                        catch (ReactiveException)
+                        {
+                            caught = true;
+                        }
+                        recordingAfter = Reaction.IsRecording;
+                        var unused = reg.Value;
+                    });
+                    host.OnScheduler(() => { });
+                    Assert.Equal(1, n);
+                    Assert.True(caught);
+                    Assert.True(recordingAfter);
+                    Assert.Null(logged);
+                    reg.Value = 1;
+                    host.OnScheduler(() => { });
+                    Assert.Equal(2, n);
+                }
+                finally
+                {
+                    Reactive.UnhandledException -= handler;
+                }
+            }
+        }
+
+        [Fact]
         public void Rule_2_21_PauseOutsideReactionHasNoEffect()
         {
             Reaction.PauseRecording();

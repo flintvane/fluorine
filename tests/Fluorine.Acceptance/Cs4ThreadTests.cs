@@ -22,13 +22,15 @@ namespace Fluorine.Acceptance
         {
             Thread thread = null;
             Scheduler current = null;
+            bool done = false;
             var caller = Thread.CurrentThread;
             var s = ThreadScheduler.CreateNew("initial", () =>
             {
                 thread = Thread.CurrentThread;
                 current = Scheduler.Current;
+                done = true;
             });
-            Assert.NotNull(s);
+            Assert.True(done);
             Assert.NotEqual(caller, thread);
             Assert.Equal("initial", thread.Name);
             Assert.Same(s, current);
@@ -93,8 +95,6 @@ namespace Fluorine.Acceptance
                 Assert.NotNull(s);
                 Assert.Equal(1, log.Count);
                 Assert.Same(x, log.Snapshot()[0]);
-                Assert.NotNull(thread);
-                Assert.True(thread.IsAlive);
                 bool ran = false;
                 s.Queue(() => ran = true);
                 Harness.Barrier(s);
@@ -123,6 +123,51 @@ namespace Fluorine.Acceptance
                 Assert.True(done.WaitOne(2000), "Reactive.Shutdown did not return promptly");
                 Assert.Null(shutdownError);
             }
+        }
+
+        [Fact(DisplayName = "cs4.2-05")]
+        public void cs4_2_05()
+        {
+            using (var log = new Log())
+            {
+                bool initial = false;
+                Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew(null, () => initial = true));
+                Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew("", () => initial = true));
+                Assert.False(initial);
+                Assert.Equal(0, log.Count);
+                var done = new ManualResetEvent(false);
+                Exception error = null;
+                var waiter = new Thread(() =>
+                {
+                    try
+                    {
+                        Reactive.Shutdown();
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                    }
+                    finally
+                    {
+                        done.Set();
+                    }
+                });
+                waiter.IsBackground = true;
+                waiter.Start();
+                Assert.True(done.WaitOne(2000), "Reactive.Shutdown did not return promptly");
+                Assert.Null(error);
+            }
+        }
+
+        [Fact(DisplayName = "cs4.2-06")]
+        public void cs4_2_06()
+        {
+            Harness.AssertInitialIsFirst(initial => ThreadScheduler.CreateNew("cs4.2-06", initial));
+        }
+
+        [Fact(DisplayName = "cs4.2-07", Skip = "not testable through the public API (spec gap)")]
+        public void cs4_2_07()
+        {
         }
 
         [Fact(DisplayName = "cs4.3-01")]

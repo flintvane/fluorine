@@ -133,6 +133,38 @@ namespace Fluorine.Tests
         }
 
         [Fact]
+        public void Rule_1_8_ScheduleExceptionPassesThrough()
+        {
+            var scheduler = new ThrowingScheduler();
+            Exception logged = null;
+            Action<Exception> handler = e => logged = e;
+            Reactive.UnhandledException += handler;
+            try
+            {
+                var reg = new Register<int>(0);
+                var reactor = new Reactor(scheduler);
+                var triggered = reactor.Add(() => { });
+                reactor.Add(() =>
+                {
+                    var unused = reg.Value;
+                });
+                scheduler.Pump();
+                var platform = new InvalidOperationException("schedule");
+                scheduler.Bomb = platform;
+                Assert.Same(platform, Assert.Throws<InvalidOperationException>(() => triggered.Trigger()));
+                Assert.Same(platform, Assert.Throws<InvalidOperationException>(() => { reg.Value = 1; }));
+                Assert.Same(platform, Assert.Throws<InvalidOperationException>(() => scheduler.Queue(() => { })));
+                Assert.Null(logged);
+            }
+            finally
+            {
+                scheduler.Bomb = null;
+                Reactive.UnhandledException -= handler;
+                scheduler.Shutdown();
+            }
+        }
+
+        [Fact]
         public void Rule_1_9_TrackingIsPerThread()
         {
             using (var a = new ThreadHost())
@@ -153,6 +185,44 @@ namespace Fluorine.Tests
                 WaitUntil.True(() => an == 2, "a retriggered");
                 Thread.Sleep(40);
                 Assert.Equal(1, bn);
+            }
+        }
+
+        sealed class ThrowingScheduler : Scheduler
+        {
+            readonly System.Collections.Generic.Queue<Action> _queue = new System.Collections.Generic.Queue<Action>();
+
+            public Exception Bomb;
+
+            protected override void Schedule(Action action)
+            {
+                var bomb = Bomb;
+                if (bomb != null)
+                    throw bomb;
+                if (action == null || !AcceptWork())
+                    return;
+                lock (_queue)
+                    _queue.Enqueue(action);
+            }
+
+            protected override void DrainOnOwnerThread()
+            {
+                Pump();
+            }
+
+            public void Pump()
+            {
+                while (true)
+                {
+                    Action action;
+                    lock (_queue)
+                    {
+                        if (_queue.Count == 0)
+                            return;
+                        action = _queue.Dequeue();
+                    }
+                    action();
+                }
             }
         }
     }
@@ -684,6 +754,71 @@ namespace Fluorine.Tests
                 host.Scheduler.Queue(() => order += "b");
                 go.Set();
                 WaitUntil.True(() => order == "ab", "fifo");
+            }
+        }
+
+        [Fact]
+        public void Rule_14_7_SelfRequeueGoesToEndOfQueue()
+        {
+            using (var host = new ThreadHost())
+            {
+                var reg = new Register<int>(0);
+                var order = "";
+                var entered = new ManualResetEvent(false);
+                var release = new ManualResetEvent(false);
+                var done = new ManualResetEvent(false);
+                int recorded = 0;
+                int selfTriggers = 0;
+                bool record = false;
+                try
+                {
+                    var reactor = host.NewReactor();
+                    Reaction r1 = null;
+                    r1 = reactor.Add(() =>
+                    {
+                        int value = reg.Value;
+                        if (!record)
+                            return;
+                        order += "r1";
+                        if (Interlocked.Increment(ref recorded) == 1)
+                        {
+                            entered.Set();
+                            release.WaitOne();
+                        }
+                        if (Volatile.Read(ref selfTriggers) < 3)
+                        {
+                            Interlocked.Increment(ref selfTriggers);
+                            reg.Value = value + 1;
+                        }
+                        else
+                            done.Set();
+                    });
+                    var r2 = reactor.Add(() =>
+                    {
+                        if (record)
+                            order += "r2";
+                    });
+                    var r3 = reactor.Add(() =>
+                    {
+                        if (record)
+                            order += "r3";
+                    });
+                    host.OnScheduler(() => { });
+                    record = true;
+                    r1.Trigger();
+                    if (!entered.WaitOne(TimeSpan.FromSeconds(15)))
+                        throw new TimeoutException("r1 waiting");
+                    r2.Trigger();
+                    r3.Trigger();
+                    release.Set();
+                    if (!done.WaitOne(TimeSpan.FromSeconds(15)))
+                        throw new TimeoutException("self requeue");
+                    Assert.Equal("r1r2r3r1r1r1", order);
+                }
+                finally
+                {
+                    release.Set();
+                }
             }
         }
 

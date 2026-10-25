@@ -102,9 +102,8 @@ namespace Fluorine.Acceptance
                 thread.Start();
                 Harness.Wait(done, "reactor ctor");
                 Assert.IsType<ReactiveException>(thrown);
-                Assert.Equal(1, seen);
-                Assert.Equal(1, log.Count);
-                Assert.IsType<ReactiveException>(log.Snapshot()[0]);
+                Assert.Equal(0, seen);
+                Assert.Equal(0, log.Count);
             }
         }
 
@@ -141,9 +140,8 @@ namespace Fluorine.Acceptance
         {
             using (var log = new Log())
             {
-                var ex = Assert.Throws<ReactiveException>(() => new Reactor(null));
-                Assert.Same(ex, log.Snapshot()[0]);
-                Assert.Equal(1, log.Count);
+                Assert.Throws<ReactiveException>(() => new Reactor(null));
+                Assert.Equal(0, log.Count);
             }
         }
 
@@ -667,16 +665,29 @@ namespace Fluorine.Acceptance
                 var s = Harness.Create();
                 var reg = new Register<int>(0);
                 int runs = 0;
+                bool caught = false;
+                bool recordingAfter = false;
                 new Reactor(s).Add(() =>
                 {
                     runs++;
                     if (runs == 1)
-                        Reaction.ContinueRecording();
+                    {
+                        try
+                        {
+                            Reaction.ContinueRecording();
+                        }
+                        catch (ReactiveException)
+                        {
+                            caught = true;
+                        }
+                        recordingAfter = Reaction.IsRecording;
+                    }
                     var unused = reg.Value;
                 });
                 Harness.Barrier(s);
-                Assert.Equal(1, log.Count);
-                Assert.IsType<ReactiveException>(log.Snapshot()[0]);
+                Assert.True(caught);
+                Assert.Equal(0, log.Count);
+                Assert.True(recordingAfter);
                 reg.Value = 1;
                 Harness.Barrier(s);
                 Assert.Equal(2, runs);
@@ -686,34 +697,38 @@ namespace Fluorine.Acceptance
         [Fact(DisplayName = "cs2.21-01")]
         public void cs2_21_01()
         {
-            var s = Harness.Create();
-            var ex = Record.Exception(() =>
+            using (var log = new Log())
             {
-                Reaction.PauseRecording();
-                Reaction.ContinueRecording();
-                Reaction.ContinueRecording();
-            });
-            Assert.Null(ex);
-            Assert.False(Reaction.Recording);
-            Exception actionError = null;
-            bool recording = true;
-            s.Queue(() =>
-            {
-                try
+                var s = Harness.Create();
+                var ex = Record.Exception(() =>
                 {
                     Reaction.PauseRecording();
                     Reaction.ContinueRecording();
                     Reaction.ContinueRecording();
-                    recording = Reaction.Recording;
-                }
-                catch (Exception ex2)
+                });
+                Assert.Null(ex);
+                Assert.False(Reaction.IsRecording);
+                Exception actionError = null;
+                bool recording = true;
+                s.Queue(() =>
                 {
-                    actionError = ex2;
-                }
-            });
-            Harness.Barrier(s);
-            Assert.Null(actionError);
-            Assert.False(recording);
+                    try
+                    {
+                        Reaction.PauseRecording();
+                        Reaction.ContinueRecording();
+                        Reaction.ContinueRecording();
+                        recording = Reaction.IsRecording;
+                    }
+                    catch (Exception ex2)
+                    {
+                        actionError = ex2;
+                    }
+                });
+                Harness.Barrier(s);
+                Assert.Null(actionError);
+                Assert.False(recording);
+                Assert.Equal(0, log.Count);
+            }
         }
 
         [Fact(DisplayName = "cs2.22-01")]
@@ -721,7 +736,7 @@ namespace Fluorine.Acceptance
         {
             var s = Harness.Create();
             bool recording = false;
-            new Reactor(s).Add(() => recording = Reaction.Recording);
+            new Reactor(s).Add(() => recording = Reaction.IsRecording);
             Harness.Barrier(s);
             Assert.True(recording);
         }
@@ -735,13 +750,13 @@ namespace Fluorine.Acceptance
             new Reactor(s).Add(() =>
             {
                 using (Reaction.Pause())
-                    insidePause = Reaction.Recording;
+                    insidePause = Reaction.IsRecording;
             });
-            s.Queue(() => inAction = Reaction.Recording);
+            s.Queue(() => inAction = Reaction.IsRecording);
             Harness.Barrier(s);
             Assert.False(insidePause);
             Assert.False(inAction);
-            Assert.False(Reaction.Recording);
+            Assert.False(Reaction.IsRecording);
         }
 
         [Fact(DisplayName = "cs2.23-01")]
@@ -785,7 +800,7 @@ namespace Fluorine.Acceptance
                 {
                     var unused = reg.Value;
                 }
-                recordingAfter = Reaction.Recording;
+                recordingAfter = Reaction.IsRecording;
             });
             Harness.Barrier(s);
             Assert.True(recordingAfter);
