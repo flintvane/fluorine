@@ -189,8 +189,8 @@ namespace Fluorine.Tests
         [Fact]
         public void Rule_3_11_ReactiveShutdownInformsAllThenWaits()
         {
-            var a = ThreadScheduler.CreateNew("3_11a");
-            var b = ThreadScheduler.CreateNew("3_11b");
+            var a = ThreadScheduler.CreateNew("a");
+            var b = ThreadScheduler.CreateNew("b");
             Reactive.Shutdown();
             Assert.True(a.IsFinished);
             Assert.True(b.IsFinished);

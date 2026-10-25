@@ -8,38 +8,30 @@ namespace Fluorine
     {
         readonly Queue<Action> _queue = new Queue<Action>();
 
-        ThreadScheduler()
+        ThreadScheduler(bool announceImmediately)
+            : base(announceImmediately)
         {
         }
 
         public static ThreadScheduler CreateNew(string name, Action initial = null)
         {
-            ThreadScheduler created = null;
-            var ready = new ManualResetEventSlim(false);
-            var thread = new Thread(() =>
+            return StartOwnedThread(
+                name,
+                ApartmentState.MTA,
+                typeof(ThreadScheduler),
+                () => new ThreadScheduler(false),
+                (scheduler, action) => scheduler.EnqueueStartup(action),
+                scheduler => scheduler.RunLoop(),
+                initial);
+        }
+
+        void EnqueueStartup(Action action)
+        {
+            lock (this)
             {
-                try
-                {
-                    var scheduler = new ThreadScheduler();
-                    initial?.Invoke();
-                    created = scheduler;
-                    ready.Set();
-                    scheduler.RunLoop();
-                }
-                catch (Exception ex)
-                {
-                    Reactive.OnUnhandledException(ex);
-                }
-                finally
-                {
-                    ready.Set();
-                }
-            });
-            thread.IsBackground = true;
-            thread.Name = name;
-            thread.Start();
-            ready.Wait();
-            return created;
+                _queue.Enqueue(action);
+                Monitor.Pulse(this);
+            }
         }
 
         protected override void Schedule(Action action)
@@ -104,12 +96,6 @@ namespace Fluorine
             {
                 Reactive.OnUnhandledException(ex);
             }
-        }
-
-        void AbandonBeforeStart()
-        {
-            RequestShutdown();
-            CompleteShutdown();
         }
     }
 }

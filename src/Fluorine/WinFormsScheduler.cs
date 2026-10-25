@@ -24,10 +24,18 @@ namespace Fluorine
             if (Current != null)
                 throw new ReactiveException("This thread already has a scheduler of another type.");
 
-            var context = SynchronizationContext.Current as WindowsFormsSynchronizationContext;
-            if (context == null)
-                throw new ReactiveException("WinFormsScheduler requires a WindowsFormsSynchronizationContext on the calling thread.");
-            return new WinFormsScheduler(context);
+            ClaimCurrentThread(typeof(WinFormsScheduler));
+            try
+            {
+                var context = SynchronizationContext.Current as WindowsFormsSynchronizationContext;
+                if (context == null)
+                    throw new ReactiveException("WinFormsScheduler requires a WindowsFormsSynchronizationContext on the calling thread.");
+                return new WinFormsScheduler(context);
+            }
+            finally
+            {
+                ReleaseClaim();
+            }
         }
 
         protected override int ExecutingWorkDepth => t_executing;

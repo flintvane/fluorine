@@ -243,13 +243,14 @@ namespace Fluorine.Acceptance
             Scheduler seen = null;
             Dispatcher dispatcher = null;
             Thread initialThread = null;
-            var s = DispatcherScheduler.CreateNew(() =>
+            var s = DispatcherScheduler.CreateNew("initial", () =>
             {
                 seen = Scheduler.Current;
                 dispatcher = Dispatcher.CurrentDispatcher;
                 initialThread = Thread.CurrentThread;
             });
             Assert.NotEqual(Thread.CurrentThread, initialThread);
+            Assert.Equal("initial", initialThread.Name);
             Assert.Same(s, seen);
             Assert.NotNull(dispatcher);
             bool ran = false;
@@ -271,23 +272,22 @@ namespace Fluorine.Acceptance
             {
                 var x = new InvalidOperationException("init-x");
                 Thread thread = null;
-                Exception caught = null;
-                try
+                var s = DispatcherScheduler.CreateNew("init-throws", () =>
                 {
-                    DispatcherScheduler.CreateNew(() =>
-                    {
-                        thread = Thread.CurrentThread;
-                        throw x;
-                    });
-                }
-                catch (Exception ex)
-                {
-                    caught = ex;
-                }
-                AssertAccepted(caught, x);
+                    thread = Thread.CurrentThread;
+                    throw x;
+                });
+                Assert.NotNull(s);
                 Assert.Equal(1, log.Count);
+                Assert.Same(x, log.Snapshot()[0]);
                 Assert.NotNull(thread);
-                Assert.True(thread.Join(Harness.TimeoutMs), "dispatcher thread kept running");
+                Assert.True(thread.IsAlive);
+                bool ran = false;
+                s.Queue(() => ran = true);
+                Harness.Barrier(s);
+                Assert.True(ran);
+                s.Shutdown();
+                Assert.True(thread.Join(Harness.TimeoutMs), "dispatcher thread did not end");
                 AssertPromptShutdown();
             }
         }
@@ -541,15 +541,6 @@ namespace Fluorine.Acceptance
                 Assert.True(ran);
                 Assert.True(forms.Thread.IsAlive, "Application.Run ended");
             }
-        }
-
-        static void AssertAccepted(Exception caught, Exception original)
-        {
-            Assert.NotNull(caught);
-            bool originalThrown = ReferenceEquals(caught, original);
-            var wrapped = caught as ReactiveException;
-            bool wrapperThrown = wrapped != null && ReferenceEquals(wrapped.InnerException, original);
-            Assert.True(originalThrown || wrapperThrown, "propagated " + caught.GetType().FullName);
         }
 
         static void AssertPromptShutdown()

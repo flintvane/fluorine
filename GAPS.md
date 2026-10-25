@@ -44,7 +44,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 ## Schedulers: creation, threads, attach
 
-- **Section:** semantics-cs.md 4.2, 5.2. **Unclear:** apartment state, `IsBackground`, thread name. **Choice:** `ThreadScheduler` threads are MTA background threads named `Fluorine ThreadScheduler`. `DispatcherScheduler.CreateNew` uses STA background threads named `Fluorine DispatcherScheduler`, because WPF dispatchers are used from STA.
+- **Section:** semantics-cs.md 4.2, 5.2. **Unclear:** apartment state, `IsBackground`, thread name. **Choice:** `ThreadScheduler` threads are MTA background threads. `DispatcherScheduler.CreateNew` uses STA background threads, because WPF dispatchers are used from STA. The thread name is the required `name` argument. A null or empty name throws `ReactiveException` and starts no thread.
 
 - **Section:** semantics.md 3.7 vs semantics-cs.md 4.2 / 5.2. **Unclear:** the core spec says starting the loop is explicit via `Run()`; the C# spec’s `CreateNew` starts the loop after the initial action and the base class has no `Run()`. **Choice:** follow 4.2/5.2. `CreateNew` starts the loop. No public `Run()` on `ThreadScheduler` (4.1: same members as `DispatcherScheduler` except `AttachToCurrent`).
 
@@ -70,7 +70,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 - **Section:** semantics-cs.md 7.1. **Unclear:** console stream; multicast handler failures. **Choice:** `Console.WriteLine`. The multicast is invoked as one call. If it throws, both exceptions are written to the console and the scheduler loop continues. Remaining subscribers are not invoked.
 
-- **Section:** semantics-cs.md 4.2 / 5.2 / 7.1–7.2. **Unclear:** logging of a throwing `CreateNew` initial action, which is neither a reaction nor a queued action. **Choice:** raise `ReactiveException` with the original as `InnerException`, then rethrow the original to the caller of `CreateNew`.
+- **Section:** semantics-cs.md 4.2 / 5.2 / 7.1–7.3. **Unclear:** how `CreateNew` reports failures, and where the initial action runs. **Choice:** see `spec/create-new-startup.md`. The initial action is the first loop message. Its exception is delivered unwrapped through `Reactive.UnhandledException`, and `CreateNew` returns the scheduler. Any other failure while bringing the scheduler up is thrown to the caller as `ReactiveException` and is not logged. The thread is claimed before its queue or dispatcher is created.
 
 ## Logging messages and extra public API
 

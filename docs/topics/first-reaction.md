@@ -16,7 +16,7 @@ class Program
     static void Main()
     {
         // 1. An event loop on its own thread.
-        Scheduler loop = ThreadScheduler.CreateNew();
+        Scheduler loop = ThreadScheduler.CreateNew("loop");
 
         // 2. State.
         var first = new Register<string>("Ada");
@@ -52,7 +52,7 @@ Augusta Byron
 
 ## What happened
 
-1. **The scheduler.** `ThreadScheduler.CreateNew()` starts a thread with its own event loop and returns its scheduler (cs 4.2). Reactions need a scheduler to run on.
+1. **The scheduler.** `ThreadScheduler.CreateNew("loop")` starts a thread named `loop` with its own event loop and returns its scheduler (cs 4.2). Reactions need a scheduler to run on.
 2. **The registers.** `new Register<string>("Ada")` creates a register with an initial value. Storing an initial value triggers nothing (cs 1.7).
 3. **The reactor and the reaction.** `new Reactor(loop)` creates a reactor on the given scheduler (cs 2.3). `Add` creates the reaction and queues its first run on that loop (cs 2.7). The first run prints *Ada Lovelace*. While it runs, it reads `first` and `last`, so it now depends on both.
 4. **The writes.** Writing `last` queues a run. Writing `first` before that run has started queues nothing more: the run is already waiting. The single run sees both new values and prints *Augusta Byron*. The intermediate state *Ada Byron* is skipped, which is by design ([When reactions run](when-reactions-run.md)).

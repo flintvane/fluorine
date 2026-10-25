@@ -13,7 +13,8 @@ namespace Fluorine
         int _pending;
         DispatcherFrame _drainFrame;
 
-        DispatcherScheduler(Dispatcher dispatcher, bool ownsDispatcher)
+        DispatcherScheduler(Dispatcher dispatcher, bool ownsDispatcher, bool announceImmediately)
+            : base(announceImmediately)
         {
             _dispatcher = dispatcher;
             _ownsDispatcher = ownsDispatcher;
@@ -21,33 +22,14 @@ namespace Fluorine
 
         public static DispatcherScheduler CreateNew(string name, Action initial = null)
         {
-            DispatcherScheduler created = null;
-            var ready = new ManualResetEventSlim(false);
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    var dispatcher = Dispatcher.CurrentDispatcher;
-                    var scheduler = new DispatcherScheduler(dispatcher, true);
-                    initial?.Invoke();
-                    created = scheduler;
-                    ready.Set();
-                }
-                catch (Exception ex)
-                {
-                    Reactive.OnUnhandledException(ex);
-                }
-                finally
-                {
-                    ready.Set();
-                }
-                Dispatcher.Run();
-            });
-            thread.IsBackground = true;
-            thread.Name = name;
-            thread.Start();
-            ready.Wait();
-            return created;
+            return StartOwnedThread(
+                name,
+                ApartmentState.STA,
+                typeof(DispatcherScheduler),
+                () => new DispatcherScheduler(Dispatcher.CurrentDispatcher, true, false),
+                (scheduler, action) => scheduler.EnqueueStartup(action),
+                scheduler => Dispatcher.Run(),
+                initial);
         }
 
         public static DispatcherScheduler AttachToCurrent()
@@ -57,7 +39,30 @@ namespace Fluorine
             if (Current != null)
                 throw new ReactiveException("This thread already has a scheduler of another type.");
 
-            return new DispatcherScheduler(Dispatcher.CurrentDispatcher, false);
+            ClaimCurrentThread(typeof(DispatcherScheduler));
+            try
+            {
+                return new DispatcherScheduler(Dispatcher.CurrentDispatcher, false, true);
+            }
+            finally
+            {
+                ReleaseClaim();
+            }
+        }
+
+        void EnqueueStartup(Action action)
+        {
+            lock (this)
+                _pending++;
+            try
+            {
+                _dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => InvokeWork(action)));
+            }
+            catch
+            {
+                NoteWorkFinished();
+                throw;
+            }
         }
 
         protected override int ExecutingWorkDepth => t_executing;
@@ -179,12 +184,6 @@ namespace Fluorine
                         return;
                 }
             }
-        }
-
-        void AbandonBeforeStart()
-        {
-            RequestShutdown();
-            CompleteShutdown();
         }
     }
 }
