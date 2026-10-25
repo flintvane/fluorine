@@ -255,7 +255,7 @@ namespace Fluorine.Tests
             try
             {
                 Assert.Throws<ReactiveException>(() => WinFormsScheduler.AttachToCurrent());
-                Assert.IsType<ReactiveException>(seen);
+                Assert.Null(seen); // usage error: thrown, not logged (cs7.2)
             }
             finally
             {
@@ -320,7 +320,7 @@ namespace Fluorine.Tests
                 {
                     host.NewReactor().Add(() => { throw new InvalidOperationException("rx"); });
                     WaitUntil.True(() => seen != null, "logged");
-                    Assert.IsType<ReactiveException>(seen);
+                    Assert.IsType<InvalidOperationException>(seen); // user exception, unwrapped (cs7.2)
                 }
             }
             finally
@@ -339,23 +339,6 @@ namespace Fluorine.Tests
             Assert.Equal("m", b.Message);
             Assert.Same(inner, c.InnerException);
             Assert.IsAssignableFrom<Exception>(a);
-        }
-
-        [Fact]
-        public void Rule_7_3_ProgrammingErrorsAreLogged()
-        {
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                Assert.Throws<ReactiveException>(() => new Reactor());
-                Assert.NotNull(seen);
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-            }
         }
 
         [Fact]

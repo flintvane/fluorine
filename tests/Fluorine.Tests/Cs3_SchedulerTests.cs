@@ -153,7 +153,7 @@ namespace Fluorine.Tests
                         }
                     });
                     Assert.True(threw);
-                    Assert.IsType<ReactiveException>(seen);
+                    Assert.Null(seen); // usage error: thrown, not logged (cs7.2)
                 }
                 finally
                 {

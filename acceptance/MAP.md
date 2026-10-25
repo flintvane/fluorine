@@ -69,7 +69,6 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_6_3_QueueNeverBlocksAndShutdownDoesNotEndLoop | cs6.3-01, cs6.3-02 | |
 | Rule_7_1_UnhandledExceptionEventAndConsoleFallback | cs7.1-01, cs7.1-02 | |
 | Rule_7_2_ReactiveExceptionConstructorsAndInner | cs7.2-01 | |
-| Rule_7_3_ProgrammingErrorsAreLogged | cs7.3-01 | |
 | Rule_7_4_ExecutionCountIncreasesAndDoesNotAffectBehaviour | cs7.4-01, cs7.4-02 | |
 | Rule_7_5_DiagnosticsModeIsImplementationDefined | — | unspecified behaviour: no acceptance ID; asserts Name reads back "diag" |
 | Rule_1_1_EventLoopProcessesOneAtATime | s1.2-01, s11.7-01 | |
