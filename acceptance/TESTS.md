@@ -13,7 +13,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 - **Log**: a handler on `Reactive.UnhandledException` collecting exceptions. "logged" = exactly one exception arrives there (cs7.1). Only errors with no caller are logged (cs7.3, s15.1): exceptions from a reaction, a queued action or the `CreateNew` initial action, which arrive as the thrown exception itself, unwrapped (cs7.2); and anything else escaping a scheduler-loop work item (Werner 2026-10-25). Errors in how the library is used are thrown to the caller as `ReactiveException` and are **not** logged (cs7.2, s15.2): "throws, not logged" = the caller catches it and nothing arrives at Log. (changed 2026-10-25)
 - **TS(S)**: a test subclass of `Scheduler` that implements the protected abstract `Schedule(Action)` by putting the item in its own queue, which the test pumps on one thread; it can call the protected `Run(Reaction)` (cs3.4). Used only where protected members are needed.
 - **Console**: capture `Console.Out` and `Console.Error` together (stream is unspecified, see SPEC-GAPS G12).
-- Run counts are observed through a counter incremented inside the lambda, not through `ExecutionCount` (cs7.4 may be DEBUG-only).
+- Run counts are observed through a counter incremented inside the lambda, not through `ExecutionCount` (an independent check; `ExecutionCount` always exists per cs7.4 @ 4f5118f and may also be used).
 - Every test ends with `Reactive.Shutdown()` unless the test itself shuts down.
 - Concurrency tests (marked E, "stress") run ≥10 000 iterations; a failure in any iteration fails the test.
 
@@ -37,7 +37,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs1.8-02 | Setter with different value triggers | P | reaction reads reg (0) | `reg.Value = 1`; Barrier | ran again, saw 1 | not yet checked |
 | cs1.8-03 | Setter with equal value does not trigger | N | reg = 1; reaction reads reg | Barrier; `reg.Value = 1`; Barrier | no extra run (s3.2) | not yet checked |
 | cs1.9-01 | Register.Name settable | P | – | `reg.Name = "x"` | no exception; no ctor `Register(string)` / `Register<T>(string, …)` exists (reflection) | not yet checked |
-| cs1.9-02 | Register.Name read-back in diagnostics mode | E | diagnostics mode on (impl-defined, cs7.5) | set then get Name | "x" (only checked when the build documents its diagnostics switch) | not yet checked |
+| cs1.9-02 | Register.Name read-back | P | – | set then get Name | "x" (names always kept, cs1.10 @ 4f5118f) | not yet checked |
 | cs1.11-01 | Register not sealed; members non-virtual | P | reflection | inspect `Register`, `Register<T>` | not sealed; `Value`, `RecordRead`, `TriggerReactions` not virtual | not yet checked |
 | cs1.12-01 | Backing value is protected | P | reflection / subclass | subclass reads backing field | backing member is `protected`; no public setter bypass | not yet checked |
 | cs1.13-01 | Ctor and Value from any thread | E | – | create, read, write registers on 8 non-scheduler threads | no exception; final value equals one written value | not yet checked |
@@ -65,7 +65,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs2.5-01 | Reactor.Name settable, no name ctor | P | – | set Name; reflection on ctors | works; only `Reactor()` and `Reactor(Scheduler)` public | not yet checked |
 | cs2.6-01 | Reaction has no public constructor | P | reflection | – | `typeof(Reaction)` has no public ctor | not yet checked |
 | cs2.7-01 | Add returns reaction and queues first run | P | R on S | `var r = R.Add(f)`; Barrier | r != null; f ran once | not yet checked |
-| cs2.7-02 | Add(name, lambda) | P | diagnostics mode | `R.Add("n", f).Name` | "n"; f ran | not yet checked |
+| cs2.7-02 | Add(name, lambda) | P | – | `R.Add("n", f).Name` | "n"; f ran | not yet checked |
 | cs2.8-01 | Never inline, even on scheduler thread | E | inside an action on S | `R.Add(() => ran = true)`; check `ran` immediately | false right after Add; true after Barrier | not yet checked |
 | cs2.9-01 | Add on disposed reactor returns null silently | N | R disposed | `R.Add(f)`; Barrier | null; f never runs; nothing logged | not yet checked |
 | cs2.11-01 | Reactor dispose disposes reactions | P | R with 3 reactions reading reg | Barrier; `R.Dispose()`; Barrier; write reg; Barrier | none rerun | not yet checked |
@@ -76,7 +76,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs2.15-01 | Trigger queues run and returns | P | r on S, idle | `r.Trigger()`; Barrier | ran once more | not yet checked |
 | cs2.15-02 | Trigger never inline | E | from inside an action on S | `r.Trigger()`; check flag | not run until after the action | not yet checked |
 | cs2.15-03 | Trigger on disposed reaction | N | r disposed | `r.Trigger()`; Barrier | no run, no throw, nothing logged | not yet checked |
-| cs2.16-01 | Reaction.Name equals name given to Add | P | diagnostics mode | `R.Add("abc", f).Name` | "abc" | not yet checked |
+| cs2.16-01 | Reaction.Name equals name given to Add | P | – | `R.Add("abc", f).Name` | "abc" | not yet checked |
 | cs2.17-01 | Dispose detaches from all registers | P | r reads a, b | `r.Dispose()`; Barrier; write a, b; Barrier | no further runs | not yet checked |
 | cs2.17-02 | Dispose from foreign thread | E | r on S | `r.Dispose()` from test thread | no exception; no further runs | not yet checked |
 | cs2.17-03 | Dispose twice harmless | E | – | `r.Dispose(); r.Dispose()` | no exception, nothing logged | not yet checked |
@@ -175,7 +175,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs5.3-01 | AttachToCurrent on dispatcher thread | P | STA thread with Dispatcher | `AttachToCurrent()`; queue work; run dispatcher | work runs on that thread | not yet checked |
 | cs5.3-02 | AttachToCurrent idempotent | P | – | call twice | same instance | not yet checked |
 | cs5.4-01 | Queue hands to dispatcher, non-blocking | E | dispatcher busy in a long message | `S.Queue(a)` from other thread | returns immediately; a runs later on dispatcher thread | not yet checked |
-| cs5.4-02 | UI messages not starved | E | self-retriggering reaction (s6.2) | post `Dispatcher.BeginInvoke` input-priority item | item runs within 1 s (s11.9a) | not yet checked (1 s bound is a heuristic, no bound in spec; see s14.7-01) |
+| cs5.4-02 | UI messages not starved | E | self-retriggering reaction (s6.2) | post `Dispatcher.BeginInvoke` input-priority item | item runs within 1 s (s11.9a) | KNOWN/ACCEPTED FAILURE: DispatcherScheduler posts at DispatcherPriority.Normal, kept by Werner's decision 2026-10-21 (priorities deferred); fails as expected until priorities are addressed. 1 s bound is a heuristic |
 | **cs6 WinForms scheduler** |||||||
 | cs6.1-01 | AttachToCurrent on WinForms thread | P | STA thread with `WindowsFormsSynchronizationContext` installed and `Application.Run` | attach; queue work | runs on that thread | not yet checked |
 | cs6.1-02 | AttachToCurrent idempotent | P | – | twice | same instance | not yet checked |
@@ -191,7 +191,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs7.2-01 | ReactiveException ctors | P | – | three ctors | Message/InnerException set; derives from Exception | not yet checked |
 | cs7.2-02 | Reaction exception logged unwrapped | P | lambda throws X | – | handler gets X itself (same instance); no `ReactiveException` wrapper (cs7.2) | changed 2026-10-21; not yet checked |
 | cs7.3-01 | Only user errors without a caller are logged | N | sub-cases: (a) reaction throws X; (b) queued action throws X; (c) CreateNew initial throws X; (d) each usage error: cs2.2-02, cs2.3-02, cs2.20-02, cs3.8-06, cs3.13-04, cs6.1-03, cs4.2-05 | – | (a)–(c): X logged once, unwrapped; (d): thrown to caller, nothing logged (cs7.2, cs7.3, s15.2) | changed 2026-10-25; not yet checked |
-| cs7.4-01 | ExecutionCount counts runs (if present) | P | skip if member absent in release | 3 runs | ExecutionCount == 3 | not yet checked |
+| cs7.4-01 | ExecutionCount counts runs | P | – (always present, cs7.4 @ 4f5118f) | 3 runs | ExecutionCount == 3 | not yet checked |
 | cs7.4-02 | ExecutionCount readable from any thread, no side effects | E | – | read from test thread during runs | no exception; no subscription created | not yet checked |
 | **cs8 Computed values** (cs8.1-01..03 retired, async now cs9.1) |||||||
 | cs8.1-01 | Reads before first suspending await recorded | P | `async () => { a.Value; await Task.Delay(50); b.Value; }` | write a; then write b | a reruns; b does not | retired 2026-10-21: async moved to cs9.1, ID reused by section 8 Computed; see cs9.1-01 |
