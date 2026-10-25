@@ -58,7 +58,15 @@ namespace Fluorine
         internal bool HasStartedShutdown => Volatile.Read(ref _state) >= StateShuttingDown;
 
         internal bool IsFinished => Volatile.Read(ref _state) == StateFinished;
-
+    
+        /// <summary>
+        /// This redirect allows the author of a scheduler, to perform the effective run of a reaction
+        /// It is here to hide the internal Reaction.Run, which might otherwise be abused by the API
+        /// users
+        /// </summary>
+        protected void Run(Reaction reaction) 
+            => reaction.Run();
+        
         public void Queue(Action action)
         {
             if (action == null)
@@ -70,7 +78,7 @@ namespace Fluorine
         {
             if (reaction == null)
                 return;
-            Schedule(reaction.Run);
+            Schedule(()=> Run(reaction));
         }
 
         public void Shutdown()

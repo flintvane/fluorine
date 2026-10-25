@@ -119,10 +119,8 @@ namespace Fluorine.Tests
             }
         }
 
-        public void ForceRun(Reaction reaction)
-        {
-            reaction.Run();
-        }
+        public void ForceRun(Reaction reaction) 
+            => Run(reaction);
     }
 
     sealed class WinFormsHost : IDisposable
