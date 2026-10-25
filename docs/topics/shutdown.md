@@ -47,7 +47,7 @@ A `DispatcherScheduler` attached with `AttachToCurrent()` leaves the dispatcher 
 
 ## Shutdown from inside a reaction
 
-A reaction cannot wait for its own loop to finish. Calling a shutdown from a reaction throws `ReactiveException` (cs 3.8). Queue the shutdown as ordinary work, or call it from outside the loop.
+A reaction cannot wait for its own loop to finish. Calling `Scheduler.Shutdown()` or `Reactive.Shutdown()` from a reaction throws `ReactiveException` (cs 3.8, 3.11). Queue the shutdown as ordinary work, or call it from outside the loop.
 
 ---
 
