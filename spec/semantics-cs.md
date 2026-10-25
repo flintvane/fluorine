@@ -161,3 +161,11 @@ The continuation resumes on the captured synchronisation context, usually the UI
 | A null or empty thread name | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | 4.2, 5.2 |
 | Attaching WinForms where there is no WinForms context | `WinFormsScheduler.AttachToCurrent()` | 6.1 |
 
+
+## 11. AutoNotify (WPF)
+
+11.1 `AutoNotify` is an abstract class that implements `INotifyPropertyChanged`. Its constructor takes the reactor on which its reactions are set up: `AutoNotify(Reactor reactor)`.
+11.2 `[AutoNotify]` (`AutoNotifyAttribute`) marks a property of a class derived from `AutoNotify`.
+11.3 For every marked property, one reaction is added to that reactor. It reads the getter of the property. It runs on the scheduler of the reactor (2.2, 2.3), so `PropertyChanged` is raised on the thread of that scheduler.
+11.4 The first run of such a reaction records its reads and raises nothing, as `INotifyPropertyChanged` notifies only on change. Every later run raises `PropertyChanged` with the name of the property.
+11.5 Disposing the reactor disposes these reactions (2.11), and the object raises no further notifications.
