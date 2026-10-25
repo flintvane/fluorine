@@ -98,13 +98,13 @@ The classes below are the standard realisation of a register. Other storage mode
 ## 4. Thread scheduler
 
 4.1 `ThreadScheduler` is the scheduler for a plain thread with its own event loop. It has no public constructor. It has the same members as `DispatcherScheduler` (section 5), except that it has no `AttachToCurrent()`: a plain thread has no event loop of its own to attach to.
-4.2 `ThreadScheduler.CreateNew(Action initial = null)` behaves as `DispatcherScheduler.CreateNew` (5.2): it creates a new thread, installs the scheduler on it (3.6), runs the action there, returns the scheduler as soon as the action has finished, and runs the event loop of the scheduler on that thread afterwards. If the action throws, the exception is logged and rethrown to the caller, the thread ends and no scheduler exists.
+4.2 `ThreadScheduler.CreateNew(Action initial = null)` behaves as `DispatcherScheduler.CreateNew` (5.2): it creates a new thread, installs the scheduler on it (3.6), runs the action there, returns the scheduler as soon as the action has finished, and runs the event loop of the scheduler on that thread afterwards. If the action throws, the exception goes to `Reactive.UnhandledException` (7.2) without being wrapped, and the scheduler continues as if the action had completed: `CreateNew` returns it and its event loop runs.
 4.3 `Queue` of a `ThreadScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8, and the thread ends afterwards.
 
 ## 5. WPF Dispatcher scheduler
 
 5.1 `DispatcherScheduler` is the scheduler for a WPF `Dispatcher`. It has no public constructor.
-5.2 `DispatcherScheduler.CreateNew(Action initial = null)` creates a new thread, installs a scheduler on it (3.6), executes the action on that thread, and then runs the dispatcher on it. It returns the scheduler as soon as the action has finished, so that the initialisation of the thread and of its scheduler is complete when the caller continues. If the action throws, the exception is logged and rethrown to the caller of `CreateNew`. The new thread ends without running the dispatcher, and the scheduler does not exist afterwards.
+5.2 `DispatcherScheduler.CreateNew(Action initial = null)` creates a new thread, installs a scheduler on it (3.6), executes the action on that thread, and then runs the dispatcher on it. It returns the scheduler as soon as the action has finished, so that the initialisation of the thread and of its scheduler is complete when the caller continues. If the action throws, the exception goes to `Reactive.UnhandledException` (7.2) without being wrapped. The scheduler continues as if the action had completed: `CreateNew` returns it and the dispatcher runs on the new thread.
 5.3 `DispatcherScheduler.AttachToCurrent()` attaches a scheduler to the dispatcher of the calling thread. A thread has at most one scheduler: when one is already attached, that one is returned.
 5.4 `Queue` of a `DispatcherScheduler` hands the run to the dispatcher without blocking. Its `Shutdown()` follows 3.8.
 
