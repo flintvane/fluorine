@@ -117,7 +117,7 @@ The classes below are the standard realisation of a register. Other storage mode
 ## 7. Logging and monitoring
 
 7.1 "Logged" (15.1) means that the error is raised through `Reactive.UnhandledException`, a public static event of type `Action<Exception>`. When no handler is attached, a warning is written to the console. When a handler itself throws, a warning with both the original error and the handler's exception is written to the console, and the loop continues, so a faulty handler cannot stop a loop.
-7.2 `ReactiveException` signals an issue with the usage of the Fluorine library. The known cases are: creating a reactor without a scheduler (2.2, 2.3), a second scheduler on a thread (3.13, 6.1), a shutdown from inside a reaction (3.8), a reaction starting while another one is running (3.16), `ContinueRecording()` with a pause count of zero (2.20), and a null or empty name for `CreateNew` (5.2). It is thrown to the caller as an ordinary exception and is not logged. It derives from `Exception` and has the usual constructors: `ReactiveException()`, `ReactiveException(string message)` and `ReactiveException(string message, Exception inner)`. Every other exception, from the .NET libraries or from user code (anything the user writes with Fluorine, including an overridden `Schedule`), keeps its own type and reaches its caller, or `Reactive.UnhandledException` (7.3), as it is.
+7.2 `ReactiveException` signals an issue with the usage of the Fluorine library. Every case is listed in section 10. It is thrown to the caller as an ordinary exception and is not logged. It derives from `Exception` and has the usual constructors: `ReactiveException()`, `ReactiveException(string message)` and `ReactiveException(string message, Exception inner)`. Every other exception, from the .NET libraries or from user code (anything the user writes with Fluorine, including an overridden `Schedule`), keeps its own type and reaches its caller, or `Reactive.UnhandledException` (7.3), as it is.
 7.3 Only exceptions from user code that has no caller to receive them are logged: an unhandled exception from a reaction, from a queued action (15.1, 3.3), or from the initial action of `CreateNew` (5.2).
 7.4 `Reaction.ExecutionCount` returns how often the reaction has run (15.3). It is for monitoring only: it can be read at any time, and it never changes how anything behaves.
 
@@ -142,3 +142,19 @@ After the first suspension an exception is no longer handled by the reaction. In
 The continuation resumes on the captured synchronisation context, usually the UI thread, in a separate message dispatch. No reaction is running there, so `Reaction.Current` is null.
 
 9.2 **Detaching the reactions of a shutdown.** Disposing a reaction normally queues a run with a null lambda, and that run detaches the reaction from its registers (2.17). During a shutdown no new runs are queued (3.2), yet the shutdown disposes all reactors (3.8). This is not a contradiction. The reactors are disposed only after everything that was queued has run, so nothing is left to do except cut the links to the registers. The shutdown therefore detaches those reactions from their registers directly, without a queued run.
+
+## 10. Errors
+
+10.1 This section lists every case in which Fluorine throws `ReactiveException` (7.2). Each one is an issue with the usage of the library, thrown to the caller and not logged. The list is kept up to date as cases are found, so users know which mistakes Fluorine reports back to them.
+
+| Case | Thrown by | Rule |
+|---|---|---|
+| Creating a reactor on a thread without a scheduler | `Reactor()` | 2.2 |
+| Passing a null scheduler to a reactor | `Reactor(Scheduler)` | 2.3 |
+| Ending a pause that was not started | `Reaction.ContinueRecording()` at a pause count of zero | 2.20 |
+| Shutting down a scheduler from inside a reaction | `Scheduler.Shutdown()` | 3.8 |
+| A second scheduler on a thread | `CreateNew`, `AttachToCurrent` of another type | 3.13 |
+| Starting a reaction while another one runs on the same thread | `Reaction.Run()`, through a nested pump | 3.16 |
+| A null or empty thread name | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | 4.2, 5.2 |
+| Attaching WinForms where there is no WinForms context | `WinFormsScheduler.AttachToCurrent()` | 6.1 |
+
