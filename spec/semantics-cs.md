@@ -151,7 +151,7 @@ The continuation resumes on the captured synchronisation context, usually the UI
 
 | Case | Thrown by | Rule |
 |---|---|---|
-| Creating a reactor on a thread without a scheduler | `Reactor()` | 2.2 |
+| Creating a reactor on a thread without a scheduler | `Reactor()`, `AutoNotify()` | 2.2, 11.1 |
 | Passing a null scheduler to a reactor | `Reactor(Scheduler)` | 2.3 |
 | Ending a pause that was not started | `Reaction.ContinueRecording()` at a pause count of zero | 2.20 |
 | Shutting down a scheduler from inside a reaction | `Scheduler.Shutdown()` | 3.8 |
@@ -164,8 +164,8 @@ The continuation resumes on the captured synchronisation context, usually the UI
 
 ## 11. AutoNotify (WPF)
 
-11.1 `AutoNotify` is an abstract class that implements `INotifyPropertyChanged`. Its constructor takes the reactor on which its reactions are set up: `AutoNotify(Reactor reactor)`.
+11.1 `AutoNotify` is an abstract class that implements `INotifyPropertyChanged` and `IDisposable`. Its constructor `AutoNotify()` creates the reactor of the object on `Scheduler.Current`, the scheduler of the thread on which the constructor runs, as `Reactor()` does (2.2). When that thread has no scheduler, it throws `ReactiveException`. An implementation may let `AutoNotify` derive from `Reactor`.
 11.2 `[AutoNotify]` (`AutoNotifyAttribute`) marks a property of a class derived from `AutoNotify`.
 11.3 For every marked property, one reaction is added to that reactor. It reads the getter of the property. It runs on the scheduler of the reactor (2.2, 2.3), so `PropertyChanged` is raised on the thread of that scheduler.
 11.4 The first run of such a reaction records its reads and raises nothing, as `INotifyPropertyChanged` notifies only on change. Every later run raises `PropertyChanged` with the name of the property.
-11.5 Disposing the reactor disposes these reactions (2.11), and the object raises no further notifications.
+11.5 `Dispose()` disposes the reactor of the object and so its reactions (2.11). Afterwards the object raises no further notifications.
