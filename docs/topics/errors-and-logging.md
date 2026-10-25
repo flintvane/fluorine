@@ -29,7 +29,7 @@ An exception thrown by a reaction or by a queued action is passed as it is, unwr
 
 ## Programming errors
 
-Errors in how the library is used throw `ReactiveException` to the caller, as ordinary exceptions. They are not logged; the caller receives them (cs 7.2, §15.2):
+ReactiveException signals an issue with the usage of the Fluorine library. It is thrown to the caller as an ordinary exception and is not logged (cs 7.2, §15.2). The known cases are:
 
 - `new Reactor()` on a thread without a scheduler, or `new Reactor(null)`;
 - a second scheduler on a thread that already has one;
@@ -37,6 +37,8 @@ Errors in how the library is used throw `ReactiveException` to the caller, as or
 - `Shutdown()` from inside a reaction;
 - a reaction starting while another runs on the same thread (see [Rules of thumb](rules-of-thumb.md));
 - `ContinueRecording()` with a pause count of zero.
+
+Every other exception, from the .NET libraries or from your own code, including an overridden `Schedule`, keeps its own type. It reaches its caller, or `Reactive.UnhandledException`, as it is (cs 7.2).
 
 Logging through `Reactive.UnhandledException` is for exceptions from user code that has no caller to receive them: an unhandled exception from a reaction, from a queued action, or from a scheduler's `CreateNew` initial action (cs 7.3, 5.2).
 
