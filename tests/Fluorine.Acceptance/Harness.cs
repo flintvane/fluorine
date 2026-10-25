@@ -33,7 +33,7 @@ namespace Fluorine.Acceptance
 
         public static ThreadScheduler Create()
         {
-            return ThreadScheduler.CreateNew();
+            return ThreadScheduler.CreateNew("acceptance");
         }
 
         public static void Barrier(Scheduler scheduler)

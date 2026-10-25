@@ -23,13 +23,14 @@ namespace Fluorine.Acceptance
             Thread thread = null;
             Scheduler current = null;
             var caller = Thread.CurrentThread;
-            var s = ThreadScheduler.CreateNew(() =>
+            var s = ThreadScheduler.CreateNew("initial", () =>
             {
                 thread = Thread.CurrentThread;
                 current = Scheduler.Current;
             });
             Assert.NotNull(s);
             Assert.NotEqual(caller, thread);
+            Assert.Equal("initial", thread.Name);
             Assert.Same(s, current);
         }
 
@@ -41,7 +42,7 @@ namespace Fluorine.Acceptance
             bool ranDuringInitial = false;
             Thread ranOn = null;
             Thread initialThread = null;
-            var s = ThreadScheduler.CreateNew(() =>
+            var s = ThreadScheduler.CreateNew("reaction", () =>
             {
                 initialThread = Thread.CurrentThread;
                 new Reactor().Add(() =>
@@ -63,7 +64,7 @@ namespace Fluorine.Acceptance
         [Fact(DisplayName = "cs4.2-03")]
         public void cs4_2_03()
         {
-            var s = ThreadScheduler.CreateNew();
+            var s = ThreadScheduler.CreateNew("plain");
             Assert.NotNull(s);
             bool ran = false;
             Scheduler seen = null;
@@ -84,26 +85,21 @@ namespace Fluorine.Acceptance
             {
                 var x = new InvalidOperationException("init-x");
                 Thread thread = null;
-                Exception caught = null;
-                try
+                var s = ThreadScheduler.CreateNew("init-throws", () =>
                 {
-                    ThreadScheduler.CreateNew(() =>
-                    {
-                        thread = Thread.CurrentThread;
-                        throw x;
-                    });
-                }
-                catch (Exception ex)
-                {
-                    caught = ex;
-                }
-                Assert.NotNull(caught);
-                bool originalThrown = ReferenceEquals(caught, x);
-                var wrapped = caught as ReactiveException;
-                bool wrapperThrown = wrapped != null && ReferenceEquals(wrapped.InnerException, x);
-                Assert.True(originalThrown || wrapperThrown, "propagated " + caught.GetType().FullName);
+                    thread = Thread.CurrentThread;
+                    throw x;
+                });
+                Assert.NotNull(s);
                 Assert.Equal(1, log.Count);
+                Assert.Same(x, log.Snapshot()[0]);
                 Assert.NotNull(thread);
+                Assert.True(thread.IsAlive);
+                bool ran = false;
+                s.Queue(() => ran = true);
+                Harness.Barrier(s);
+                Assert.True(ran);
+                s.Shutdown();
                 Assert.True(thread.Join(Harness.TimeoutMs), "scheduler thread did not end");
                 var done = new ManualResetEvent(false);
                 Exception shutdownError = null;

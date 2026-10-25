@@ -65,7 +65,7 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_3_15_AtMostOneReactionPerThread | cs3.15-01 | |
 | Rule_3_16_NestedRunReactionLogsRequeuesAndThrows | cs3.16-01 | |
 | Rule_4_1_NoPublicConstructorAndNoAttachToCurrent | cs4.1-01 | |
-| Rule_4_2_CreateNewRunsInitialThenLoopAndRethrows | cs4.2-01, cs4.2-02, cs4.2-04 | unspecified behaviour: requires the original InvalidOperationException and message "init"; cs4.2-04 allows the original exception or a ReactiveException wrapper |
+| Rule_4_2_CreateNewRunsInitialThenLoop | cs4.2-01, cs4.2-02, cs4.2-04 | cs4.2-04: the original exception is delivered once through UnhandledException; CreateNew returns the scheduler and the loop keeps running |
 | Rule_4_3_QueueNeverBlocksAndShutdownEndsThread | cs4.3-01, cs4.3-02 | |
 | Rule_5_1_NoPublicConstructor | cs5.1-01 | |
 | Rule_5_2_CreateNewRunsInitialThenDispatcher | cs5.2-01 | |

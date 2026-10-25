@@ -7,7 +7,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 
 ## Harness conventions (public API only)
 
-- **S** = a scheduler made with `ThreadScheduler.CreateNew()` unless stated. **T(S)** is its thread.
+- **S** = a scheduler made with `ThreadScheduler.CreateNew(name)` unless stated. **T(S)** is its thread.
 - **Barrier(S)**: `S.Queue(() => evt.Set())`, then wait on `evt` with a timeout (5 s). Because actions and reaction runs share one FIFO (cs3.3, s11.9) this proves everything queued earlier has run. It is a test helper, not a library flush API.
 - **Barrier2(S)**: Barrier twice, for runs queued by runs.
 - **Log**: a handler on `Reactive.UnhandledException` collecting exceptions. "logged" = exactly one exception arrives there (cs7.1). For an error Fluorine detects itself it is a `ReactiveException`; for user code (a reaction, a queued action) it is the thrown exception itself, unwrapped (cs7.2, changed 2026-10-21).
@@ -150,16 +150,16 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs3.16-02 | Refused nested start adds no run | E | as cs3.16-01, but other also has a pending trigger queued normally before the nested call | pump the queue; Barrier | other runs exactly once (its pending trigger); the refused RunReaction neither ran it nor queued an extra run (replaces old "requeue" expectation; run 4 saw 3 runs) | changed 2026-10-21; not yet checked |
 | **cs4 Thread scheduler** |||||||
 | cs4.1-01 | No public ctor, no AttachToCurrent | P | reflection | – | none | not yet checked |
-| cs4.2-01 | CreateNew runs initial on new thread first | P | – | `CreateNew(() => {t=CurrentThread; cur=Scheduler.Current;})` | returns after action; t ≠ caller; cur == returned S | not yet checked |
+| cs4.2-01 | CreateNew runs initial on new thread first | P | – | `CreateNew(name, () => {t=CurrentThread; cur=Scheduler.Current;})` | returns after action; t ≠ caller; t.Name == name; cur == returned S | not yet checked |
 | cs4.2-02 | CreateNew loop runs after initial | P | initial adds reaction | Barrier | reaction ran on T(S), after CreateNew returned | not yet checked |
-| cs4.2-03 | CreateNew(null) | E | – | `CreateNew()` | valid scheduler | not yet checked |
-| cs4.2-04 | Initial throws: logged and rethrown, no scheduler | N | initial throws X | `CreateNew(...)` | X itself propagates to caller (user code, not wrapped, cs7.2; resolves G7); X logged once; thread ends; `Reactive.Shutdown()` returns promptly | changed 2026-10-21; not yet checked |
+| cs4.2-03 | CreateNew(name) with no action | E | – | `CreateNew(name)` | valid scheduler | not yet checked |
+| cs4.2-04 | Initial throws: unhandled, scheduler continues | N | initial throws X | `CreateNew(name, ...)` | CreateNew returns S; X itself is logged once, unwrapped; a later Queue runs; Shutdown then ends the thread; `Reactive.Shutdown()` returns promptly | changed 2026-10-25 |
 | cs4.3-01 | Queue never blocks | E | S action blocked on gate | `S.Queue(a)` ×1000 from test thread | returns quickly | not yet checked |
 | cs4.3-02 | Thread ends after Shutdown | P | – | Shutdown; `T(S).Join(5s)` | thread ended | not yet checked |
 | **cs5 WPF Dispatcher scheduler** |||||||
 | cs5.1-01 | No public ctor | P | reflection | – | none | not yet checked |
-| cs5.2-01 | CreateNew initial then dispatcher | P | – | `CreateNew(init)`; Barrier | init on new thread with `Dispatcher.CurrentDispatcher` and Scheduler.Current == S; queued work runs via dispatcher | not yet checked |
-| cs5.2-02 | CreateNew initial throws | N | init throws X | CreateNew | X itself rethrown (unwrapped, cs7.2); X logged once; thread ends without running dispatcher | changed 2026-10-21; not yet checked |
+| cs5.2-01 | CreateNew initial then dispatcher | P | – | `CreateNew(name, init)`; Barrier | init on new thread named `name`, with `Dispatcher.CurrentDispatcher` and Scheduler.Current == S; queued work runs via dispatcher | not yet checked |
+| cs5.2-02 | CreateNew initial throws | N | init throws X | CreateNew(name, ...) | CreateNew returns S; X itself logged once, unwrapped; a later Queue runs on the dispatcher; Shutdown ends the thread | changed 2026-10-25 |
 | cs5.3-01 | AttachToCurrent on dispatcher thread | P | STA thread with Dispatcher | `AttachToCurrent()`; queue work; run dispatcher | work runs on that thread | not yet checked |
 | cs5.3-02 | AttachToCurrent idempotent | P | – | call twice | same instance | not yet checked |
 | cs5.4-01 | Queue hands to dispatcher, non-blocking | E | dispatcher busy in a long message | `S.Queue(a)` from other thread | returns immediately; a runs later on dispatcher thread | not yet checked |

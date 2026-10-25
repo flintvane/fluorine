@@ -831,8 +831,8 @@ namespace Fluorine.Tests
         [Fact]
         public void Rule_11_17_ReactiveShutdownAll()
         {
-            var a = ThreadScheduler.CreateNew();
-            var b = ThreadScheduler.CreateNew();
+            var a = ThreadScheduler.CreateNew("a");
+            var b = ThreadScheduler.CreateNew("b");
             Reactive.Shutdown();
             Assert.True(a.IsFinished);
             Assert.True(b.IsFinished);

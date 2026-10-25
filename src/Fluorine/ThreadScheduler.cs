@@ -8,45 +8,30 @@ namespace Fluorine
     {
         readonly Queue<Action> _queue = new Queue<Action>();
 
-        ThreadScheduler()
+        ThreadScheduler(bool announceImmediately)
+            : base(announceImmediately)
         {
         }
 
-        public static ThreadScheduler CreateNew(Action initial = null)
+        public static ThreadScheduler CreateNew(string name, Action initial = null)
         {
-            Exception error = null;
-            ThreadScheduler created = null;
-            var ready = new ManualResetEventSlim(false);
-            var thread = new Thread(() =>
-            {
-                ThreadScheduler scheduler = null;
-                try
-                {
-                    scheduler = new ThreadScheduler();
-                    initial?.Invoke();
-                    created = scheduler;
-                }
-                catch (Exception ex)
-                {
-                    error = ex;
-                    scheduler?.AbandonBeforeStart();
-                }
-                finally
-                {
-                    ready.Set();
-                }
+            return StartOwnedThread(
+                name,
+                ApartmentState.MTA,
+                typeof(ThreadScheduler),
+                () => new ThreadScheduler(false),
+                (scheduler, action) => scheduler.EnqueueStartup(action),
+                scheduler => scheduler.RunLoop(),
+                initial);
+        }
 
-                if (error != null || scheduler == null)
-                    return;
-                scheduler.RunLoop();
-            });
-            thread.IsBackground = true;
-            thread.Name = "Fluorine ThreadScheduler";
-            thread.Start();
-            ready.Wait();
-            if (error != null)
-                throw error;
-            return created;
+        void EnqueueStartup(Action action)
+        {
+            lock (this)
+            {
+                _queue.Enqueue(action);
+                Monitor.Pulse(this);
+            }
         }
 
         protected override void Schedule(Action action)
@@ -111,12 +96,6 @@ namespace Fluorine
             {
                 Reactive.OnUnhandledException(ex);
             }
-        }
-
-        void AbandonBeforeStart()
-        {
-            RequestShutdown();
-            CompleteShutdown();
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Fluorine.Tests
 
         public ThreadHost(Action initial = null)
         {
-            Scheduler = ThreadScheduler.CreateNew(initial);
+            Scheduler = ThreadScheduler.CreateNew("test", initial);
         }
 
         public Reactor NewReactor()
