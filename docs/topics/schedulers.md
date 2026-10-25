@@ -8,8 +8,8 @@ A scheduler is an event loop that runs reactions, one at a time, on its own thre
 
 | Scheduler | For | How you get one |
 |---|---|---|
-| `ThreadScheduler` | a dedicated thread with its own loop | `ThreadScheduler.CreateNew(initial)` |
-| `DispatcherScheduler` | a WPF `Dispatcher` | `DispatcherScheduler.AttachToCurrent()` or `DispatcherScheduler.CreateNew(initial)` |
+| `ThreadScheduler` | a dedicated thread with its own loop | `ThreadScheduler.CreateNew(name, initial)` |
+| `DispatcherScheduler` | a WPF `Dispatcher` | `DispatcherScheduler.AttachToCurrent()` or `DispatcherScheduler.CreateNew(name, initial)` |
 | `WinFormsScheduler` | the WinForms message loop | `WinFormsScheduler.AttachToCurrent()` |
 
 All derive from the abstract class `Scheduler` (cs 3.1).
@@ -17,14 +17,14 @@ All derive from the abstract class `Scheduler` (cs 3.1).
 ### A loop thread
 
 ```csharp
-Scheduler io = ThreadScheduler.CreateNew(() =>
+Scheduler io = ThreadScheduler.CreateNew("io", () =>
 {
     // Runs on the new thread, with Scheduler.Current already set.
     ioReactor = new Reactor();
 });
 ```
 
-`CreateNew` starts a thread, installs the scheduler there, runs the optional action on it, and returns once the action has finished. The loop then runs on that thread (cs 4.2). If the action throws, the exception goes unwrapped to `Reactive.UnhandledException`, and the scheduler carries on as if the action had completed: `CreateNew` returns it and the loop runs (cs 4.2, 5.2).
+`CreateNew` starts a thread with the given name, so logs and debuggers show which thread is which, installs the scheduler there, runs the optional action on it, and returns once the action has finished. The loop then runs on that thread (cs 4.2). If the action throws, the exception goes unwrapped to `Reactive.UnhandledException`, and the scheduler carries on as if the action had completed: `CreateNew` returns it and the loop runs (cs 4.2, 5.2).
 
 ### WPF
 
