@@ -70,7 +70,7 @@ Sources: `semantics.md` (draft 0.9) and `semantics-cs.md` (draft 0.5). This file
 
 - **Section:** semantics-cs.md 7.1. **Unclear:** console stream; multicast handler failures. **Choice:** `Console.WriteLine`. The multicast is invoked as one call. If it throws, both exceptions are written to the console and the scheduler loop continues. Remaining subscribers are not invoked.
 
-- **Section:** semantics-cs.md 4.2 / 5.2 / 7.1–7.3. **Unclear:** how `CreateNew` reports failures, and where the initial action runs. **Resolved:** now specified in semantics-cs 4.2/5.2 (5d6ba24, 43f20a5). The initial action is the first loop message. Its exception is delivered unwrapped through `Reactive.UnhandledException`, and `CreateNew` returns the scheduler. Any other failure while bringing the scheduler up (for example the platform refusing a dispatcher) passes back to the caller unchanged and is not logged; no `ReactiveException` wrapping (cs5.2 @ 43f20a5). The thread is claimed before its queue or dispatcher is created.
+- **Section:** semantics-cs.md 4.2 / 5.2 / 7.1–7.3. **Unclear:** how `CreateNew` reports failures, and where the initial action runs. **Resolved:** now specified in semantics-cs 4.2/5.2 (5d6ba24, 0103513). The initial action is the first loop message. Its exception is delivered unwrapped through `Reactive.UnhandledException`, and `CreateNew` returns the scheduler. Any other failure while bringing the scheduler up passes back to the caller unchanged and is not logged; no `ReactiveException` wrapping (cs5.2 @ 0103513). The thread is claimed before its queue or dispatcher is created.
 
 ## Logging messages and extra public API
 
