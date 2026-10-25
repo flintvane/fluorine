@@ -166,7 +166,7 @@ The continuation resumes on the captured synchronisation context, usually the UI
 
 ## 11. AutoNotify (WPF)
 
-11.1 `AutoNotify` is an abstract class that implements `INotifyPropertyChanged` and `IDisposable`. Its constructor `AutoNotify()` creates the reactor of the object on `Scheduler.Current`, the scheduler of the thread on which the constructor runs, as `Reactor()` does (2.2). An implementation may let `AutoNotify` derive from `Reactor`.
+11.1 `AutoNotify` is an abstract class that implements `INotifyPropertyChanged` and `IDisposable`. Its constructor `AutoNotify()` creates the reactor of the object on current scheduler. An implementation may let `AutoNotify` derive from `Reactor`.
 11.2 `[AutoNotify]` (`AutoNotifyAttribute`) marks a property of a class derived from `AutoNotify`. A marked property stays marked in derived classes, including overrides. A property declared with `new` hides it and is marked only if it carries `[AutoNotify]` itself.
 11.3 For every marked property, one reaction is added to that reactor. It reads the getter of the property. It runs on the scheduler of the reactor (2.2, 2.3), so `PropertyChanged` is raised on the thread of that scheduler.
 11.4 The first run of such a reaction is queued, so it happens after the constructor of the derived class has finished. It records its reads and the value of the getter, and raises nothing, as `INotifyPropertyChanged` notifies only on change. A later run raises `PropertyChanged` with the name of the property when the getter returns a value that differs from the previous one (`Equals`), and stores the new value.
