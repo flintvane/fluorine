@@ -153,7 +153,7 @@ The continuation resumes on the captured synchronisation context, usually the UI
 | Passing a null scheduler to a reactor | `Reactor(Scheduler)` | 2.3 |
 | Ending a pause that was not started | `Reaction.ContinueRecording()` at a pause count of zero | 2.20 |
 | Shutting down a scheduler from inside a reaction | `Scheduler.Shutdown()` | 3.8 |
-| A second scheduler on a thread | `CreateNew`, `AttachToCurrent` of another type | 3.13 |
+| Attempting to create a second scheduler on a thread | `CreateNew`, `AttachToCurrent` of another type | 3.13 |
 | Starting a reaction while another one runs on the same thread | `Reaction.Run()`, through a nested pump | 3.16 |
 | A null or empty thread name | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | 4.2, 5.2 |
 | Attaching WinForms where there is no WinForms context | `WinFormsScheduler.AttachToCurrent()` | 6.1 |
