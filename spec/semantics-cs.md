@@ -82,7 +82,7 @@ The classes below are the standard realisation of a register. Other storage mode
 3.4 A derived scheduler implements the protected abstract `Schedule(Action)`, which places an item in its queue to be executed on its own thread. `Queue(Action)` and `Queue(Reaction)` hand their work to `Schedule`. A queued reaction is run through the protected `Run(Reaction)` of the base class, which runs the reaction synchronously. This is the only way for a scheduler to run a reaction; `Reaction.Run()` itself is internal to the library.
 3.5 `Reaction.Run()` runs the lambda, during which all reads are recorded. Afterwards, the reaction is disconnected from all registers that it no longer read (7.3). An exception from the lambda is handled as in 8.1.
 3.6 The scheduler of a thread is a thread-static, `Scheduler.Current`. A scheduler installs itself on its own thread (11.3). When its shutdown has finished, it removes itself from that thread, so `Scheduler.Current` is null there afterwards. During the shutdown it stays installed, because the reactions that are drained still run on it.
-3.7 Starting the event loop is done explicitly by the user. A scheduler that owns its loop offers its own `Run()`, and a Dispatcher-based scheduler defers to the Dispatcher. A scheduler that joins an existing loop has no `Run()`. The base class has no `Run()` that starts an event loop.
+3.7 The loop of a scheduler created by `CreateNew` runs from its creation on (4.2, 5.2). A scheduler that attaches to an existing loop uses that loop (5.3, 6.1).
 3.8 `Scheduler.Shutdown()` returns when all queued reactions and all queued actions have run, and all reactors of the scheduler have been disposed (11.15, 11.16), so that their reactions are disconnected (2.11). It can be called from any thread. Called from inside a reaction, paused or not, it throws `ReactiveException` (15.2). Called on the thread of the scheduler itself, outside a reaction, it processes what is still open before it returns. A second call to `Shutdown()` on the same scheduler starts nothing new and returns when the shutdown has finished.
 3.9 The base class `Scheduler` announces every scheduler to the static class `Reactive`. The user does not register schedulers manually.
 3.10 Schedulers are not light-weight. Their lifetime is intended to be the lifetime of the application, and one scheduler may serve many reactors.
@@ -93,7 +93,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 **Nesting**
 3.15 Nested message pumps are prohibited on every scheduler. A reaction runs no message pump (10.3). At most one reaction runs per thread (10.4).
-3.16 `Reaction.Run()` on a thread where another reaction is running does not start the reaction and throws `ReactiveException` (10.4). This is a serious scheduler error with no recovery: the state of the refused reaction afterwards is undefined.
+3.16 `Reaction.Run()` on a thread where another reaction is running does not start the reaction and throws `ReactiveException` (10.4). This is a serious scheduler error with no recovery: the state of the refused reaction afterwards, and where the exception ends up when the running reaction does not catch it, are undefined.
 
 ## 4. Thread scheduler
 
@@ -142,6 +142,8 @@ After the first suspension an exception is no longer handled by the reaction. In
 The continuation resumes on the captured synchronisation context, usually the UI thread, in a separate message dispatch. No reaction is running there, so `Reaction.Current` is null.
 
 9.2 **Detaching the reactions of a shutdown.** Disposing a reaction normally queues a run with a null lambda, and that run detaches the reaction from its registers (2.17). During a shutdown no new runs are queued (3.2), yet the shutdown disposes all reactors (3.8). This is not a contradiction. The reactors are disposed only after everything that was queued has run, so nothing is left to do except cut the links to the registers. The shutdown therefore detaches those reactions from their registers directly, without a queued run.
+
+9.3 **A `Dispose` that throws.** Disposing the old value of a computed value (8.6) is user code, run inside a reaction. An exception from it is handled like any other exception of a reaction (8.1), and Fluorine does nothing special about it. Whatever that `Dispose` left undone stays undone; covering for it is up to the author of the value.
 
 ## 10. Errors
 
