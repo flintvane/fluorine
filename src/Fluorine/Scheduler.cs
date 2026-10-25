@@ -58,15 +58,15 @@ namespace Fluorine
         internal bool HasStartedShutdown => Volatile.Read(ref _state) >= StateShuttingDown;
 
         internal bool IsFinished => Volatile.Read(ref _state) == StateFinished;
-    
+
         /// <summary>
         /// This redirect allows the author of a scheduler, to perform the effective run of a reaction
         /// It is here to hide the internal Reaction.Run, which might otherwise be abused by the API
         /// users
         /// </summary>
-        protected void Run(Reaction reaction) 
+        protected void Run(Reaction reaction)
             => reaction.Run();
-        
+
         public void Queue(Action action)
         {
             if (action == null)
@@ -78,7 +78,7 @@ namespace Fluorine
         {
             if (reaction == null)
                 return;
-            Schedule(()=> Run(reaction));
+            Schedule(() => Run(reaction));
         }
 
         public void Shutdown()
@@ -106,6 +106,7 @@ namespace Fluorine
                     return;
                 _state = StateShuttingDown;
             }
+
             OnShutdownRequested();
         }
 
@@ -213,9 +214,6 @@ namespace Fluorine
         internal void Publish()
         {
             var thread = _ownerThread;
-            if (thread == null || t_current != this)
-                throw new ReactiveException("Could not create the scheduler.");
-
             lock (StaticLock)
             {
                 if (ByThread.TryGetValue(thread, out var mapped) && mapped != this)
@@ -298,11 +296,11 @@ namespace Fluorine
                         error = ex;
                         try
                         {
-                            if (scheduler != null)
-                                scheduler.AbandonUnstarted();
+                            scheduler?.AbandonUnstarted();
                         }
-                        catch (Exception)
+                        catch (Exception nested)
                         {
+                            error = new AggregateException(ex, nested);
                         }
 
                         ReleaseClaim();
@@ -322,8 +320,9 @@ namespace Fluorine
                             if (!scheduler.IsFinished)
                                 scheduler.AbandonUnstarted();
                         }
-                        catch (Exception)
+                        catch (Exception e2)
                         {
+                            Reactive.OnUnhandledException(e2);
                         }
 
                         if (!ready.IsSet)
