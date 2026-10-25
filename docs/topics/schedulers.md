@@ -90,7 +90,7 @@ ui.Add(() => resultLabel.Text = result.Value);
 - takes part in shutdown through the overridable `OnShutdownRequested()`, `DrainOnOwnerThread()` and `OnShutdownFinished()`, and uses `AcceptWork()` and `CompleteShutdown()` to follow the rules of [Shutting down](shutdown.md);
 - runs user actions through `RunUserAction(Action)`, which logs their exceptions.
 
-The scheduler runs a reaction through the protected `Run(Reaction)` of the base class, synchronously, on its own thread (cs 3.4). `Queue(Reaction)` passes exactly that call to `Schedule`. Starting the loop is up to the scheduler and its user: a scheduler that owns its loop offers its own `Run()`, and one that joins an existing loop uses that loop (cs 3.7). `ThreadScheduler` in the source is a compact example of all of these.
+The scheduler runs a reaction through the protected `Run(Reaction)` of the base class, synchronously, on its own thread (cs 3.4). `Queue(Reaction)` passes exactly that call to `Schedule`. The loop of a scheduler created by `CreateNew` runs from its creation on. A scheduler that attaches to an existing loop uses that loop (cs 3.7). `ThreadScheduler` in the source is a compact example of all of these.
 
 ---
 
