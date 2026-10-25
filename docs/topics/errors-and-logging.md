@@ -33,11 +33,12 @@ Errors in how the library is used throw `ReactiveException` to the caller, as or
 
 - `new Reactor()` on a thread without a scheduler, or `new Reactor(null)`;
 - a second scheduler on a thread that already has one;
+- `CreateNew` with a null or empty name, or a scheduler that fails to start (cs 5.2);
 - `Shutdown()` from inside a reaction;
 - a reaction starting while another runs on the same thread (see [Rules of thumb](rules-of-thumb.md));
 - `ContinueRecording()` with a pause count of zero.
 
-Logging through `Reactive.UnhandledException` is for exceptions from user code that has no caller to receive them: an unhandled exception from a reaction, from a queued action, or from a scheduler's `CreateNew` initial action (cs 7.3, 4.2, 5.2).
+Logging through `Reactive.UnhandledException` is for exceptions from user code that has no caller to receive them: an unhandled exception from a reaction, from a queued action, or from a scheduler's `CreateNew` initial action (cs 7.3, 5.2).
 
 ## Writes and triggers
 

@@ -24,7 +24,11 @@ Scheduler io = ThreadScheduler.CreateNew("io", () =>
 });
 ```
 
-`CreateNew` starts a thread with the given name, so logs and debuggers show which thread is which, installs the scheduler there, runs the optional action on it, and returns once the action has finished. The loop then runs on that thread (cs 4.2). If the action throws, the exception goes unwrapped to `Reactive.UnhandledException`, and the scheduler carries on as if the action had completed: `CreateNew` returns it and the loop runs (cs 4.2, 5.2).
+`CreateNew` starts a thread with the given name, so logs and debuggers show which thread is which, and installs the scheduler there. The name must be non-empty; a null or empty name throws `ReactiveException` before any thread exists (cs 5.2).
+
+The optional action is the first message the new scheduler runs. Nothing runs before it, including work from `Reactive.Shutdown`. `CreateNew` returns the scheduler once the action has finished, and the loop keeps running on that thread (cs 4.2, 5.2).
+
+If the action throws, the exception goes unwrapped to `Reactive.UnhandledException`, and `CreateNew` still returns the scheduler. Any other failure while the scheduler starts throws `ReactiveException` to you, unlogged, and no scheduler remains for that thread. Exceptions from the platform while it creates or starts the thread propagate unchanged (cs 5.2, §1.8).
 
 ### WPF
 
