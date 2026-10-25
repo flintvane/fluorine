@@ -37,7 +37,7 @@ Errors in how the library is used throw `ReactiveException` to the caller, as or
 - a reaction starting while another runs on the same thread (see [Rules of thumb](rules-of-thumb.md));
 - `ContinueRecording()` with a pause count of zero.
 
-Logging through `Reactive.UnhandledException` is for exceptions from user code that has no caller to receive them: an unhandled exception from a reaction or from a queued action (cs 7.3).
+Logging through `Reactive.UnhandledException` is for exceptions from user code that has no caller to receive them: an unhandled exception from a reaction, from a queued action, or from a scheduler's `CreateNew` initial action (cs 7.3, 4.2, 5.2).
 
 ## Writes and triggers
 
