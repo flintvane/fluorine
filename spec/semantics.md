@@ -213,6 +213,6 @@ Example: a label on screen shows a person's full name. `first` and `last` are re
 
 15.1 All unhandled exceptions from reactions must be logged. An exception that reaches the event loop is logged as a programming error. Where the log goes is left to the platform.
 15.2 Errors in how the library is used are programming errors that are thrown to the caller as ordinary exceptions and are not logged: creating a reactor without a scheduler (11.4), requesting a shutdown from inside a reaction (11.16), starting a reaction while another one is running (10.4), and ending a pause more often than it was started (15.5). Logging is for exceptions from user code that has no caller to receive them (15.1).
-15.3 An implementation may provide an execution counter per reaction (for example in debug mode). Its only purpose is to show how often something ran. It never stops anything.
-15.4 Reactions and registers may be named, for logs and diagnostics.
+15.3 Each reaction has an execution counter that shows how often it ran. It never stops anything.
+15.4 Reactions and registers may be named, for logs and debugging. Names are always kept.
 15.5 Ending a pause more often than it was started is a programming error, and an exception is thrown to the caller (9.3, 15.2).

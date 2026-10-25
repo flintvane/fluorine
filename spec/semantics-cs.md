@@ -23,8 +23,8 @@ The classes below are the standard realisation of a register. Other storage mode
 1.6 `Register<T>` has an empty constructor. It initializes the backing value with `default(T)` (3.1a).
 1.7 `Register<T>` has a constructor that takes an initial value. The value is stored without triggering anything.
 1.8 `Value` is a property. The getter calls `RecordRead()` and then returns the stored value. The setter performs a write as described in 3.1b.
-1.9 `Register.Name` is a settable property, for logs and diagnostics (15.4). There is no constructor that takes a name.
-1.10 The name need not be retained when the library does not run in diagnostics mode.
+1.9 `Register.Name` is a settable property, for logs and debugging (15.4). There is no constructor that takes a name.
+1.10 The name is always kept.
 1.11 Registers can be inherited. `Value`, `RecordRead()` and `TriggerReactions()` are not virtual.
 1.12 The backing value of the `Value` property is protected. It is only available to inheritors that want to specialize further.
 1.13 The constructors, and the getter and setter of `Value`, can be called from any thread.
@@ -45,7 +45,7 @@ The classes below are the standard realisation of a register. Other storage mode
 2.2 `Reactor()` creates a reactor on `Scheduler.Current`, captured at creation (11.2). When the calling thread has no scheduler, it throws `ReactiveException` (11.4, 15.2).
 2.3 `Reactor(Scheduler scheduler)` creates a reactor on the given scheduler. Passing null throws `ReactiveException` (15.2).
 2.4 A reactor created on a scheduler that has started its shutdown or has shut down is created without an error, and it behaves as a disposed reactor: `Add` creates nothing and returns null (2.9, 11.15).
-2.5 `Reactor.Name` is a settable property, for logs and diagnostics. There is no constructor that takes a name.
+2.5 `Reactor.Name` is a settable property, for logs and debugging. There is no constructor that takes a name.
 
 **Creating reactions**
 2.6 Reactions are only created through a reactor. `Reaction` has no public constructor.
@@ -62,7 +62,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 **Reaction**
 2.15 `Reaction.Trigger()` queues a run on the scheduler of the reaction and returns immediately (4.6). It raises no exception of its own (1.8), and on a disposed reaction it does nothing (12.6).
-2.16 `Reaction.Name` is the name given to `Add` (15.4). The name need not be retained when the library does not run in diagnostics mode.
+2.16 `Reaction.Name` is the name given to `Add` (15.4).
 2.17 `Reaction.Dispose()` sets the lambda to null and queues the reaction as a normal run. The run with the null lambda reads nothing, so dependency maintenance (7.3) detaches the reaction from all its registers (14.5). It can be called from any thread, and disposing twice is harmless (12.6).
 2.18 `Reaction.Current` is a public static property. It returns the reaction that is running on this thread, whether it is paused or not, or null when none is running. Reads are attributed to it while `Reaction.IsRecording` is true (1.3).
 
@@ -119,8 +119,7 @@ The classes below are the standard realisation of a register. Other storage mode
 7.1 "Logged" (15.1) means that the error is raised through `Reactive.UnhandledException`, a public static event of type `Action<Exception>`. When no handler is attached, a warning is written to the console. When a handler itself throws, a warning with both the original error and the handler's exception is written to the console, and the loop continues, so a faulty handler cannot stop a loop.
 7.2 `ReactiveException` is used only for errors in how the library is used, which Fluorine detects itself: creating a reactor without a scheduler (2.2, 2.3), a second scheduler on a thread (3.13, 6.1), a shutdown from inside a reaction (3.8), a reaction starting while another one is running (3.16), and `ContinueRecording()` with a pause count of zero (2.20). It is thrown to the caller as an ordinary exception and is not logged. It derives from `Exception` and has the usual constructors: `ReactiveException()`, `ReactiveException(string message)` and `ReactiveException(string message, Exception inner)`. An exception thrown by a reaction or by a queued action is user code and is logged as it is, without wrapping. There are three sources of exceptions: the platform (the .NET libraries), Fluorine itself, and user code (everything the user writes with Fluorine, including an overridden `Schedule`). Only errors in the use of Fluorine are `ReactiveException`; platform and user exceptions pass through as they are.
 7.3 Only exceptions from user code that has no caller to receive them are logged: an unhandled exception from a reaction, from a queued action (15.1, 3.3), or from the initial action of `CreateNew` (5.2).
-7.4 `Reaction.ExecutionCount` returns how often the reaction has run (15.3). It is for monitoring only: it can be read at any time, and it never changes how anything behaves. The library may compile it only into debug builds (`#if DEBUG`), so code that must also build against a release library does not rely on it.
-7.5 What diagnostics mode is, and how it is switched on, is up to the implementation.
+7.4 `Reaction.ExecutionCount` returns how often the reaction has run (15.3). It is for monitoring only: it can be read at any time, and it never changes how anything behaves.
 
 ## 8. Computed values
 
