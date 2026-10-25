@@ -33,7 +33,7 @@ Errors in how the library is used throw `ReactiveException` to the caller, as or
 
 - `new Reactor()` on a thread without a scheduler, or `new Reactor(null)`;
 - a second scheduler on a thread that already has one;
-- `CreateNew` with a null or empty name, or a scheduler that fails to start (cs 5.2);
+- `CreateNew` with a null or empty name (cs 5.2);
 - `Shutdown()` from inside a reaction;
 - a reaction starting while another runs on the same thread (see [Rules of thumb](rules-of-thumb.md));
 - `ContinueRecording()` with a pause count of zero.
