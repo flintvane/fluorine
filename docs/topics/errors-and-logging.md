@@ -37,7 +37,7 @@ ReactiveException signals an issue with the usage of the Fluorine library. It is
 | Passing a null scheduler to a reactor | `new Reactor(null)` | cs 2.3 |
 | Ending a pause that was not started | `ContinueRecording()` at a pause count of zero | cs 2.20 |
 | Shutting down a scheduler from inside a reaction | `Scheduler.Shutdown()` | cs 3.8 |
-| A second scheduler on a thread | `CreateNew`, or `AttachToCurrent` of another type | cs 3.13 |
+| Attempting to create a second scheduler on a thread | `CreateNew`, or `AttachToCurrent` of another type | cs 3.13 |
 | Starting a reaction while another one runs on the same thread (see [Rules of thumb](rules-of-thumb.md)) | the nested reaction start | cs 3.16 |
 | A null or empty thread name | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | cs 4.2, 5.2 |
 | Attaching WinForms on a thread without a WinForms context | `WinFormsScheduler.AttachToCurrent()` | cs 6.1 |
