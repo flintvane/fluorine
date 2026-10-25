@@ -41,7 +41,6 @@ ReactiveException signals an issue with the usage of the Fluorine library. It is
 | Attempting to create a second scheduler on a thread | `CreateNew`, or `AttachToCurrent` of another type | cs 3.13 |
 | Starting a reaction while another one runs on the same thread (see [Rules of thumb](rules-of-thumb.md)) | the nested reaction start | cs 3.16 |
 | A null or empty thread name | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | cs 4.2, 5.2 |
-| A thread or scheduler that cannot be brought up, with the original exception as `InnerException` | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | cs 5.2 |
 | Attaching WinForms on a thread without a WinForms context | `WinFormsScheduler.AttachToCurrent()` | cs 6.1 |
 
 Every other exception, from the .NET libraries or from your own code, including an overridden `Schedule`, keeps its own type. It reaches its caller, or `Reactive.UnhandledException`, as it is (cs 7.2).
