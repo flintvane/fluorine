@@ -46,7 +46,7 @@ Triggering and queueing raise no exceptions of their own (§1.8). An exception f
 
 ## Execution count
 
-`Reaction.ExecutionCount` returns how often a reaction has run, for monitoring (cs 7.4). It may be compiled into debug builds only, so use it in diagnostics code, and keep it out of application logic.
+`Reaction.ExecutionCount` returns how often a reaction has run, for monitoring (cs 7.4). It is always available and never changes how anything behaves.
 
 *Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: Errors](side-by-side/errors.md).*
 

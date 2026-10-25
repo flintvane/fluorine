@@ -54,9 +54,7 @@ if (image.SetValue(LoadBitmap(path), out old) && old != null)
 title.Name = "page title";
 ```
 
-`Name` is a settable property used in logs and diagnostics (cs 1.9).
-
-> **TODO** (cs 1.10): names "need not be retained" outside diagnostics mode, and diagnostics mode is not yet defined (cs 7.5).
+`Name` is a settable property used in logs and debugging (cs 1.9). The name is always kept (cs 1.10).
 
 ## Deriving from a register
 
