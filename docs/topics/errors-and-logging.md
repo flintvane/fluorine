@@ -25,7 +25,7 @@ Reactive.UnhandledException += ex =>
 - With no handler attached, a warning is written to the console.
 - When a handler throws, both errors are written to the console, and the loop continues.
 
-An exception thrown by a reaction or by a queued action is passed as it is, unwrapped. `ReactiveException` is the type of the errors Fluorine itself detects (cs 7.2).
+An exception thrown by a reaction, by a queued action or by a `CreateNew` initial action is passed as it is, unwrapped. `ReactiveException` is the type of the errors Fluorine itself detects (cs 7.2).
 
 ## Programming errors
 
