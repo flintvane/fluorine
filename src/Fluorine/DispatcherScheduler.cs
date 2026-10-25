@@ -134,8 +134,7 @@ namespace Fluorine
             t_executing++;
             try
             {
-                if (action != null)
-                    action();
+                action?.Invoke();
             }
             catch (Exception ex)
             {

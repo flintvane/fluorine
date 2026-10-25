@@ -12,49 +12,32 @@ namespace Fluorine
     {
     }
 
-    public abstract class AutoNotify : INotifyPropertyChanged, IDisposable
+    public class AutoNotify : Reactor, INotifyPropertyChanged
     {
         static readonly Dictionary<MethodInfo, Func<object, object>> Getters =
             new Dictionary<MethodInfo, Func<object, object>>();
 
-        readonly Reactor _reactor;
-        readonly object _gate = new object();
         PropertyChangedEventHandler _propertyChanged;
         int _wired;
-        int _disposed;
-
-        protected AutoNotify()
-        {
-            _reactor = new Reactor();
-        }
 
         public event PropertyChangedEventHandler PropertyChanged
         {
             add
             {
-                lock (_gate)
+                lock (this)
                     _propertyChanged += value;
                 Wire();
             }
             remove
             {
-                lock (_gate)
+                lock (this)
                     _propertyChanged -= value;
             }
-        }
-
-        public void Dispose()
-        {
-            if (Interlocked.Exchange(ref _disposed, 1) != 0)
-                return;
-            _reactor.Dispose();
         }
 
         // 9.4: the reactions exist only once something listens.
         void Wire()
         {
-            if (Volatile.Read(ref _disposed) != 0)
-                return;
             if (Interlocked.CompareExchange(ref _wired, 1, 0) != 0)
                 return;
 
@@ -114,7 +97,7 @@ namespace Fluorine
         {
             object previous = null;
             var hasValue = false;
-            _reactor.Add(name, () =>
+            Add(name, () =>
             {
                 var value = read(this);
                 if (!hasValue)
@@ -124,12 +107,12 @@ namespace Fluorine
                     return;
                 }
 
-                if (object.Equals(previous, value))
+                if (Equals(previous, value))
                     return;
 
                 previous = value;
                 PropertyChangedEventHandler handler;
-                lock (_gate)
+                lock (this)
                     handler = _propertyChanged;
                 handler?.Invoke(this, new PropertyChangedEventArgs(name));
             });

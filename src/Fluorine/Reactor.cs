@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Fluorine
 {
-    public sealed class Reactor : IDisposable
+    public class Reactor : IDisposable
     {
         readonly Scheduler _scheduler;
         readonly HashSet<Reaction> _reactions = new HashSet<Reaction>();
@@ -76,7 +76,7 @@ namespace Fluorine
             });
         }
 
-        public void Dispose()
+        virtual public void Dispose()
         {
             DisposeCore(false);
         }

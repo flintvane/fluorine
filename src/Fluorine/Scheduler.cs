@@ -278,8 +278,7 @@ namespace Fluorine
                         {
                             try
                             {
-                                if (initial != null)
-                                    initial();
+                                initial?.Invoke();
                             }
                             catch (Exception ex)
                             {
