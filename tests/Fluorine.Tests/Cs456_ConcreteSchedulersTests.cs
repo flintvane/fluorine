@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 using System.Threading;
-using System.Windows.Threading;
 using Xunit;
 
 namespace Fluorine.Tests
@@ -19,7 +18,7 @@ namespace Fluorine.Tests
         public void Rule_4_2_CreateNewRunsInitialThenLoopAndRethrows()
         {
             Scheduler seen = null;
-            var s = ThreadScheduler.CreateNew(() => seen = Scheduler.Current);
+            var s = ThreadScheduler.CreateNew("Rule_4_2",() => seen = Scheduler.Current);
             try
             {
                 Assert.Same(s, seen);
@@ -35,7 +34,7 @@ namespace Fluorine.Tests
             try
             {
                 var ex = Assert.Throws<InvalidOperationException>(() =>
-                    ThreadScheduler.CreateNew(() => { throw new InvalidOperationException("init"); }));
+                    ThreadScheduler.CreateNew("4_2_b",() => throw new InvalidOperationException("init")));
                 Assert.Equal("init", ex.Message);
                 Assert.NotNull(logged);
             }
@@ -49,9 +48,9 @@ namespace Fluorine.Tests
         public void Rule_4_3_QueueNeverBlocksAndShutdownEndsThread()
         {
             Thread owner = null;
-            var s = ThreadScheduler.CreateNew(() => owner = Thread.CurrentThread);
+            var s = ThreadScheduler.CreateNew("Rule_4_3",() => owner = Thread.CurrentThread);
             var entered = new ManualResetEventSlim(false);
-            s.Queue(() => entered.Set());
+            s.Queue(entered.Set);
             WaitUntil.Event(entered, "queued");
             s.Shutdown();
             WaitUntil.True(() => !owner.IsAlive, "thread ended");
@@ -72,7 +71,7 @@ namespace Fluorine.Tests
             try
             {
                 Scheduler seen = null;
-                var s = DispatcherScheduler.CreateNew(() => seen = Scheduler.Current);
+                var s = DispatcherScheduler.CreateNew("Rule_5_2",() => seen = Scheduler.Current);
                 try
                 {
                     Assert.Same(s, seen);
@@ -99,7 +98,7 @@ namespace Fluorine.Tests
             {
                 DispatcherScheduler first = null;
                 DispatcherScheduler second = null;
-                var s = DispatcherScheduler.CreateNew(() =>
+                var s = DispatcherScheduler.CreateNew("Rule_5_3", () =>
                 {
                     first = DispatcherScheduler.AttachToCurrent();
                     second = DispatcherScheduler.AttachToCurrent();
@@ -126,7 +125,7 @@ namespace Fluorine.Tests
         {
             try
             {
-                var s = DispatcherScheduler.CreateNew();
+                var s = DispatcherScheduler.CreateNew("Rule_5_4");
                 try
                 {
                     var n = 0;
@@ -157,7 +156,7 @@ namespace Fluorine.Tests
             Reactive.UnhandledException += h;
             try
             {
-                Assert.Throws<ReactiveException>(() => WinFormsScheduler.AttachToCurrent());
+                Assert.Throws<ReactiveException>(WinFormsScheduler.AttachToCurrent);
                 Assert.IsType<ReactiveException>(seen);
             }
             finally
@@ -184,7 +183,7 @@ namespace Fluorine.Tests
         [Fact]
         public void Rule_6_2_UserContextIsNotSupported()
         {
-            Assert.Throws<ReactiveException>(() => WinFormsScheduler.AttachToCurrent());
+            Assert.Throws<ReactiveException>(WinFormsScheduler.AttachToCurrent);
         }
 
         [Fact]
@@ -221,7 +220,7 @@ namespace Fluorine.Tests
             {
                 using (var host = new ThreadHost())
                 {
-                    host.NewReactor().Add(() => { throw new InvalidOperationException("rx"); });
+                    host.NewReactor().Add(() => throw new InvalidOperationException("rx"));
                     WaitUntil.True(() => seen != null, "logged");
                     Assert.IsType<ReactiveException>(seen);
                 }

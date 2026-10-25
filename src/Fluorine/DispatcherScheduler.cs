@@ -19,43 +19,34 @@ namespace Fluorine
             _ownsDispatcher = ownsDispatcher;
         }
 
-        public static DispatcherScheduler CreateNew(Action initial = null)
+        public static DispatcherScheduler CreateNew(string name, Action initial = null)
         {
-            Exception error = null;
             DispatcherScheduler created = null;
             var ready = new ManualResetEventSlim(false);
             var thread = new Thread(() =>
             {
-                DispatcherScheduler scheduler = null;
                 try
                 {
                     var dispatcher = Dispatcher.CurrentDispatcher;
-                    scheduler = new DispatcherScheduler(dispatcher, true);
-                    if (initial != null)
-                        initial();
+                    var scheduler = new DispatcherScheduler(dispatcher, true);
+                    initial?.Invoke();
                     created = scheduler;
+                    ready.Set();
                 }
                 catch (Exception ex)
                 {
-                    error = ex;
-                    scheduler?.AbandonBeforeStart();
+                    Reactive.OnUnhandledException(ex);
                 }
                 finally
                 {
                     ready.Set();
                 }
-
-                if (error != null || scheduler == null)
-                    return;
                 Dispatcher.Run();
             });
             thread.IsBackground = true;
-            thread.Name = "Fluorine DispatcherScheduler";
-            thread.SetApartmentState(ApartmentState.STA);
+            thread.Name = name;
             thread.Start();
             ready.Wait();
-            if (error != null)
-                throw error;
             return created;
         }
 

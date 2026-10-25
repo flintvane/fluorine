@@ -12,40 +12,33 @@ namespace Fluorine
         {
         }
 
-        public static ThreadScheduler CreateNew(Action initial = null)
+        public static ThreadScheduler CreateNew(string name, Action initial = null)
         {
-            Exception error = null;
             ThreadScheduler created = null;
             var ready = new ManualResetEventSlim(false);
             var thread = new Thread(() =>
             {
-                ThreadScheduler scheduler = null;
                 try
                 {
-                    scheduler = new ThreadScheduler();
+                    var scheduler = new ThreadScheduler();
                     initial?.Invoke();
                     created = scheduler;
+                    ready.Set();
+                    scheduler.RunLoop();
                 }
                 catch (Exception ex)
                 {
-                    error = ex;
-                    scheduler?.AbandonBeforeStart();
+                    Reactive.OnUnhandledException(ex);
                 }
                 finally
                 {
                     ready.Set();
                 }
-
-                if (error != null || scheduler == null)
-                    return;
-                scheduler.RunLoop();
             });
             thread.IsBackground = true;
-            thread.Name = "Fluorine ThreadScheduler";
+            thread.Name = name;
             thread.Start();
             ready.Wait();
-            if (error != null)
-                throw error;
             return created;
         }
 
