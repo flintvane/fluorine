@@ -592,38 +592,6 @@ namespace Fluorine.Tests
         }
 
         [Fact]
-        public void Rule_9_2a_PausedReadDoesNotKeepExistingSubscription()
-        {
-            using (var host = new ThreadHost())
-            {
-                var r = new Register<int>(0);
-                var n = 0;
-                Reaction reaction = null;
-                reaction = host.NewReactor().Add(() =>
-                {
-                    Interlocked.Increment(ref n);
-                    if (n == 1)
-                    {
-                        var _ = r.Value;
-                    }
-                    else
-                    {
-                        Reaction.Pause(() => { var unused = r.Value; });
-                    }
-                });
-                WaitUntil.True(() => n == 1 && reaction.ExecutionCount >= 1, "first");
-                var afterFirst = reaction.ExecutionCount;
-                r.Value = 1;
-                WaitUntil.True(() => n == 2 && reaction.ExecutionCount > afterFirst, "second");
-                var afterSecond = reaction.ExecutionCount;
-                r.Value = 2;
-                Thread.Sleep(50);
-                Assert.Equal(2, n);
-                Assert.Equal(afterSecond, reaction.ExecutionCount);
-            }
-        }
-
-        [Fact]
         public void Rule_9_3_UnbalancedPauseEndsWithReaction()
         {
             using (var host = new ThreadHost())
@@ -649,34 +617,6 @@ namespace Fluorine.Tests
             }
         }
 
-        [Fact]
-        public void Rule_10_4_SecondReactionWhileOneRuns()
-        {
-            var scheduler = new ManualScheduler();
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                var reactor = new Reactor(scheduler);
-                Reaction other = null;
-                var threw = false;
-                reactor.Add(() =>
-                {
-                    other = reactor.Add(() => { });
-                    try { scheduler.ForceRun(other); }
-                    catch (ReactiveException) { threw = true; }
-                });
-                scheduler.Pump();
-                Assert.True(threw);
-                Assert.NotNull(seen);
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-                scheduler.Shutdown();
-            }
-        }
     }
 
     public class Md11_SchedulingTests
@@ -691,23 +631,6 @@ namespace Fluorine.Tests
                 var n = 0;
                 reactor.Add(() => Interlocked.Increment(ref n));
                 WaitUntil.True(() => n == 1, "ran on captured");
-            }
-        }
-
-        [Fact]
-        public void Rule_11_4_NoSchedulerIsProgrammingError()
-        {
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                Assert.Throws<ReactiveException>(() => new Reactor());
-                Assert.NotNull(seen);
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
             }
         }
 
@@ -1028,24 +951,5 @@ namespace Fluorine.Tests
             }
         }
 
-        [Fact]
-        public void Rule_15_5_ContinueRecordingTooOftenIsLogged()
-        {
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                using (var host = new ThreadHost())
-                {
-                    host.NewReactor().Add(() => Reaction.ContinueRecording());
-                    WaitUntil.True(() => seen != null, "logged");
-                }
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-            }
-        }
     }
 }

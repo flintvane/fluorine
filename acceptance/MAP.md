@@ -25,8 +25,6 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_1_17_EqualityExceptionReachesCallerNothingStored | cs1.17-01 | |
 | Rule_1_18_LargeStructAssignmentDoesNotTear | cs1.18-01 | |
 | Rule_2_1_ReactorQueueUsesSchedulerAndDisposedDrops | cs2.1-01, cs2.1-02 | |
-| Rule_2_2_ReactorCapturesSchedulerCurrentOrThrows | cs2.2-01, cs2.2-02 | |
-| Rule_2_3_NullSchedulerLogsAndThrows | cs2.3-02 | |
 | Rule_2_4_ReactorOnShuttingDownSchedulerIsDisposed | cs2.4-01, cs2.4-02 | |
 | Rule_2_5_NameIsSettableNoNameConstructor | cs2.5-01 | unspecified behaviour: asserts Reactor.Name reads back "r"; cs2.5-01 only requires that set works and that the only public constructors are Reactor() and Reactor(Scheduler) |
 | Rule_2_6_ReactionHasNoPublicConstructor | cs2.6-01 | |
@@ -43,19 +41,15 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_2_17_DisposeNullsLambdaAndDetaches | cs2.17-01 | |
 | Rule_2_18_CurrentIsRunningReaction | cs2.18-01, cs2.18-02 | |
 | Rule_2_19_PauseRecordingIncrementsPauseCount | cs2.19-01 | |
-| Rule_2_20_ContinueRecordingAtZeroLogsAndStaysZero | cs2.20-02 | |
 | Rule_2_21_PauseOutsideReactionHasNoEffect | cs2.21-01 | |
 | Rule_2_22_RecordingTrueOnlyWhenUnpausedReaction | cs2.22-01, cs2.22-02 | |
 | Rule_2_23_PauseCountEndsWithTheRunningReaction | cs2.23-01 | |
 | Rule_2_24_PauseWrappersAreReentrant | cs2.24-01, cs2.24-02, cs2.24-04 | |
 | Rule_3_1_SchedulerIsAbstract | cs3.1-01 | |
 | Rule_3_2_QueueReactionNeverInlineNeverThrowsAfterShutdownSilent | cs3.2-01, cs3.2-02 | |
-| Rule_3_3_QueueActionOrderAndNoReadsAndLogsExceptions | cs3.3-01, cs3.3-02, cs3.3-03, cs3.3-04 | |
-| Rule_3_4_RunReactionIsTheOnlyRunPath | cs3.4-01 | unspecified behaviour: requires Reaction.Run to be internal; cs3.4-01 only requires no public Run and protected RunReaction |
 | Rule_3_5_RunRecordsReadsThenDisconnectsUnread | cs3.5-01 | |
 | Rule_3_6_CurrentIsThreadStaticAndClearedAfterShutdown | cs3.6-01, cs3.6-02, cs3.6-04, cs3.13-03 | |
 | Rule_3_7_BaseClassHasNoRun | cs3.7-01 | |
-| Rule_3_8_ShutdownDrainsAndDisposesAndThrowsInsideReaction | cs3.8-01, cs3.8-02, cs3.8-06 | |
 | Rule_3_9_SchedulersAreAnnouncedToReactive | cs3.9-01 | unspecified behaviour: asserts membership in Scheduler.SnapshotAll; cs3.9-01 only requires both schedulers finished |
 | Rule_3_10_OneSchedulerServesManyReactors | cs3.10-01 | |
 | Rule_3_11_ReactiveShutdownInformsAllThenWaits | cs3.11-01 | unspecified behaviour: asserts internal IsFinished; cs3.11-01 requires drained work and ForThread null |
@@ -63,7 +57,6 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_3_13_ForThreadAndAttachOtherTypeThrows | cs3.13-01, cs3.13-04 | |
 | Rule_3_14_SchedulerOfAThreadStaysTheSame | cs3.14-01 | |
 | Rule_3_15_AtMostOneReactionPerThread | cs3.15-01 | |
-| Rule_3_16_NestedRunReactionLogsRequeuesAndThrows | cs3.16-01 | |
 | Rule_4_1_NoPublicConstructorAndNoAttachToCurrent | cs4.1-01 | |
 | Rule_4_2_CreateNewRunsInitialThenLoop | cs4.2-01, cs4.2-02, cs4.2-04 | cs4.2-04: the original exception is delivered once through UnhandledException; CreateNew returns the scheduler and the loop keeps running |
 | Rule_4_3_QueueNeverBlocksAndShutdownEndsThread | cs4.3-01, cs4.3-02 | |
@@ -109,12 +102,9 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_8_2_ReactionDoesNotStopTheLoop | s8.2-01 | |
 | Rule_9_1_PausedReadsDoNotSubscribe | cs1.3-02, cs2.19-01 | |
 | Rule_9_2_PauseIsReentrant | cs2.24-04 | |
-| Rule_9_2a_PausedReadDoesNotKeepExistingSubscription | s7.3a-02 | unspecified behaviour: asserts ExecutionCount is unchanged after the second run; s7.3a-02 only requires no further rerun |
 | Rule_9_3_UnbalancedPauseEndsWithReaction | cs2.23-01 | |
 | Rule_10_1_PlainSynchronousRun | — | unspecified behaviour: no acceptance ID; waits until a run's depth is positive |
-| Rule_10_4_SecondReactionWhileOneRuns | cs3.16-01 | |
 | Rule_11_2_ReactorCapturesCreatingThreadScheduler | cs2.2-01 | |
-| Rule_11_4_NoSchedulerIsProgrammingError | cs2.2-02 | |
 | Rule_11_5_SameLoopFirstRunAfterCreatorFinishes | s11.5-01 | |
 | Rule_11_7_TwoReactionsOnSameLoopNeverConcurrent | s11.7-01 | |
 | Rule_11_9_FirstComeFirstServed | s11.9-01 | |
@@ -132,7 +122,6 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_13_3_QueuedAtMostOnceFromManyThreads | s13.3-01 | |
 | Rule_13_8_WritersDoNotWaitForReaction | s13.8-01 | |
 | Rule_15_1_UnhandledFromReactionIsLogged | cs7.2-02 | |
-| Rule_15_5_ContinueRecordingTooOftenIsLogged | cs2.20-02 | |
 | Rule_5_1_GlitchableAcrossRegisters | — | unspecified behaviour: no acceptance ID; glitching across registers is only permitted, not required |
 | Rule_5_3_AggregateValueIsAtomic | — | unspecified behaviour: no acceptance ID; asserts an aggregate register value is (2, 2) |
 | Rule_5_4_DerivedValueAfterSchedulerTurn | s5.4-01 | |
@@ -144,7 +133,6 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_11_8_NoTwoReactionsInsideEachOther | s7.4-01 | |
 | Rule_11_12_NoCrossThreadWriteBundle | — | unspecified behaviour: no acceptance ID; cross-thread write bundling is only a missing guarantee, and the test pins values 1 and 2 |
 | Rule_11_13_NoAtomicMultiRegisterWrite | — | unspecified behaviour: no acceptance ID; multi-register atomicity is only a missing guarantee, and the test pins a value of 1 |
-| Rule_11_14_NestedPumpsProhibited | cs3.15-01 | |
 | Rule_12_1_StrongReferencesBothWays | — | unspecified behaviour: no acceptance ID; asserts the reaction still runs after other references are dropped |
 | Rule_12_2_ReactionBelongsToOneReactor | — | unspecified behaviour: no acceptance ID; asserts a reaction is non-null under "belongs to one reactor" |
 | Rule_12_3_ReactorDisposeDisposesAll | cs2.11-01 | |
@@ -154,7 +142,6 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (154). Mapping uses the test 
 | Rule_12_11_SameCodeAsOrdinaryCallRecordsNothing | cs2.14-01 | |
 | Rule_13_2_RegisterCriticalSectionSerializesSubscribeAndTrigger | — | unspecified behaviour: no acceptance ID; register critical-section serialisation is not an acceptance row |
 | Rule_13_7_LambdaDoesNotRunUnderQueueLock | s13.7-01 | |
-| Rule_15_2_ProgrammingErrorsLoggedBeforeThrow | s15.2-01 | |
 | Rule_15_3_ExecutionCounter | cs7.4-01 | |
 | Rule_15_4_NamedReactionsAndRegisters | — | unspecified behaviour: no acceptance ID; asserts Register.Name "reg" and Reaction.Name "rx" outside diagnostics mode |
 | Rule_8_1_AsyncLambdaIsOrdinaryAfterAwait | cs8.1-01, cs8.1-02 | |

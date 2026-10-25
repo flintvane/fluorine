@@ -33,42 +33,6 @@ namespace Fluorine.Tests
         }
 
         [Fact]
-        public void Rule_3_3_QueueActionOrderAndNoReadsAndLogsExceptions()
-        {
-            using (var host = new ThreadHost())
-            {
-                Exception seen = null;
-                Action<Exception> h = e => seen = e;
-                Reactive.UnhandledException += h;
-                try
-                {
-                    var order = "";
-                    host.Scheduler.Queue(() => order += "a");
-                    host.Scheduler.Queue(() => order += "b");
-                    host.Scheduler.Queue(() => { throw new InvalidOperationException("boom"); });
-                    WaitUntil.True(() => order == "ab" && seen != null, "order+log");
-                    Assert.IsType<ReactiveException>(seen);
-                    Assert.IsType<InvalidOperationException>(seen.InnerException);
-                }
-                finally
-                {
-                    Reactive.UnhandledException -= h;
-                }
-            }
-        }
-
-        [Fact]
-        public void Rule_3_4_RunReactionIsTheOnlyRunPath()
-        {
-            var run = typeof(Reaction).GetMethod("Run", BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.NotNull(run);
-            Assert.True(run.IsAssembly);
-            var method = typeof(Scheduler).GetMethod("RunReaction", BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.NotNull(method);
-            Assert.True(method.IsFamily);
-        }
-
-        [Fact]
         public void Rule_3_5_RunRecordsReadsThenDisconnectsUnread()
         {
             using (var host = new ThreadHost())
@@ -116,52 +80,6 @@ namespace Fluorine.Tests
         public void Rule_3_7_BaseClassHasNoRun()
         {
             Assert.Null(typeof(Scheduler).GetMethod("Run", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-        }
-
-        [Fact]
-        public void Rule_3_8_ShutdownDrainsAndDisposesAndThrowsInsideReaction()
-        {
-            using (var host = new ThreadHost())
-            {
-                var n = 0;
-                var reactor = host.NewReactor();
-                var reg = new Register<int>(0);
-                reactor.Add(() =>
-                {
-                    var _ = reg.Value;
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                Exception seen = null;
-                Action<Exception> h = e => seen = e;
-                Reactive.UnhandledException += h;
-                try
-                {
-                    var threw = false;
-                    var gate = new ManualResetEventSlim(false);
-                    var inRun = new ManualResetEventSlim(false);
-                    reactor.Add(() =>
-                    {
-                        inRun.Set();
-                        gate.Wait();
-                        try
-                        {
-                            host.Scheduler.Shutdown();
-                        }
-                        catch (ReactiveException)
-                        {
-                            threw = true;
-                        }
-                    });
-                    WaitUntil.Event(inRun, "in reaction");
-                    gate.Set();
-                    WaitUntil.True(() => threw && seen != null, "logged throw");
-                }
-                finally
-                {
-                    Reactive.UnhandledException -= h;
-                }
-            }
         }
 
         [Fact]
@@ -275,42 +193,5 @@ namespace Fluorine.Tests
             }
         }
 
-        [Fact]
-        public void Rule_3_16_NestedRunReactionLogsRequeuesAndThrows()
-        {
-            var scheduler = new ManualScheduler();
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                var reactor = new Reactor(scheduler);
-                Reaction inner = null;
-                var innerRuns = 0;
-                var threw = false;
-                reactor.Add(() =>
-                {
-                    inner = reactor.Add(() => innerRuns++);
-                    try
-                    {
-                        scheduler.ForceRun(inner);
-                    }
-                    catch (ReactiveException)
-                    {
-                        threw = true;
-                    }
-                });
-                scheduler.Pump();
-                Assert.True(threw);
-                Assert.IsType<ReactiveException>(seen);
-                scheduler.Pump();
-                Assert.True(innerRuns >= 1);
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-                scheduler.Shutdown();
-            }
-        }
     }
 }

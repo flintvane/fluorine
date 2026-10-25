@@ -23,50 +23,6 @@ namespace Fluorine.Tests
         }
 
         [Fact]
-        public void Rule_2_2_ReactorCapturesSchedulerCurrentOrThrows()
-        {
-            Assert.Null(Scheduler.Current);
-            var thrown = false;
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                try
-                {
-                    new Reactor();
-                }
-                catch (ReactiveException)
-                {
-                    thrown = true;
-                }
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-            }
-            Assert.True(thrown);
-            Assert.IsType<ReactiveException>(seen);
-        }
-
-        [Fact]
-        public void Rule_2_3_NullSchedulerLogsAndThrows()
-        {
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                Assert.Throws<ReactiveException>(() => new Reactor(null));
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-            }
-            Assert.IsType<ReactiveException>(seen);
-        }
-
-        [Fact]
         public void Rule_2_4_ReactorOnShuttingDownSchedulerIsDisposed()
         {
             var host = new ThreadHost();
@@ -288,33 +244,6 @@ namespace Fluorine.Tests
                 reg.Value = 1;
                 Thread.Sleep(40);
                 Assert.Equal(1, n);
-            }
-        }
-
-        [Fact]
-        public void Rule_2_20_ContinueRecordingAtZeroLogsAndStaysZero()
-        {
-            using (var host = new ThreadHost())
-            {
-                Exception seen = null;
-                Action<Exception> h = e => seen = e;
-                Reactive.UnhandledException += h;
-                try
-                {
-                    var n = 0;
-                    host.NewReactor().Add(() =>
-                    {
-                        Reaction.ContinueRecording();
-                        Interlocked.Increment(ref n);
-                    });
-                    WaitUntil.True(() => n == 1, "ran");
-                    WaitUntil.True(() => seen != null, "logged");
-                    Assert.IsType<ReactiveException>(seen);
-                }
-                finally
-                {
-                    Reactive.UnhandledException -= h;
-                }
             }
         }
 

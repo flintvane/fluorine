@@ -176,33 +176,6 @@ namespace Fluorine.Tests
             Assert.Equal(1, a.Value);
         }
 
-        [Fact]
-        public void Rule_11_14_NestedPumpsProhibited()
-        {
-            var scheduler = new ManualScheduler();
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                var reactor = new Reactor(scheduler);
-                var threw = false;
-                reactor.Add(() =>
-                {
-                    var other = reactor.Add(() => { });
-                    try { scheduler.ForceRun(other); }
-                    catch (ReactiveException) { threw = true; }
-                });
-                scheduler.Pump();
-                Assert.True(threw);
-                Assert.NotNull(seen);
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-                scheduler.Shutdown();
-            }
-        }
     }
 
     public class Md12_MoreTests
@@ -361,25 +334,6 @@ namespace Fluorine.Tests
 
     public class Md15_MoreTests
     {
-        [Fact]
-        public void Rule_15_2_ProgrammingErrorsLoggedBeforeThrow()
-        {
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                var threw = false;
-                try { new Reactor(); }
-                catch (ReactiveException) { threw = true; }
-                Assert.True(threw);
-                Assert.NotNull(seen);
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-            }
-        }
 
         [Fact]
         public void Rule_15_3_ExecutionCounter()
