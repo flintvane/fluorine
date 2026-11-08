@@ -8,6 +8,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine.Tests", "tests\Flu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine.Acceptance", "tests\Fluorine.Acceptance\Fluorine.Acceptance.csproj", "{A306A8F5-C1DA-4D1B-8879-A93D7285D757}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine.Generators", "src\Fluorine.Generators\Fluorine.Generators.csproj", "{4C9C40A9-27F7-4DFE-87E9-08322E87781B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine.GeneratorTests", "tests\Fluorine.GeneratorTests\Fluorine.GeneratorTests.csproj", "{7899C53D-8CC6-4AF1-98A6-2A7A3FDE5CF8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,5 +30,13 @@ Global
 		{A306A8F5-C1DA-4D1B-8879-A93D7285D757}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A306A8F5-C1DA-4D1B-8879-A93D7285D757}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A306A8F5-C1DA-4D1B-8879-A93D7285D757}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C9C40A9-27F7-4DFE-87E9-08322E87781B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C9C40A9-27F7-4DFE-87E9-08322E87781B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C9C40A9-27F7-4DFE-87E9-08322E87781B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C9C40A9-27F7-4DFE-87E9-08322E87781B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7899C53D-8CC6-4AF1-98A6-2A7A3FDE5CF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7899C53D-8CC6-4AF1-98A6-2A7A3FDE5CF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7899C53D-8CC6-4AF1-98A6-2A7A3FDE5CF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7899C53D-8CC6-4AF1-98A6-2A7A3FDE5CF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
