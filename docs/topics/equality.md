@@ -44,6 +44,8 @@ The comparison is user code and runs outside any lock. An exception from it reac
 
 Two threads writing the same register at once can cause at most one extra run, or a write that compares equal to a value that is being replaced. That is equivalent to the writes happening in the other order. No change is lost (§3.1b).
 
+`ReactiveSet<T>` uses an `IEqualityComparer<T>` for membership ([Reactive sets](reactive-sets.md)). Hash codes must stay stable while an element is in the set.
+
 ---
 
 *Spec references: §3, §14.2; cs 1.16, 1.17; platform-notes.md. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*

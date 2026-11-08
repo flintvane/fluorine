@@ -64,6 +64,8 @@ title.Name = "page title";
 
 `Register` (without a type argument, created with `new Register()`) is the base class: a register that only remembers its readers and can be triggered. It is covered in [Signal registers and shadow registers](signal-registers.md).
 
+`ReactiveSet<T>` is a set built on that base: add and remove members, react when one appears or disappears, and keep an immutable picture to compare later ([Reactive sets](reactive-sets.md)).
+
 ---
 
 *Spec references: §3.1a, §7, §12.8; cs 1.1-1.15. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*

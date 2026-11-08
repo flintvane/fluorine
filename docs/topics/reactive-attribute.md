@@ -1,6 +1,6 @@
 [← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [Binding a model to WinForms →](winforms-binding.md)
 
-# 19. The `[Reactive]` attribute and the source generator
+# 20. The `[Reactive]` attribute and the source generator
 
 `[Reactive]` (`ReactiveAttribute`) marks two kinds of member.
 

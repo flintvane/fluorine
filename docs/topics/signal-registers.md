@@ -1,4 +1,4 @@
-[← Pausing: reads that do not subscribe](pausing.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Pausing: reads that do not subscribe](pausing.md) · [Topics](../index.md) · [Reactive sets →](reactive-sets.md)
 
 # 11. Signal registers and shadow registers
 
@@ -51,8 +51,10 @@ This is the purpose of the manual trigger. Objects whose state changes inside th
 
 To bind a model to WinForms text, visibility and enabled state, `FormsReactor` is the dedicated helper ([Binding a model to WinForms](winforms-binding.md)).
 
+A set of members, with reactions that follow one element or the whole picture, is a [`ReactiveSet<T>`](reactive-sets.md).
+
 ---
 
 *Spec references: §4.5, §12.8, §14.1, §14.2, §14.4; cs 1.1-1.5. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← Pausing: reads that do not subscribe](pausing.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Pausing: reads that do not subscribe](pausing.md) · [Topics](../index.md) · [Reactive sets →](reactive-sets.md)

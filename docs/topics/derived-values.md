@@ -1,6 +1,6 @@
-[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Computed values →](computed.md)
+[← Reactive sets](reactive-sets.md) · [Topics](../index.md) · [Computed values →](computed.md)
 
-# 12. Derived values, self-writes and cycles
+# 13. Derived values, self-writes and cycles
 
 Reactions may write registers. This is how derived values are made.
 
@@ -59,4 +59,4 @@ reactor.Add(() =>
 
 *Spec references: §5.4, §6, §14.3; cs 7.4. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Computed values →](computed.md)
+[← Reactive sets](reactive-sets.md) · [Topics](../index.md) · [Computed values →](computed.md)

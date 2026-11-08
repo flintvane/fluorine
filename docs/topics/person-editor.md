@@ -1,6 +1,6 @@
 [← Binding a model to WinForms](winforms-binding.md) · [Topics](../index.md) · [Comparison with other frameworks →](comparison.md)
 
-# 21. PersonEditor: one model in two windows
+# 22. PersonEditor: one model in two windows
 
 `demos/PersonEditor` opens the same `Person` in a WinForms window and a WPF window. Typing in either window updates the other. The model has no reference to either UI framework.
 

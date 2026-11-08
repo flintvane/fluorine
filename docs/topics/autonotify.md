@@ -1,6 +1,6 @@
 [← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md) · [The Reactive attribute and the source generator →](reactive-attribute.md)
 
-# 18. AutoNotify: notifying WPF
+# 19. AutoNotify: notifying WPF
 
 WPF bindings listen to `INotifyPropertyChanged`. `AutoNotify` is a model base class that raises `PropertyChanged` when a marked getter starts returning a different value (cs 11). The getter reads registers in the usual way, so the notification is just another reaction: it runs on the scheduler where the object was created.
 

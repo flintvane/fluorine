@@ -1,6 +1,6 @@
 [← Async code inside a reaction](async.md) · [Topics](../index.md) · [AutoNotify: notifying WPF →](autonotify.md)
 
-# 17. Rules of thumb
+# 18. Rules of thumb
 
 A short checklist, with the reasons behind each rule.
 
