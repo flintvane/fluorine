@@ -103,26 +103,17 @@ namespace Fluorine
 
         void Arm(string name, Func<object, object> read)
         {
-            object previous = null;
-            var hasValue = false;
+            object previous =  read(this);
             Add(name, () =>
             {
                 var value = read(this);
-                if (!hasValue)
-                {
-                    hasValue = true;
-                    previous = value;
-                    return;
-                }
-
-                if (Equals(previous, value))
-                    return;
-
+                if (Equals(previous, value)) return;
                 previous = value;
                 PropertyChangedEventHandler handler;
                 lock (this)
                     handler = _propertyChanged;
-                handler?.Invoke(this, new PropertyChangedEventArgs(name));
+                using(Reaction.Pause())
+                    handler?.Invoke(this, new PropertyChangedEventArgs(name));
             });
         }
 
