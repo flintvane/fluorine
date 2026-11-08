@@ -16,9 +16,12 @@ namespace Fluorine
             current?.Subscribe(this);
         }
 
+        // Listener operations lock this. A derived register may share another object's lock.
+        protected virtual object SyncRoot => this;
+
         public void TriggerReactions()
         {
-            lock (this)
+            lock (SyncRoot)
             {
                 var snapshot = new Reaction[_listeners.Count];
                 _listeners.CopyTo(snapshot);
@@ -27,20 +30,32 @@ namespace Fluorine
             }
         }
 
-        internal void AddListener(Reaction reaction)
+        internal virtual bool AddListener(Reaction reaction)
         {
             if (reaction == null)
-                return;
-            lock (this)
-                _listeners.Add(reaction);
+                return false;
+            lock (SyncRoot)
+                return AddListenerLocked(reaction);
         }
 
-        internal void RemoveListener(Reaction reaction)
+        internal virtual bool RemoveListener(Reaction reaction)
         {
             if (reaction == null)
-                return;
-            lock (this)
-                _listeners.Remove(reaction);
+                return false;
+            lock (SyncRoot)
+                return RemoveListenerLocked(reaction);
+        }
+
+        // Caller holds SyncRoot.
+        protected bool AddListenerLocked(Reaction reaction)
+        {
+            return _listeners.Add(reaction);
+        }
+
+        // Caller holds SyncRoot.
+        protected bool RemoveListenerLocked(Reaction reaction)
+        {
+            return _listeners.Remove(reaction);
         }
     }
 
