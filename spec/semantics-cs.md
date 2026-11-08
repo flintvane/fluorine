@@ -145,7 +145,7 @@ The continuation resumes on the captured synchronisation context, usually the UI
 
 9.3 **A `Dispose` that throws.** Disposing the old value of a computed value (8.6) is user code, run inside a reaction. An exception from it is handled like any other exception of a reaction (8.1), and Fluorine does nothing special about it. Whatever that `Dispose` left undone stays undone; covering for it is up to the author of the value.
 
-9.4 **Setting up AutoNotify reactions on demand.** An implementation may create the reactions of an `AutoNotify` object (11.3) only when the first handler attaches to `PropertyChanged`, so objects that nobody binds to cost no reactions. This must preserve notification of the first change after a handler attaches (11.4).
+
 
 ## 10. Errors
 
@@ -170,4 +170,9 @@ The continuation resumes on the captured synchronisation context, usually the UI
 11.2 `[AutoNotify]` (`AutoNotifyAttribute`) marks a property of a class derived from `AutoNotify`. A marked property stays marked in derived classes, including overrides. A property declared with `new` hides it and is marked only if it carries `[AutoNotify]` itself.
 11.3 For every marked property, one reaction is added to that reactor. It reads the getter of the property. It runs on the scheduler of the reactor (2.2, 2.3), so `PropertyChanged` is raised on the thread of that scheduler.
 11.4 The first run of such a reaction is queued, so it happens after the constructor of the derived class has finished. The initial getter value is established when observation begins, no later than when the first handler attaches to `PropertyChanged`, and raises no event. Every run, including the first queued run, records its reads and compares the getter value with the previously recorded value (`Equals`). When they differ, it raises `PropertyChanged` with the name of the property. It stores the new value. A change after a handler attaches must therefore be notified even if it occurs before the first queued run.
-11.5 `Dispose()` disposes the reactor of the object and so its reactions (2.11). Afterwards the object raises no further notifications.
+11.5 `Dispose()` disposes the underlying reactor so the object raises no further PropetyChanged notifications.
+11.6 **Setting up AutoNotify reactions on demand.**
+An implementation may create the reactions of an `AutoNotify` object (11.3)
+only when the first handler attaches to `PropertyChanged`, so objects that
+nobody binds to cost no reactions. This must preserve notification of the
+first change after a handler attaches (11.4).
