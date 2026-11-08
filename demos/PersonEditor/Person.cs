@@ -27,55 +27,23 @@ namespace PersonDemo
     // binding keeps the old value, and the WinForms converter does not call
     // the setter. AgeStatus therefore stays on the last integer until a new
     // one is stored.
-    public sealed class Person : AutoNotify
+    public partial class Person : AutoNotify
     {
-        public const string ValidAge = "Age is a positive integer.";
-        public const string InvalidAge = "Age must be a positive integer.";
+        public Person() => Computed(ageStatus, DescribeAge);
 
-        readonly Register<string> _firstName = new Register<string>("Ada");
-        readonly Register<string> _lastName = new Register<string>("Lovelace");
-        readonly Register<int> _age = new Register<int>(36);
-        readonly Register<string> _ageStatus = new Register<string>(ValidAge);
+        [Reactive]
+        public partial string FirstName { get; set; }
 
-        public Person()
-        {
-            Computed(_ageStatus, () => DescribeAge(_age.Value));
-        }
+        [Reactive]
+        public partial string LastName { get; set; }
 
-        [AutoNotify]
-        public string FirstName
-        {
-            get { return _firstName.Value; }
-            set { _firstName.Value = value ?? ""; }
-        }
+        [Reactive]
+        public partial int Age { get; set; }
 
-        [AutoNotify]
-        public string LastName
-        {
-            get { return _lastName.Value; }
-            set { _lastName.Value = value ?? ""; }
-        }
+        [Reactive]
+        public partial string AgeStatus { get; set; }
 
-        [AutoNotify]
-        public int Age
-        {
-            get { return _age.Value; }
-            set { _age.Value = value; }
-        }
-
-        // Read only. The computed reaction is the writer. [AutoNotify] raises
-        // PropertyChanged when the register changes, which is what the WPF
-        // binding listens to. The WinForms control does not: its reaction
-        // reads this getter and so subscribes to the register directly.
-        [AutoNotify]
-        public string AgeStatus
-        {
-            get { return _ageStatus.Value; }
-        }
-
-        public static string DescribeAge(int age)
-        {
-            return age >= 1 ? ValidAge : InvalidAge;
-        }
+        private string DescribeAge() 
+            => Age >= 1 ? null : "Age must be a positive integer.";
     }
 }
