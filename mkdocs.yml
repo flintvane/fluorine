@@ -52,6 +52,10 @@ nav:
       - "Shutting down": topics/shutdown.md
       - "Async code inside a reaction": topics/async.md
       - "Rules of thumb": topics/rules-of-thumb.md
+      - "AutoNotify: notifying WPF": topics/autonotify.md
+      - "The Reactive attribute and the source generator": topics/reactive-attribute.md
+      - "Binding a model to WinForms": topics/winforms-binding.md
+      - "PersonEditor: one model in two windows": topics/person-editor.md
       - "Comparison with other frameworks": topics/comparison.md
       - Side by side:
           - Overview: topics/side-by-side/index.md

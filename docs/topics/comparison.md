@@ -1,6 +1,6 @@
-[← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md)
+[← PersonEditor: one model in two windows](person-editor.md) · [Topics](../index.md)
 
-# 18. Comparison with other frameworks
+# 22. Comparison with other frameworks
 
 Fluorine shares its central idea with several well-known libraries: dependencies are found by recording reads while code runs. This page maps each of them onto Fluorine's three parts:
 
@@ -74,6 +74,8 @@ Fluorine shares its central idea with several well-known libraries: dependencies
 
 **ReactiveUI and DynamicData** build on Rx. `WhenAnyValue` observes a property path given as an expression; DynamicData provides reactive collections. Both suit applications already built around Rx.
 
+Fluorine's own path to WPF is `AutoNotify`: marked getters raise `INotifyPropertyChanged` when their value changes, so an ordinary `DataContext` binding works ([AutoNotify](autonotify.md)). WinForms bindings go through `FormsReactor` ([Binding a model to WinForms](winforms-binding.md)). [PersonEditor](person-editor.md) shows one model displayed both ways.
+
 **SignalsDotnet** (3.4.1) is the .NET library closest to Fluorine. In our test runs (research/dotnet-demo):
 
 - tracking is implicit through `Signal.Value`, and stale subscriptions are dropped per run;
@@ -92,4 +94,4 @@ Eight small programs, written in Fluorine and in seven of these frameworks and r
 
 *Spec references: §1–§12; cs 1.16, 2.24, 7.1, 8.1. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6). Sources: research/landscape.md (2026-10-17), research/dotnet-demo/RESULT.md (2026-10-18).*
 
-[← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md)
+[← PersonEditor: one model in two windows](person-editor.md) · [Topics](../index.md)

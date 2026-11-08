@@ -81,7 +81,7 @@ var reactor = new Reactor();          // uses Scheduler.Current
 reactor.Add(() => nameLabel.Content = first.Value + " " + last.Value);
 ```
 
-See [Schedulers](schedulers.md).
+See [Schedulers](schedulers.md). To raise `INotifyPropertyChanged` for WPF bindings, derive the model from `AutoNotify` ([AutoNotify](autonotify.md)). To bind WinForms controls, use `FormsReactor` ([Binding a model to WinForms](winforms-binding.md)). [PersonEditor](person-editor.md) shows both frontends sharing one model.
 
 *Elsewhere: the same scenario in MobX, Vue, Solid, Knockout, Tracker, SignalsDotnet and Rx.NET: [Side by side: First reaction](side-by-side/first-reaction.md).*
 

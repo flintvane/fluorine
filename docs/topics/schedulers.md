@@ -48,11 +48,11 @@ public partial class App : Application
 ### WinForms
 
 ```csharp
-// On the UI thread, once the WinForms context is installed (e.g. in the form's constructor):
+// After the message loop has started, for example in OnLoad:
 WinFormsScheduler.AttachToCurrent();
 ```
 
-The calling thread must have the WinForms `SynchronizationContext`; otherwise the call throws `ReactiveException` (cs 6.1). The application keeps owning its message loop (cs 6.3).
+The calling thread must have the WinForms `SynchronizationContext`; otherwise the call throws `ReactiveException` (cs 6.1). That context is installed when the message loop starts, not when a form or control is constructed. `Application.Run(new Form())` constructs the form first, so attach in `OnLoad` (or after `Application.Run` has begun), as [PersonEditor](person-editor.md) does. The application keeps owning its message loop (cs 6.3).
 
 ## Finding the scheduler of a thread
 

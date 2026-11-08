@@ -1,4 +1,4 @@
-[← Async code inside a reaction](async.md) · [Topics](../index.md) · [Comparison with other frameworks →](comparison.md)
+[← Async code inside a reaction](async.md) · [Topics](../index.md) · [AutoNotify: notifying WPF →](autonotify.md)
 
 # 17. Rules of thumb
 
@@ -42,4 +42,4 @@ At most one reaction runs per thread (§10.4, cs 3.15). A reaction starting whil
 
 *Spec references: §10, §14.6; cs 3.15, 3.16. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← Async code inside a reaction](async.md) · [Topics](../index.md) · [Comparison with other frameworks →](comparison.md)
+[← Async code inside a reaction](async.md) · [Topics](../index.md) · [AutoNotify: notifying WPF →](autonotify.md)
