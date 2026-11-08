@@ -26,14 +26,14 @@ namespace Fluorine.Tests
         }
 
         [Fact]
-        public void Rule_11_4_FirstRunIsQueuedAndRaisesNothing()
+        public void Rule_11_4_ChangeBeforeFirstRunStillNotifies()
         {
             using (var host = new DispatcherHost())
             {
                 CtorOrder model = null;
                 host.OnScheduler(() => model = new CtorOrder());
                 host.Drain();
-                Assert.Equal(new[] { "ctor", "read:7" }, model.Log);
+                Assert.Equal(new[] { "read:1", "ctor", "read:7", "event:Value" }, model.Log);
             }
         }
 
@@ -106,7 +106,8 @@ namespace Fluorine.Tests
                     model.PropertyChanged += (sender, args) => names.Add(args.PropertyName);
                 });
                 host.Drain();
-                Assert.Equal(1, Volatile.Read(ref model.Reads));
+                // One read establishes the baseline at attach; the queued run reads again.
+                Assert.Equal(2, Volatile.Read(ref model.Reads));
 
                 model.Source.Value = 2;
                 host.Drain();
@@ -130,7 +131,8 @@ namespace Fluorine.Tests
                 quiet.Source.Value = 9;
                 host.Drain();
                 Assert.Equal(new[] { "Value" }, names);
-                Assert.Equal(0, Volatile.Read(ref quiet.Reads));
+                // Attach still reads the baseline. The disposed reactor adds no reaction.
+                Assert.Equal(1, Volatile.Read(ref quiet.Reads));
             }
         }
 
@@ -191,7 +193,7 @@ namespace Fluorine.Tests
         }
 
         [Fact]
-        public void GetterExceptionIsLoggedUnwrapped()
+        public void GetterExceptionReachesTheSubscriberUnwrapped()
         {
             using (var host = new DispatcherHost())
             {
@@ -201,15 +203,17 @@ namespace Fluorine.Tests
                 Reactive.UnhandledException += handler;
                 try
                 {
+                    InvalidOperationException thrown = null;
                     host.OnScheduler(() =>
                     {
                         var model = new ThrowingModel();
-                        model.PropertyChanged += (sender, args) => names.Add(args.PropertyName);
+                        thrown = Assert.Throws<InvalidOperationException>(() =>
+                            model.PropertyChanged += (sender, args) => names.Add(args.PropertyName));
                     });
                     host.Drain();
+                    Assert.Equal("getter", thrown.Message);
                     Assert.Empty(names);
-                    Assert.IsType<InvalidOperationException>(logged);
-                    Assert.Equal("getter", logged.Message);
+                    Assert.Null(logged);
                 }
                 finally
                 {
