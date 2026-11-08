@@ -1,8 +1,6 @@
-using System.Windows;
-
 namespace PersonDemo
 {
-    public partial class PersonWindow : Window
+    public partial class PersonWindow
     {
         // The caller has already constructed the Person on this dispatcher
         // thread. Setting DataContext is what attaches the bindings in the

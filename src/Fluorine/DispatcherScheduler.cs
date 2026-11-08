@@ -28,7 +28,7 @@ namespace Fluorine
                 typeof(DispatcherScheduler),
                 () => new DispatcherScheduler(Dispatcher.CurrentDispatcher, true, false),
                 (scheduler, action) => scheduler.EnqueueStartup(action),
-                scheduler => Dispatcher.Run(),
+                _ => Dispatcher.Run(),
                 initial);
         }
 

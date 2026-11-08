@@ -78,16 +78,16 @@ namespace Fluorine.Tests
                     var label = new Label();
                     try
                     {
-                        Assert.Throws<ReactiveException>(() => forms.BindText(label, (Func<string>)null));
-                        Assert.Throws<ReactiveException>(() => forms.BindText((Control)null, () => "a"));
-                        Assert.Throws<ReactiveException>(() => forms.BindText(box, null, value => { }));
-                        Assert.Throws<ReactiveException>(() => forms.BindText(box, () => "a", null));
-                        Assert.Throws<ReactiveException>(() => forms.BindText(box, () => 1, value => { }, null));
-                        Assert.Throws<ReactiveException>(() => forms.BindText<int>(label, null, TextConverters.Int32));
-                        Assert.Throws<ReactiveException>(() => forms.BindVisible(null, () => true));
-                        Assert.Throws<ReactiveException>(() => forms.BindVisible(label, null));
-                        Assert.Throws<ReactiveException>(() => forms.BindEnabled(null, () => true));
-                        Assert.Throws<ReactiveException>(() => forms.BindEnabled(label, null));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindText(label, (Func<string>)null));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindText((Control)null, () => "a"));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindText(box, null, value => { }));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindText(box, () => "a", null));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindText(box, () => 1, value => { }, null));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindText<int>(label, null, TextConverters.Int32));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindVisible(null, () => true));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindVisible(label, null));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindEnabled(null, () => true));
+                        Assert.Throws<ArgumentNullException>(() => forms.BindEnabled(label, null));
                     }
                     finally
                     {

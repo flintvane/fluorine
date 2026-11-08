@@ -8,7 +8,7 @@ namespace Fluorine
     // after WinFormsScheduler is attached, and disposes it before the controls.
     //
     // BindText on a Control is one way (a label). BindText on a TextBoxBase
-    // with a write function is two way. BindVisible and BindEnabled are set
+    // with a write function is two-way. BindVisible and BindEnabled are set
     // only: their getters report the parents as well as the control, so reading
     // them back would replace the model's desired value with the effective one.
     public class FormsReactor : Reactor
@@ -20,38 +20,31 @@ namespace Fluorine
         {
         }
 
-        public FormsReactor(Scheduler scheduler)
-            : base(scheduler)
+        public FormsReactor(Scheduler scheduler): base(scheduler)
         {
         }
 
         public void BindText(Control control, Func<string> read)
         {
-            if (read == null)
-                throw new ReactiveException("BindText requires a read function.");
+            if (read == null) throw new ArgumentNullException(nameof(read));
             BindSet(control, "Text", read, value => control.Text = value);
         }
 
         public void BindText<T>(Control control, Func<T> read, TextConverter<T> converter)
         {
-            if (read == null)
-                throw new ReactiveException("BindText requires a read function.");
-            if (converter == null)
-                throw new ReactiveException("BindText requires a converter.");
+            if (read == null) throw new ArgumentNullException(nameof(read));
+            if (converter == null) throw new ArgumentNullException(nameof(converter));
             BindText(control, () => converter.Format(read()) ?? "");
         }
 
         public void BindText(TextBoxBase box, Func<string> read, Action<string> write)
         {
-            if (box == null)
-                throw new ReactiveException("BindText requires a control.");
-            if (read == null)
-                throw new ReactiveException("BindText requires a read function.");
-            if (write == null)
-                throw new ReactiveException("BindText requires a write function.");
+            if (box == null) throw new ArgumentNullException(nameof(box));
+            if (read == null) throw new ArgumentNullException(nameof(read));
+            if (write == null) throw new ArgumentNullException(nameof(write));
 
             var suppress = 0;
-            EventHandler onChanged = (sender, args) =>
+            EventHandler onChanged = (_, _) =>
             {
                 if (suppress != 0 || box.IsDisposed)
                     return;
@@ -59,20 +52,22 @@ namespace Fluorine
             };
             Reaction reaction = null;
             EventHandler onDisposed = null;
-            Action unhook = () =>
+
+            void Action()
             {
                 box.TextChanged -= onChanged;
                 box.Disposed -= onDisposed;
-            };
-            onDisposed = (sender, args) =>
+            }
+
+            onDisposed = (_, _) =>
             {
-                unhook();
+                Action();
                 if (reaction != null)
                     reaction.Dispose();
             };
             box.TextChanged += onChanged;
             box.Disposed += onDisposed;
-            Track(unhook);
+            Track(Action);
 
             // The formatted text is read while recording. The box is touched
             // inside the pause, after that, because setting Text runs layout
@@ -98,24 +93,20 @@ namespace Fluorine
                 return true;
             });
             if (reaction == null)
-                unhook();
+                Action();
         }
 
         public void BindText<T>(TextBoxBase box, Func<T> read, Action<T> write, TextConverter<T> converter)
         {
-            if (read == null)
-                throw new ReactiveException("BindText requires a read function.");
-            if (write == null)
-                throw new ReactiveException("BindText requires a write function.");
-            if (converter == null)
-                throw new ReactiveException("BindText requires a converter.");
+            if (converter == null) throw new ArgumentNullException(nameof(converter));
+            if (read == null) throw new ArgumentNullException(nameof(read));
+            if (write == null) throw new ArgumentNullException(nameof(write));
             BindText(
                 box,
                 () => converter.Format(read()) ?? "",
                 text =>
                 {
-                    T value;
-                    if (converter.TryParse(text, out value))
+                    if (converter.TryParse(text, out var value))
                         write(value);
                 });
         }
@@ -139,21 +130,21 @@ namespace Fluorine
         void BindSet<T>(Control control, string name, Func<T> read, Action<T> assign)
         {
             if (control == null)
-                throw new ReactiveException("Bind" + name + " requires a control.");
+                throw new ArgumentNullException(nameof(control));
             if (read == null)
-                throw new ReactiveException("Bind" + name + " requires a read function.");
+                throw new ArgumentNullException(nameof(read));
 
             Reaction reaction = null;
             EventHandler onDisposed = null;
-            Action unhook = () => control.Disposed -= onDisposed;
-            onDisposed = (sender, args) =>
+            void Action() => control.Disposed -= onDisposed;
+            onDisposed = (_, _) =>
             {
-                unhook();
+                Action();
                 if (reaction != null)
                     reaction.Dispose();
             };
             control.Disposed += onDisposed;
-            Track(unhook);
+            Track(Action);
 
             reaction = TrackValue(name, read, value =>
             {
@@ -163,7 +154,7 @@ namespace Fluorine
                 return true;
             });
             if (reaction == null)
-                unhook();
+                Action();
         }
 
         // Compares against the last value this binding wrote, then assigns

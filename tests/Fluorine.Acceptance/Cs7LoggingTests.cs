@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 using System.Threading;
-using Fluorine;
 using Xunit;
 
 namespace Fluorine.Acceptance

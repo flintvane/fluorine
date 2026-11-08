@@ -151,8 +151,7 @@ namespace Fluorine
         {
             lock (ReactiveCalls)
             {
-                Action<object> call;
-                if (ReactiveCalls.TryGetValue(method, out call))
+                if (ReactiveCalls.TryGetValue(method, out var call))
                     return call;
                 call = CompileCall(method);
                 ReactiveCalls.Add(method, call);
@@ -171,7 +170,7 @@ namespace Fluorine
             return Expression.Lambda<Action<object>>(call, instance).Compile();
         }
 
-        virtual public void Dispose()
+        public virtual void Dispose()
         {
             DisposeCore(false);
         }

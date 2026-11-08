@@ -1,5 +1,3 @@
-using Fluorine;
-
 namespace Fluorine.GeneratorTests
 {
     public partial class Household : AutoNotify

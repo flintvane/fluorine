@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
-using Fluorine;
 using Xunit;
 
 namespace Fluorine.Acceptance

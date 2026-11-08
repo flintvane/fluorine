@@ -56,8 +56,7 @@ namespace Fluorine.Generators
                         continue;
                     }
 
-                    if (shell == null)
-                        shell = model;
+                    shell ??= model;
                     generated.Add(model);
                 }
 
@@ -76,8 +75,7 @@ namespace Fluorine.Generators
             {
                 if (model == null)
                     continue;
-                List<ReactiveModel> list;
-                if (!byType.TryGetValue(model.TypeKey, out list))
+                if (!byType.TryGetValue(model.TypeKey, out var list))
                 {
                     list = new List<ReactiveModel>();
                     byType.Add(model.TypeKey, list);
@@ -102,27 +100,27 @@ namespace Fluorine.Generators
     {
         public string TypeKey;
         public string HintName;
-        public string Open;
-        public string Close;
-        public string MemberIndent;
-        public string PropertyName;
-        public string PreferredField;
-        public string PropertyType;
-        public string Modifiers;
-        public string GetterPrefix;
-        public string SetterPrefix;
-        public string SetterKeyword;
-        public bool EmitAutoNotify;
-        public string ExistingMembers;
+        private string Open;
+        private string Close;
+        private string MemberIndent;
+        private string PropertyName;
+        private string PreferredField;
+        private string PropertyType;
+        private string Modifiers;
+        private string GetterPrefix;
+        private string SetterPrefix;
+        private string SetterKeyword;
+        private bool EmitAutoNotify;
+        private string ExistingMembers;
         public string DiagnosticId;
-        public string DiagnosticMessage;
+        private string DiagnosticMessage;
         public string Path;
         public int SpanStart;
-        public int SpanLength;
-        public int StartLine;
-        public int StartColumn;
-        public int EndLine;
-        public int EndColumn;
+        private int SpanLength;
+        private int StartLine;
+        private int StartColumn;
+        private int EndLine;
+        private int EndColumn;
 
         public static ReactiveModel Create(GeneratorAttributeSyntaxContext context)
         {
@@ -136,9 +134,7 @@ namespace Fluorine.Generators
             if (!reactive && !auto)
                 return null;
 
-            AccessorDeclarationSyntax getter;
-            AccessorDeclarationSyntax setter;
-            if (!IsOpenGetSet(syntax, out getter, out setter))
+            if (!IsOpenGetSet(syntax, out var getter, out var setter))
             {
                 if (!reactive)
                     return null;
@@ -164,8 +160,7 @@ namespace Fluorine.Generators
             if (!TypeIsPartial(type))
                 return Fail(property, syntax, Ids.Type, "be partial");
 
-            string open, close, indent;
-            BuildShell(type, out open, out close, out indent);
+            BuildShell(type, out var open, out var close, out var indent);
 
             return new ReactiveModel
             {
@@ -183,7 +178,7 @@ namespace Fluorine.Generators
                 SetterKeyword = setter.Keyword.ValueText,
                 EmitAutoNotify = !auto,
                 ExistingMembers = Members(type),
-                Path = syntax.SyntaxTree.FilePath ?? "",
+                Path = syntax.SyntaxTree.FilePath,
                 SpanStart = syntax.SpanStart,
                 SpanLength = 0
             };
@@ -209,7 +204,7 @@ namespace Fluorine.Generators
                         new LinePosition(EndLine, EndColumn)));
             }
 
-            return Microsoft.CodeAnalysis.Diagnostic.Create(descriptor, location, PropertyName, DiagnosticMessage);
+            return Diagnostic.Create(descriptor, location, PropertyName, DiagnosticMessage);
         }
 
         public string Render(List<ReactiveModel> properties)
@@ -316,7 +311,7 @@ namespace Fluorine.Generators
                 PropertyName = property.Name,
                 DiagnosticId = id,
                 DiagnosticMessage = message,
-                Path = syntax.SyntaxTree.FilePath ?? "",
+                Path = syntax.SyntaxTree.FilePath,
                 SpanStart = span.Start,
                 SpanLength = span.Length,
                 StartLine = line.Start.Line,

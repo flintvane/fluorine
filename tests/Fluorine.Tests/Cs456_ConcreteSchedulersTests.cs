@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using System.Windows.Threading;
 using Xunit;
 
 namespace Fluorine.Tests
