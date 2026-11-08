@@ -1,0 +1,31 @@
+<Window x:Class="PersonDemo.PersonWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Person — WPF"
+        Width="400" Height="280"
+        WindowStartupLocation="Manual"
+        Left="500" Top="80"
+        FontFamily="Segoe UI" FontSize="14">
+    <!--
+        DataContext is the Person. These bindings are the whole WPF frontend.
+        UpdateSourceTrigger=PropertyChanged writes the register on each
+        keystroke, so the WinForms window follows along. Age is an int: WPF's
+        own converter rejects text that is not an integer and leaves Age
+        unchanged. ValidatesOnExceptions draws the box as invalid in that case.
+        AgeStatus is one way. The model computes it; this window only displays it.
+    -->
+    <StackPanel Margin="16">
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
+                   Text="This window and the WinForms window edit one Person. The DataContext is that object."/>
+        <TextBlock Text="First name"/>
+        <TextBox Margin="0,2,0,8"
+                 Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"/>
+        <TextBlock Text="Last name"/>
+        <TextBox Margin="0,2,0,8"
+                 Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"/>
+        <TextBlock Text="Age"/>
+        <TextBox Margin="0,2,0,8"
+                 Text="{Binding Age, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
+        <TextBlock Text="{Binding AgeStatus, Mode=OneWay}" Foreground="DarkRed"/>
+    </StackPanel>
+</Window>
