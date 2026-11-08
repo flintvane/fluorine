@@ -4,7 +4,9 @@ namespace Fluorine
 {
     // Marks a partial property. The source generator writes a Register<T> for it
     // and the get/set accessors, and marks that property [AutoNotify].
-    [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+    // Also marks a parameterless void method. AutoNotify adds each such method
+    // on the instance as a reaction on its reactor.
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class ReactiveAttribute : Attribute
     {
     }

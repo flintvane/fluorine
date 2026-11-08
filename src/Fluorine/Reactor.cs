@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Fluorine
 {
     public class Reactor : IDisposable
     {
+        static readonly Dictionary<MethodInfo, Action<object>> ReactiveCalls =
+            new Dictionary<MethodInfo, Action<object>>();
+
         readonly Scheduler _scheduler;
         readonly HashSet<Reaction> _reactions = new HashSet<Reaction>();
         int _disposed;
@@ -74,6 +79,96 @@ namespace Fluorine
                 if (register.SetValue(result, out var oldValue) && oldValue is IDisposable disposable)
                     disposable.Dispose();
             });
+        }
+
+        // Parameterless void instance methods marked [Reactive] become reactions.
+        // A marked virtual method is one reaction; the override on the instance runs.
+        // A method declared with new is a separate reaction. The first run is queued.
+        public void AddReactiveMethods(object instance)
+        {
+            if (instance == null)
+                throw new ReactiveException("AddReactiveMethods requires an object.");
+            if (_disposed != 0)
+                return;
+
+            var seen = new HashSet<MethodInfo>();
+            for (var type = instance.GetType(); type != null; type = type.BaseType)
+            {
+                var methods = type.GetMethods(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                foreach (var method in methods)
+                {
+                    if (!IsReactiveMethod(method))
+                        continue;
+                    if (!seen.Add(method.GetBaseDefinition()))
+                        continue;
+
+                    var callable = method.IsAbstract ? ConcreteImplementation(instance.GetType(), method) : method;
+                    if (callable == null)
+                        continue;
+
+                    var call = CachedCall(callable);
+                    Add(callable.Name, () => call(instance));
+                }
+            }
+        }
+
+        static bool IsReactiveMethod(MethodInfo method)
+        {
+            if (method.IsGenericMethodDefinition || method.ContainsGenericParameters)
+                return false;
+            if (method.IsSpecialName)
+                return false;
+            if (method.ReturnType != typeof(void))
+                return false;
+            if (method.GetParameters().Length != 0)
+                return false;
+            return method.IsDefined(typeof(ReactiveAttribute), false);
+        }
+
+        // An abstract method has no body. Call the most derived concrete override.
+        static MethodInfo ConcreteImplementation(Type runtimeType, MethodInfo marked)
+        {
+            var slot = marked.GetBaseDefinition();
+            for (var type = runtimeType; type != null; type = type.BaseType)
+            {
+                var declared = type.GetMethods(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                foreach (var candidate in declared)
+                {
+                    if (candidate.IsAbstract || candidate.ContainsGenericParameters)
+                        continue;
+                    if (candidate.GetParameters().Length != 0 || candidate.ReturnType != typeof(void))
+                        continue;
+                    if (candidate.GetBaseDefinition().Equals(slot))
+                        return candidate;
+                }
+            }
+            return null;
+        }
+
+        static Action<object> CachedCall(MethodInfo method)
+        {
+            lock (ReactiveCalls)
+            {
+                Action<object> call;
+                if (ReactiveCalls.TryGetValue(method, out call))
+                    return call;
+                call = CompileCall(method);
+                ReactiveCalls.Add(method, call);
+                return call;
+            }
+        }
+
+        // MethodInfo.Invoke would wrap a thrown exception in TargetInvocationException.
+        // A direct call lets it reach the reaction as the method threw it (cs 7.2, 7.3).
+        static Action<object> CompileCall(MethodInfo method)
+        {
+            var instance = Expression.Parameter(typeof(object), "instance");
+            var call = Expression.Call(
+                Expression.Convert(instance, method.DeclaringType),
+                method);
+            return Expression.Lambda<Action<object>>(call, instance).Compile();
         }
 
         virtual public void Dispose()

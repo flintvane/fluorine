@@ -218,6 +218,200 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact]
+        public void ReactiveMethodsRunAfterConstructorAndTrackReads()
+        {
+            using (var host = new DispatcherHost())
+            {
+                MethodModel model = null;
+                host.OnScheduler(() =>
+                {
+                    model = new MethodModel();
+                    Assert.Empty(model.Seen);
+                    Assert.Equal(0, model.SecretRuns);
+                });
+                host.Drain();
+                Assert.Equal(new[] { 1 }, model.Seen);
+                Assert.Equal(1, model.SecretRuns);
+                Assert.Equal(0, model.WithArgRuns);
+                Assert.Equal(0, model.NonVoidRuns);
+                Assert.Equal(0, model.GenericRuns);
+                Assert.Equal(0, model.UnmarkedRuns);
+
+                model.Source.Value = 3;
+                host.Drain();
+                Assert.Equal(new[] { 1, 3 }, model.Seen);
+                Assert.Equal(2, model.SecretRuns);
+                Assert.Equal(0, model.WithArgRuns);
+                Assert.Equal(0, model.NonVoidRuns);
+                Assert.Equal(0, model.GenericRuns);
+                Assert.Equal(0, model.UnmarkedRuns);
+            }
+        }
+
+        [Fact]
+        public void ReactiveMethodExceptionIsLoggedUnwrapped()
+        {
+            using (var host = new DispatcherHost())
+            {
+                Exception logged = null;
+                Action<Exception> handler = e => logged = e;
+                Reactive.UnhandledException += handler;
+                try
+                {
+                    host.OnScheduler(() => new ThrowingMethod());
+                    host.Drain();
+                    Assert.IsType<InvalidOperationException>(logged);
+                    Assert.Equal("method", logged.Message);
+                }
+                finally
+                {
+                    Reactive.UnhandledException -= handler;
+                }
+            }
+        }
+
+        [Fact]
+        public void ReactiveMethodStopsAfterDispose()
+        {
+            using (var host = new DispatcherHost())
+            {
+                MethodModel model = null;
+                host.OnScheduler(() => model = new MethodModel());
+                host.Drain();
+                Assert.Equal(1, model.SecretRuns);
+
+                model.Dispose();
+                model.Source.Value = 8;
+                host.Drain();
+                Assert.Equal(new[] { 1 }, model.Seen);
+                Assert.Equal(1, model.SecretRuns);
+            }
+        }
+
+        [Fact]
+        public void ReactiveVirtualMethodRunsDerivedBodyOnceAndNewMethodIsSeparate()
+        {
+            using (var host = new DispatcherHost())
+            {
+                DerivedMethods model = null;
+                host.OnScheduler(() => model = new DerivedMethods());
+                host.Drain();
+                Assert.Single(model.Log, line => line == "derived:1");
+                Assert.Contains("own", model.Log);
+                Assert.Contains("hidden", model.Log);
+                Assert.Contains("fresh", model.Log);
+                Assert.DoesNotContain("base:1", model.Log);
+
+                model.Source.Value = 4;
+                host.Drain();
+                Assert.Single(model.Log, line => line == "derived:4");
+            }
+        }
+
+        [Fact]
+        public void ReactiveAbstractMethodRunsConcreteOverride()
+        {
+            using (var host = new DispatcherHost())
+            {
+                ConcreteMethod model = null;
+                host.OnScheduler(() => model = new ConcreteMethod());
+                host.Drain();
+                Assert.Equal(new[] { "concrete:1" }, model.Log);
+                model.Source.Value = 2;
+                host.Drain();
+                Assert.Equal(new[] { "concrete:1", "concrete:2" }, model.Log);
+            }
+        }
+
+        [Fact]
+        public void ReactiveMethodOnGenericClassTracksItsRegister()
+        {
+            using (var host = new DispatcherHost())
+            {
+                Box<string> model = null;
+                host.OnScheduler(() => model = new Box<string>("a"));
+                host.Drain();
+                Assert.Equal("a", model.Seen);
+                Assert.Equal(1, model.Runs);
+                model.Source.Value = "b";
+                host.Drain();
+                Assert.Equal("b", model.Seen);
+                Assert.Equal(2, model.Runs);
+            }
+        }
+
+        [Fact]
+        public void ReactorScansReactiveMethodsOnAnyObject()
+        {
+            using (var host = new DispatcherHost())
+            {
+                PlainReactive plain = null;
+                Reactor reactor = null;
+                host.OnScheduler(() =>
+                {
+                    plain = new PlainReactive();
+                    reactor = new Reactor();
+                    Assert.Empty(plain.Seen);
+                    reactor.AddReactiveMethods(plain);
+                    Assert.Empty(plain.Seen);
+                });
+                host.Drain();
+                Assert.Equal(new[] { 1 }, plain.Seen);
+
+                plain.Source.Value = 4;
+                host.Drain();
+                Assert.Equal(new[] { 1, 4 }, plain.Seen);
+
+                reactor.Dispose();
+                plain.Source.Value = 9;
+                host.Drain();
+                Assert.Equal(new[] { 1, 4 }, plain.Seen);
+            }
+        }
+
+        [Fact]
+        public void AddReactiveMethodsRejectsNullAndIgnoresDisposedReactor()
+        {
+            using (var host = new DispatcherHost())
+            {
+                host.OnScheduler(() =>
+                {
+                    var reactor = new Reactor();
+                    Assert.Throws<ReactiveException>(() => reactor.AddReactiveMethods(null));
+
+                    var plain = new PlainReactive();
+                    reactor.Dispose();
+                    reactor.AddReactiveMethods(plain);
+                    Assert.Empty(plain.Seen);
+                });
+                host.Drain();
+            }
+        }
+
+        [Fact]
+        public void ReactiveMethodAndAutoNotifyPropertyShareTheObject()
+        {
+            using (var host = new DispatcherHost())
+            {
+                Mixed model = null;
+                var names = new List<string>();
+                host.OnScheduler(() =>
+                {
+                    model = new Mixed();
+                    model.PropertyChanged += (sender, args) => names.Add(args.PropertyName);
+                });
+                host.Drain();
+                Assert.Equal(1, model.Runs);
+                Assert.Empty(names);
+
+                model.Source.Value = 6;
+                host.Drain();
+                Assert.Equal(2, model.Runs);
+                Assert.Equal(new[] { "Value" }, names);
+            }
+        }
+
         sealed class DispatcherHost : IDisposable
         {
             public DispatcherScheduler Scheduler { get; private set; }
@@ -404,6 +598,178 @@ namespace Fluorine.Tests
             public int Bad
             {
                 get { throw new InvalidOperationException("getter"); }
+            }
+        }
+
+        sealed class MethodModel : AutoNotify
+        {
+            public readonly Register<int> Source = new Register<int>(1);
+            public readonly List<int> Seen = new List<int>();
+            public int SecretRuns;
+            public int WithArgRuns;
+            public int NonVoidRuns;
+            public int GenericRuns;
+            public int UnmarkedRuns;
+
+            [Reactive]
+            void Watch()
+            {
+                Seen.Add(Source.Value);
+            }
+
+            [Reactive]
+            void Secret()
+            {
+                SecretRuns++;
+                if (Source.Value < 0)
+                    SecretRuns--;
+            }
+
+            [Reactive]
+            void HasParameter(int value)
+            {
+                WithArgRuns += value;
+            }
+
+            [Reactive]
+            int NotVoid()
+            {
+                NonVoidRuns++;
+                return Source.Value;
+            }
+
+            [Reactive]
+            void Generic<T>()
+            {
+                GenericRuns++;
+            }
+
+            void Unmarked()
+            {
+                UnmarkedRuns++;
+            }
+
+            [Reactive]
+            static void StaticWatch()
+            {
+            }
+        }
+
+        class BaseMethods : AutoNotify
+        {
+            public readonly Register<int> Source = new Register<int>(1);
+            public readonly List<string> Log = new List<string>();
+
+            [Reactive]
+            public virtual void Watch()
+            {
+                Log.Add("base:" + Source.Value);
+            }
+
+            [Reactive]
+            public void Own()
+            {
+                Log.Add("own");
+            }
+
+            [Reactive]
+            void Hidden()
+            {
+                Log.Add("hidden");
+            }
+        }
+
+        sealed class DerivedMethods : BaseMethods
+        {
+            public override void Watch()
+            {
+                Log.Add("derived:" + Source.Value);
+            }
+
+            [Reactive]
+            public new void Own()
+            {
+                Log.Add("fresh");
+            }
+        }
+
+        abstract class AbstractMethods : AutoNotify
+        {
+            public readonly Register<int> Source = new Register<int>(1);
+            public readonly List<string> Log = new List<string>();
+
+            [Reactive]
+            public abstract void Watch();
+        }
+
+        sealed class ConcreteMethod : AbstractMethods
+        {
+            public override void Watch()
+            {
+                Log.Add("concrete:" + Source.Value);
+            }
+        }
+
+        sealed class Box<T> : AutoNotify
+        {
+            public readonly Register<T> Source;
+            public T Seen;
+            public int Runs;
+
+            public Box(T value)
+            {
+                Source = new Register<T>(value);
+            }
+
+            [Reactive]
+            void Watch()
+            {
+                Runs++;
+                Seen = Source.Value;
+            }
+        }
+
+        sealed class PlainReactive
+        {
+            public readonly Register<int> Source = new Register<int>(1);
+            public readonly List<int> Seen = new List<int>();
+
+            [Reactive]
+            public void Watch()
+            {
+                Seen.Add(Source.Value);
+            }
+
+            [Reactive]
+            public void TakesArgument(int value)
+            {
+                Seen.Add(value);
+            }
+        }
+
+        sealed class Mixed : AutoNotify
+        {
+            public readonly Register<int> Source = new Register<int>(1);
+            public int Runs;
+
+            [AutoNotify]
+            public int Value => Source.Value;
+
+            [Reactive]
+            void Watch()
+            {
+                Runs++;
+                if (Source.Value < 0)
+                    Runs--;
+            }
+        }
+
+        sealed class ThrowingMethod : AutoNotify
+        {
+            [Reactive]
+            void Boom()
+            {
+                throw new InvalidOperationException("method");
             }
         }
     }

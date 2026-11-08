@@ -20,6 +20,14 @@ namespace Fluorine
         PropertyChangedEventHandler _propertyChanged;
         int _wired;
 
+        // Method reactions are armed here. Their first run is queued, so it happens
+        // after the derived constructor. Property reactions stay lazy until
+        // PropertyChanged has a subscriber (9.4).
+        public AutoNotify()
+        {
+            AddReactiveMethods(this);
+        }
+
         public event PropertyChangedEventHandler PropertyChanged
         {
             add
