@@ -49,6 +49,8 @@ reactor.Add(() => okButton.Enabled = searchBox.Text.Length > 0);
 
 This is the purpose of the manual trigger. Objects whose state changes inside them provide registers for that state instead (§14.2).
 
+To bind a model to WinForms text, visibility and enabled state, `FormsReactor` is the dedicated helper ([Binding a model to WinForms](winforms-binding.md)).
+
 ---
 
 *Spec references: §4.5, §12.8, §14.1, §14.2, §14.4; cs 1.1-1.5. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*

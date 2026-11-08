@@ -54,6 +54,16 @@ Disposing a reactor disposes every reaction in it (cs 2.11). Disposing a single 
 
 `Add` on a disposed reactor creates nothing and returns `null` (cs 2.9). This is not an error; it can happen when an add coincides with a shutdown. `Queue(Action)` on a disposed reactor does nothing (cs 2.1). A reactor created on a scheduler that is shutting down behaves as a disposed reactor (cs 2.4).
 
+## Marked methods
+
+`Reactor.AddReactiveMethods(instance)` adds a reaction for each parameterless void instance method marked `[Reactive]` on that object. The first run is queued. A virtual method is one reaction (the override on the instance runs); a method declared with `new` is a separate reaction.
+
+```csharp
+reactor.AddReactiveMethods(watcher);
+```
+
+`AutoNotify` does this for `this` in its constructor. The full rules, and the other use of `[Reactive]` on partial properties, are in [The Reactive attribute and the source generator](reactive-attribute.md).
+
 ## Queueing work through a reactor
 
 ```csharp

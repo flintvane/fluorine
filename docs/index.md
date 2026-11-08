@@ -23,4 +23,8 @@ Format: `N. [Title](topics/slug.md): description`
 15. [Shutting down](topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
 16. [Async code inside a reaction](topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
 17. [Rules of thumb](topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
-18. [Comparison with other frameworks](topics/comparison.md): How Meteor Tracker, Compose, MobX, Knockout, Vue, the signals libraries and the .NET options map onto registers, recorded dependencies and scheduled runs. Includes [Side by side](topics/side-by-side/index.md): eight scenarios run in seven frameworks.
+18. [AutoNotify: notifying WPF](topics/autonotify.md): Derive a model from `AutoNotify`, mark properties, and raise `PropertyChanged` when their getters change.
+19. [The Reactive attribute and the source generator](topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
+20. [Binding a model to WinForms](topics/winforms-binding.md): `FormsReactor` binds text, visibility and enabled state, with `TextConverter` for typed values.
+21. [PersonEditor: one model in two windows](topics/person-editor.md): A demo that shows the same `Person` in WinForms and WPF, and how to build and run it.
+22. [Comparison with other frameworks](topics/comparison.md): How Meteor Tracker, Compose, MobX, Knockout, Vue, the signals libraries and the .NET options map onto registers, recorded dependencies and scheduled runs. Includes [Side by side](topics/side-by-side/index.md): eight scenarios run in seven frameworks.

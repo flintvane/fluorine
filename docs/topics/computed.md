@@ -43,7 +43,7 @@ reactor.Computed(thumbnail, () => Render(image.Value, size.Value), disposeOld: t
 
 ## Computed values and derived values
 
-`Computed` is the short form of the pattern in [Derived values](derived-values.md): a reaction that writes a register. Like any derived value, it is up to date after its scheduler turn (§5.4).
+`Computed` is the short form of the pattern in [Derived values](derived-values.md): a reaction that writes a register. Like any derived value, it is up to date after its scheduler turn (§5.4). [PersonEditor](person-editor.md) uses it for an age-status message that both frontends display.
 
 ---
 

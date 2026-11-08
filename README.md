@@ -29,6 +29,10 @@ Read the topics in order; each one builds on the ones before it.
 15. [Shutting down](docs/topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
 16. [Async code inside a reaction](docs/topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
 17. [Rules of thumb](docs/topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
+18. [AutoNotify: notifying WPF](docs/topics/autonotify.md): Derive a model from `AutoNotify`, mark properties, and raise `PropertyChanged` when their getters change.
+19. [The Reactive attribute and the source generator](docs/topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
+20. [Binding a model to WinForms](docs/topics/winforms-binding.md): `FormsReactor` binds text, visibility and enabled state, with `TextConverter` for typed values.
+21. [PersonEditor: one model in two windows](docs/topics/person-editor.md): A demo that shows the same `Person` in WinForms and WPF, and how to build and run it.
 
 ## Other frameworks
 
