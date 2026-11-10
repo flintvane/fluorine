@@ -63,5 +63,5 @@ After shutdown `Scheduler.Current` is null, so `new Reactor()` there throws (cs2
 - s12.1 strong references: this is internal and has no public observable.
 - cs1.10 and cs2.16 "need not retain": optional behaviour.
 - cs3.10 "not light-weight": advisory.
-- cs8.1 and s10.2: a discussion, not normative (ideas.md parks async). Its tests are informative only.
+- cs8.1 and s10.2: a discussion, not normative (async is parked outside the spec). Its tests are informative only.
 - s10.3 "a reaction never runs a message pump": this is an obligation on the user, and only detection (s10.4) is testable.
