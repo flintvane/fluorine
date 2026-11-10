@@ -4,3 +4,5 @@ site/
 [Oo]bj/
 .vs/
 TestResults/
+spec/ideas.md
+spec/platform-notes.md
