@@ -48,6 +48,6 @@ Two threads writing the same register at once can cause at most one extra run, o
 
 ---
 
-*Spec references: §3, §14.2; cs 1.16, 1.17; platform-notes.md. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
+*Spec references: §3, §14.2; cs 1.16, 1.17. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← When reactions run](when-reactions-run.md) · [Topics](../index.md) · [Reactors and lifetimes →](reactors.md)
