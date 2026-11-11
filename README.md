@@ -6,7 +6,7 @@ A reactive programming library, provided in the same form on a variety of platfo
 
 Program state lives in registers. Code that must stay in step with that state is written as a reaction. A reaction does not declare its dependencies: whatever registers it reads while it runs become its dependencies, and when one changes, the reaction runs again.
 
-Status: the platform-neutral semantic specification is being written. No implementation yet.
+This repository holds the C# implementation: the base library, with schedulers and bindings for both WPF and WinForms.
 
 ## Documentation: using Fluorine from C#
 
