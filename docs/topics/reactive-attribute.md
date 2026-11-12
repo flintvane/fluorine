@@ -1,6 +1,6 @@
-[← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [Binding a model to WinForms →](winforms-binding.md)
+[← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md) · [AutoNotify: notifying WPF →](autonotify.md)
 
-# 21. The `[Reactive]` attribute and the source generator
+# 20. The `[Reactive]` attribute and the source generator
 
 `[Reactive]` (`ReactiveAttribute`) marks two kinds of member.
 
@@ -167,4 +167,4 @@ A `[Reactive]` property that the generator cannot fill in is reported as an erro
 
 *The method scan and the generator are library helpers built on reactors, registers and `AutoNotify` (cs 2, cs 11). (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [Binding a model to WinForms →](winforms-binding.md)
+[← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md) · [AutoNotify: notifying WPF →](autonotify.md)

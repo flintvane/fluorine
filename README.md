@@ -10,7 +10,9 @@ This repository holds the C# implementation: the base library, with schedulers a
 
 ## Documentation: using Fluorine from C#
 
-Read the topics in order; each one builds on the ones before it.
+The documentation is in four sections. Read the Guide in order; each topic builds on the ones before it. WPF and WinForms follow the Guide, then the comparison to other frameworks.
+
+## Guide
 
 1. [What Fluorine is](docs/topics/introduction.md): Registers hold state, reactions follow it. The one idea behind the library, and when to use it.
 2. [Your first reaction](docs/topics/first-reaction.md): A complete program: a scheduler, two registers, a reactor and a reaction that keeps a full name up to date.
@@ -31,14 +33,22 @@ Read the topics in order; each one builds on the ones before it.
 17. [Shutting down](docs/topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
 18. [Async code inside a reaction](docs/topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
 19. [Rules of thumb](docs/topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
-20. [AutoNotify: notifying WPF](docs/topics/autonotify.md): Derive a model from `AutoNotify`, mark properties, and raise `PropertyChanged` when their getters change.
-21. [The Reactive attribute and the source generator](docs/topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
-22. [Binding a model to WinForms](docs/topics/winforms-binding.md): `FormsReactor` binds text, visibility and enabled state, with `TextConverter` for typed values.
-23. [PersonEditor: one model in two windows](docs/topics/person-editor.md): A demo that shows the same `Person` in WinForms and WPF, and how to build and run it.
+20. [The Reactive attribute and the source generator](docs/topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
 
-## Other frameworks
+## WPF
 
-How Meteor Tracker, Compose, MobX, Knockout, Vue, the signals libraries and the .NET options map onto registers, recorded dependencies and scheduled runs. Start at [Comparison with other frameworks](docs/topics/comparison.md), then compare topic by topic:
+1. [AutoNotify: notifying WPF](docs/topics/autonotify.md): Derive a model from `AutoNotify`, mark properties, and raise `PropertyChanged` when their getters change.
+
+## WinForms
+
+1. [Binding a model to WinForms](docs/topics/winforms-binding.md): `FormsReactor` binds text, visibility and enabled state, with `TextConverter` for typed values.
+2. [PersonEditor: one model in two windows](docs/topics/person-editor.md): A demo that shows the same `Person` in WinForms and WPF, and how to build and run it.
+
+## Comparison to other frameworks
+
+1. [Comparison with other frameworks](docs/topics/comparison.md): How Meteor Tracker, Compose, MobX, Knockout, Vue, the signals libraries and the .NET options map onto registers, recorded dependencies and scheduled runs.
+
+Then compare topic by topic:
 
 - [First reaction](docs/topics/side-by-side/first-reaction.md)
 - [Dynamic dependencies](docs/topics/side-by-side/dynamic-dependencies.md)

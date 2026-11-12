@@ -1,6 +1,6 @@
-[← PersonEditor: one model in two windows](person-editor.md) · [Topics](../index.md)
+[← PersonEditor: one model in two windows](person-editor.md) · [Topics](../index.md) · [Side by side →](side-by-side/index.md)
 
-# 24. Comparison with other frameworks
+# 1. Comparison with other frameworks
 
 Fluorine shares its central idea with several well-known libraries: dependencies are found by recording reads while code runs. This page maps each of them onto Fluorine's three parts:
 
@@ -94,4 +94,4 @@ Eight small programs, written in Fluorine and in seven of these frameworks and r
 
 *Spec references: §1–§12; cs 1.16, 2.24, 7.1, 8.1. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6). Sources: research/landscape.md (2026-10-17), research/dotnet-demo/RESULT.md (2026-10-18).*
 
-[← PersonEditor: one model in two windows](person-editor.md) · [Topics](../index.md)
+[← PersonEditor: one model in two windows](person-editor.md) · [Topics](../index.md) · [Side by side →](side-by-side/index.md)

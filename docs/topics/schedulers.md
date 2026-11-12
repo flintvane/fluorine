@@ -43,7 +43,7 @@ public partial class App : Application
 }
 ```
 
-`AttachToCurrent` attaches a scheduler to the calling thread's dispatcher; calling it again returns the same scheduler (cs 5.3). `DispatcherScheduler.CreateNew` starts a new dispatcher thread, like `ThreadScheduler.CreateNew` (cs 5.2).
+`AttachToCurrent` attaches a scheduler to the calling thread's dispatcher; calling it again returns the same scheduler (cs 5.3). `DispatcherScheduler.CreateNew` starts a new dispatcher thread, like `ThreadScheduler.CreateNew` (cs 5.2). To notify WPF bindings, derive the model from `AutoNotify` ([AutoNotify](autonotify.md)).
 
 ### WinForms
 
@@ -52,7 +52,7 @@ public partial class App : Application
 WinFormsScheduler.AttachToCurrent();
 ```
 
-The calling thread must have the WinForms `SynchronizationContext`; otherwise the call throws `ReactiveException` (cs 6.1). That context is installed when the message loop starts, not when a form or control is constructed. `Application.Run(new Form())` constructs the form first, so attach in `OnLoad` (or after `Application.Run` has begun), as [PersonEditor](person-editor.md) does. The application keeps owning its message loop (cs 6.3).
+The calling thread must have the WinForms `SynchronizationContext`; otherwise the call throws `ReactiveException` (cs 6.1). That context is installed when the message loop starts, not when a form or control is constructed. `Application.Run(new Form())` constructs the form first, so attach in `OnLoad` (or after `Application.Run` has begun), as [PersonEditor](person-editor.md) does. To bind text, visibility and enabled state, use `FormsReactor` ([Binding a model to WinForms](winforms-binding.md)). The application keeps owning its message loop (cs 6.3).
 
 ## Finding the scheduler of a thread
 

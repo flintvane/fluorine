@@ -1,6 +1,6 @@
-[← The Reactive attribute and the source generator](reactive-attribute.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
+[← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
 
-# 22. Binding a model to WinForms
+# 1. Binding a model to WinForms
 
 `FormsReactor` binds WinForms controls to functions that read (and, for text boxes, write) your model. It is a `Reactor`, so its bindings are reactions: they subscribe to whatever registers the read function touches, and they run on the scheduler of the reactor.
 
@@ -91,4 +91,4 @@ For the lower-level pattern of wrapping a control that holds its own data, see [
 
 *FormsReactor builds on reactors, pausing and `WinFormsScheduler` (cs 2, 2.24, 6). (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← The Reactive attribute and the source generator](reactive-attribute.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
+[← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
