@@ -66,6 +66,8 @@ title.Name = "page title";
 
 `ReactiveSet<T>` is a set built on that base: add and remove members, react when one appears or disappears, and keep an immutable picture to compare later ([Reactive sets](reactive-sets.md)).
 
+`ReactiveDictionary<TKey, TValue>` is a dictionary built on that base: add, replace and remove entries, react to one key or to the whole picture, and keep an immutable picture to compare later ([Reactive dictionaries](reactive-dictionaries.md)).
+
 ---
 
 *Spec references: §3.1a, §7, §12.8; cs 1.1-1.15. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*

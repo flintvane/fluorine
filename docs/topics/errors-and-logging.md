@@ -1,6 +1,6 @@
 [← Computed values](computed.md) · [Topics](../index.md) · [Shutting down →](shutdown.md)
 
-# 15. Errors and logging
+# 16. Errors and logging
 
 A reaction never stops its event loop (§8.2). Errors are reported through one event.
 

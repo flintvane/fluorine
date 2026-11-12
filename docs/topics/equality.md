@@ -46,6 +46,8 @@ Two threads writing the same register at once can cause at most one extra run, o
 
 `ReactiveSet<T>` uses an `IEqualityComparer<T>` for membership ([Reactive sets](reactive-sets.md)). Hash codes must stay stable while an element is in the set.
 
+`ReactiveDictionary<TKey, TValue>` uses an `IEqualityComparer<TKey>` for its keys and `object.Equals` for its values ([Reactive dictionaries](reactive-dictionaries.md)). A key's hash code must stay stable while the key is present. An equal value is not stored again.
+
 ---
 
 *Spec references: §3, §14.2; cs 1.16, 1.17. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*

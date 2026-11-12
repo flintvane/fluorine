@@ -1,6 +1,6 @@
 [← PersonEditor: one model in two windows](person-editor.md) · [Topics](../index.md)
 
-# 23. Comparison with other frameworks
+# 24. Comparison with other frameworks
 
 Fluorine shares its central idea with several well-known libraries: dependencies are found by recording reads while code runs. This page maps each of them onto Fluorine's three parts:
 

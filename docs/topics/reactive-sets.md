@@ -1,4 +1,4 @@
-[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Reactive dictionaries →](reactive-dictionaries.md)
 
 # 12. Reactive sets
 
@@ -129,4 +129,4 @@ There is no separate "item appeared" or "item disappeared" event. Appearance and
 
 *Membership reads follow register recording (§7.1); queued runs coalesce as usual (§4.4). `ReactiveSet<T>` is described here from the C# library. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Reactive dictionaries →](reactive-dictionaries.md)

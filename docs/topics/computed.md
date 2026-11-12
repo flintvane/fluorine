@@ -1,6 +1,6 @@
 [← Derived values, self-writes and cycles](derived-values.md) · [Topics](../index.md) · [Errors and logging →](errors-and-logging.md)
 
-# 14. Computed values
+# 15. Computed values
 
 A computed value is a register that holds the result of a function. It triggers its readers only when that result changes.
 

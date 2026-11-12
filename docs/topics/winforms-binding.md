@@ -1,6 +1,6 @@
 [← The Reactive attribute and the source generator](reactive-attribute.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
 
-# 21. Binding a model to WinForms
+# 22. Binding a model to WinForms
 
 `FormsReactor` binds WinForms controls to functions that read (and, for text boxes, write) your model. It is a `Reactor`, so its bindings are reactions: they subscribe to whatever registers the read function touches, and they run on the scheduler of the reactor.
 

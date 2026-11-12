@@ -51,7 +51,7 @@ This is the purpose of the manual trigger. Objects whose state changes inside th
 
 To bind a model to WinForms text, visibility and enabled state, `FormsReactor` is the dedicated helper ([Binding a model to WinForms](winforms-binding.md)).
 
-A set of members, with reactions that follow one element or the whole picture, is a [`ReactiveSet<T>`](reactive-sets.md).
+A set of members, with reactions that follow one element or the whole picture, is a [`ReactiveSet<T>`](reactive-sets.md). A dictionary of entries, with reactions that follow one key's presence, one key's value, or the whole picture, is a [`ReactiveDictionary<TKey, TValue>`](reactive-dictionaries.md).
 
 ---
 
