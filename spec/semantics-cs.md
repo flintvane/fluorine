@@ -176,3 +176,29 @@ An implementation may create the reactions of an `AutoNotify` object (11.3)
 only when the first handler attaches to `PropertyChanged`, so objects that
 nobody binds to cost no reactions. This must preserve notification of the
 first change after a handler attaches (11.4).
+
+## 12. Reactive collections
+
+Construction and enumeration of these collections are not yet specified.
+
+12.1 `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` derive from `Register`. `Value` returns a `Version`, an immutable picture of the current contents. Reading and writing a collection can be done from any thread, and creating one needs no scheduler (1.13).
+12.2 Set elements and dictionary keys are matched with the comparer of the collection (`Comparer`), using its `Equals` and `GetHashCode`. A hash code must stay stable while its element or key is present. Dictionary values are compared as register values (1.16).
+12.3 A set accepts null as an element. A dictionary accepts null as a value; a null key throws `ArgumentNullException`.
+
+**Writing**
+12.4 `ReactiveSet<T>` offers `bool Add(T)`, `bool Remove(T)` and `Clear()`. `Add` returns false when the element is present, and `Remove` returns false when it is absent.
+12.5 `ReactiveDictionary<TKey, TValue>` offers `bool Add(key, value)`, `bool SetValue(key, value)`, `bool SetValue(key, value, out oldValue)`, an indexer setter, `bool Remove(key)` and `Clear()`. `Add` returns false when the key is present and leaves its value as it is. `Remove` returns false when the key is absent. `SetValue` and the indexer setter add or replace; `SetValue` returns true when the contents changed. `oldValue` is the stored value, or `default(TValue)` when the key was absent, and is read without recording (1.15).
+12.6 A write that leaves the contents unchanged stores nothing, publishes no new `Version` and triggers nothing. Replacing a value keeps the stored key instance.
+12.7 A write that changes the contents publishes a new `Version` atomically: a reader sees the picture before or after the write (13.1).
+
+**Reading and dependencies**
+12.8 `Contains(item)` and `ContainsKey(key)` record a read on the presence of that one element or key, also when it is absent. Adding or removing it, including through `Clear`, triggers the reaction. Other elements or keys, and replacing a value, do not.
+12.9 `TryGetValue(key, out value)` and the dictionary indexer getter record a read on the value of that key. Adding or removing the key, or changing its value, triggers the reaction. Other keys do not. The indexer getter throws `KeyNotFoundException` for an absent key after recording the read.
+12.10 `Value` and `Count` record a read on the whole collection. Every write that changes the contents triggers the reaction.
+12.11 Reads on a `Version` record nothing.
+
+**Versions**
+12.12 A `Version` offers `Count`, `SameAs(other)` and `Diff(previous)`, plus `Contains` for a set, or `ContainsKey`, `TryGetValue` and an indexer for a dictionary.
+12.13 `Diff(previous)` returns the net changes from `previous` to this version, as an array of `Change`. A null `previous` counts as empty. For a set, a change is `Added` or `Removed` with its `Item`. For a dictionary, it is `Added`, `Removed` or `Updated` with `Key`, `Value` and `PreviousValue`. `Value` is the new value (`Added`, `Updated`) or the value that left (`Removed`). `PreviousValue` is the replaced value for `Updated` and `default(TValue)` otherwise. `Diff` changes neither version.
+12.14 `SameAs(other)` is true when both are the same published picture. An empty version is `SameAs` null and any other empty version. Equal contents published separately are not `SameAs`.
+12.15 A `Version` keeps no older version alive.
