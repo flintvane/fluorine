@@ -182,8 +182,8 @@ first change after a handler attaches (11.4).
 Construction and enumeration of these collections are not yet specified.
 
 12.1 `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` derive from `Register`. `Value` returns a `Version`, an immutable picture of the current contents. Reading and writing a collection can be done from any thread, and creating one needs no scheduler (1.13).
-12.2 Set elements and dictionary keys are matched with the comparer of the collection (`Comparer`), using its `Equals` and `GetHashCode`. A hash code must stay stable while its element or key is present. Dictionary values are compared as register values (1.16).
-12.3 A set accepts null as an element. A dictionary accepts null as a value; a null key throws `ArgumentNullException`.
+12.2 Set elements and dictionary keys are matched with the comparer of the collection (`Comparer`), using its `Equals` and `GetHashCode`. A hash code must stay stable while its element or key is present. Dictionary values are compared as register values (1.16, 1.17).
+12.3 A set accepts null as an element. A dictionary accepts null as a value; a null key throws `ArgumentNullException`, on the dictionary and on a `Version`.
 
 **Writing**
 12.4 `ReactiveSet<T>` offers `bool Add(T)`, `bool Remove(T)` and `Clear()`. `Add` returns false when the element is present, and `Remove` returns false when it is absent.
@@ -198,7 +198,7 @@ Construction and enumeration of these collections are not yet specified.
 12.11 Reads on a `Version` record nothing.
 
 **Versions**
-12.12 A `Version` offers `Count`, `SameAs(other)` and `Diff(previous)`, plus `Contains` for a set, or `ContainsKey`, `TryGetValue` and an indexer for a dictionary.
-12.13 `Diff(previous)` returns the net changes from `previous` to this version, as an array of `Change`. A null `previous` counts as empty. For a set, a change is `Added` or `Removed` with its `Item`. For a dictionary, it is `Added`, `Removed` or `Updated` with `Key`, `Value` and `PreviousValue`. `Value` is the new value (`Added`, `Updated`) or the value that left (`Removed`). `PreviousValue` is the replaced value for `Updated` and `default(TValue)` otherwise. `Diff` changes neither version.
-12.14 `SameAs(other)` is true when both are the same published picture. An empty version is `SameAs` null and any other empty version. Equal contents published separately are not `SameAs`.
+12.12 A `Version` offers `Count`, `SameAs(other)` and `Diff(previous)`, plus `Contains` for a set, or `ContainsKey`, `TryGetValue` and an indexer for a dictionary. The indexer of a `Version` throws `KeyNotFoundException` for an absent key.
+12.13 `Diff(previous)` returns the net changes from `previous` to this version, as an array of `Change`. A null `previous` counts as empty. `Change.Kind` is a `ChangeKind`. For a set, a change is `Added` or `Removed` with its `Item`. For a dictionary, it is `Added`, `Removed` or `Updated` with `Key`, `Value` and `PreviousValue`. `Value` is the new value (`Added`, `Updated`) or the value that left (`Removed`). `PreviousValue` is the replaced value for `Updated` and `default(TValue)` otherwise. `Diff` changes neither version.
+12.14 `SameAs(other)` is a quick identity test: when it is true, both versions have the same contents. An empty version is `SameAs` null and any other empty version. When it is false, the contents may still be equal; `Diff` tells.
 12.15 A `Version` keeps no older version alive.
