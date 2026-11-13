@@ -11,7 +11,7 @@ public ReactiveSet<string> Tags = new ReactiveSet<string>();
 public ReactiveSet<string>.Version TagValues => Tags.Value;
 ```
 
-`Tags` is where you call `Add`, `Remove`, `Clear` and `Contains`. `TagValues` (or any other read of `Value`) is the picture you enumerate or pass to `Diff` and `SameAs`.
+`Tags` is where you call `Add`, `Remove`, `Clear` and `Contains`. `TagValues` (or any other read of `Value`) is the picture you enumerate or pass to `Diff`.
 
 `ReactiveSet<T>` derives from `Register` and implements `IEnumerable<T>`. Creating one does not need a scheduler.
 
@@ -19,14 +19,14 @@ public ReactiveSet<string>.Version TagValues => Tags.Value;
 
 ```csharp
 var empty = new ReactiveSet<int>();
-var seeds = new ReactiveSet<int>(new[] { 1, 2, 2, 3 });   // three members
+var seeds = new ReactiveSet<int>(new[] { 1, 2, 3 });
 var names = new ReactiveSet<string>(StringComparer.OrdinalIgnoreCase);
 var mixed = new ReactiveSet<string>(
     new[] { "Ada", "Byron" }, StringComparer.OrdinalIgnoreCase);
 ```
 
 - `new ReactiveSet<T>()` starts empty and uses `EqualityComparer<T>.Default`.
-- The constructor that takes `IEnumerable<T>` keeps distinct items according to that comparer. A null sequence throws `ArgumentNullException`.
+- The constructor that takes `IEnumerable<T>` stores those items. A null sequence throws `ArgumentNullException`.
 - `Comparer` returns the comparer the set was created with.
 - Membership uses that comparer's `Equals` and `GetHashCode`. Hash codes must stay stable while an element is in the set.
 - A null element is a valid member when `T` can be null.
@@ -82,7 +82,6 @@ public sealed class Version : IEnumerable<T>
 {
     public int Count { get; }
     public bool Contains(T item);
-    public bool SameAs(Version other);
     public Change[] Diff(Version previous);
 }
 ```
@@ -103,30 +102,31 @@ reactor.Add(() =>
 });
 ```
 
-`Diff` compares two pictures and returns the net `Added` and `Removed` items. It does not mark either picture as seen; storing `seen = current` is what remembers the picture you applied. A null previous picture is treated as empty.
+`Diff` compares two pictures and returns the net `Added`, `Removed` and `Replaced` items. It does not mark either picture as seen; storing `seen = current` is what remembers the picture you applied. A null previous picture is treated as empty.
 
 Writes that happen before the reaction next runs are coalesced into one run ([When reactions run](when-reactions-run.md)). `Diff(seen)` then reports the net change since the last stored picture: adding `1` and `2` and then removing `1` appears as `Added: 2`.
 
 If a run returns before it updates `seen`, the next run still diffs against that older picture and applies everything that has happened since.
 
 ```csharp
-public enum ChangeKind { Added, Removed }
+public enum ChangeKind { Added, Removed, Replaced }
 
 public readonly struct Change
 {
     public ChangeKind Kind { get; }
     public T Item { get; }
+    public T Previous { get; }
 }
 ```
 
-`SameAs` is true when two pictures are the same published structure, including when both are empty (`empty.SameAs(null)` is true). Two sets built separately with the same members produce pictures whose `Diff` is empty (same membership) but `SameAs` is false (they do not share structure).
+`Item` is the added instance, the removed instance, or the instance now stored for `Replaced`. `Previous` is the instance that was stored for `Replaced`, and `default(T)` for `Added` and `Removed`. `Replaced` is reported when both pictures hold an equal element as different instances of a reference type: `Item` is the instance in the newer picture, `Previous` the one in the picture you kept.
 
 When the two pictures come from the same set, they share the branches that did not change. `Diff` returns immediately when the structure is identical, and otherwise walks only the branches that differ. Two unrelated pictures with the same members still yield an empty `Diff`, without that shared-structure shortcut.
 
-There is no separate "item appeared" or "item disappeared" event. Appearance and disappearance are `Contains` becoming true or false, or `ChangeKind.Added` and `ChangeKind.Removed` from `Diff`.
+To show a set in a WPF `ItemsControl` or `ListBox`, use `ObservableCollectionConverter` ([Showing a reactive set in WPF](observable-collections.md)).
 
 ---
 
-*Membership reads follow register recording (§7.1); queued runs coalesce as usual (§4.4). `ReactiveSet<T>` is described here from the C# library. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
+*Membership reads follow register recording (§7.1, cs 12.8–12.11); versions and `Diff` follow cs 12.12–12.15; construction follows cs 12.23; queued runs coalesce as usual (§4.4). (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Signal registers and shadow registers](signal-registers.md) · [Topics](../index.md) · [Reactive dictionaries →](reactive-dictionaries.md)

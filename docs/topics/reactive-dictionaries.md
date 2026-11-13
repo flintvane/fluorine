@@ -11,7 +11,7 @@ public ReactiveDictionary<string, int> Scores = new ReactiveDictionary<string, i
 public ReactiveDictionary<string, int>.Version ScoreValues => Scores.Value;
 ```
 
-`Scores` is where you call `Add`, `SetValue`, `Remove`, `Clear`, `ContainsKey` and `TryGetValue`. `ScoreValues` (or any other read of `Value`) is the picture you enumerate or pass to `Diff` and `SameAs`.
+`Scores` is where you call `Add`, `SetValue`, `Remove`, `Clear`, `ContainsKey` and `TryGetValue`. `ScoreValues` (or any other read of `Value`) is the picture you enumerate or pass to `Diff`.
 
 `ReactiveDictionary<TKey, TValue>` derives from `Register` and implements `IEnumerable<KeyValuePair<TKey, TValue>>`. Creating one does not need a scheduler.
 
@@ -22,16 +22,15 @@ var empty = new ReactiveDictionary<string, int>();
 var seeds = new ReactiveDictionary<string, int>(new[]
 {
     new KeyValuePair<string, int>("a", 1),
-    new KeyValuePair<string, int>("a", 2),
     new KeyValuePair<string, int>("b", 3)
-}); // two entries; the first value for "a" is kept
+});
 var names = new ReactiveDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 var mixed = new ReactiveDictionary<string, int>(
     new[] { new KeyValuePair<string, int>("Ada", 1) }, StringComparer.OrdinalIgnoreCase);
 ```
 
 - `new ReactiveDictionary<TKey, TValue>()` starts empty and uses `EqualityComparer<TKey>.Default`.
-- The constructor that takes pairs keeps the first value for each key. A null sequence throws `ArgumentNullException`. A null key throws `ArgumentNullException`.
+- The constructor that takes pairs stores those entries. A null sequence throws `ArgumentNullException`. A null key throws `ArgumentNullException`.
 - `Comparer` returns the comparer the dictionary was created with.
 - Keys use that comparer's `Equals` and `GetHashCode`. Hash codes must stay stable while a key is present.
 - Values use `object.Equals`, the same comparison a register uses ([Equality](equality.md)). Implementing `IEquatable<TValue>` alone does not count. An equal value is left as it was: the stored instance stays, and nothing is published.
@@ -115,7 +114,6 @@ public sealed class Version : IEnumerable<KeyValuePair<TKey, TValue>>
     public bool ContainsKey(TKey key);
     public bool TryGetValue(TKey key, out TValue value);
     public TValue this[TKey key] { get; }
-    public bool SameAs(Version other);
     public Change[] Diff(Version previous);
 }
 ```
@@ -156,14 +154,12 @@ public readonly struct Change
 
 `Value` is the value in the newer picture for `Added` and `Updated`, and the value that left for `Removed`. `PreviousValue` is the value that was replaced for `Updated`, and `default(TValue)` for `Added` and `Removed`.
 
-`SameAs` is true when two pictures are the same published structure, including when both are empty (`empty.SameAs(null)` is true). Two dictionaries built separately with the same entries produce pictures whose `Diff` is empty (same entries) but `SameAs` is false (they do not share structure).
-
 When the two pictures come from the same dictionary, they share the branches that did not change. `Diff` returns immediately when the structure is identical, and otherwise walks only the branches that differ. Two unrelated pictures with the same entries still yield an empty `Diff`, without that shared-structure shortcut.
 
 There is no separate "key appeared", "key disappeared" or "value changed" event. Those are `ContainsKey` or `TryGetValue` changing, or `ChangeKind.Added`, `ChangeKind.Removed` and `ChangeKind.Updated` from `Diff`.
 
 ---
 
-*Key and value reads follow register recording (§7.1); queued runs coalesce as usual (§4.4). `ReactiveDictionary<TKey, TValue>` is described here from the C# library. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
+*Key and value reads follow register recording (§7.1, cs 12.8–12.11); versions and `Diff` follow cs 12.12–12.15; construction follows cs 12.23; queued runs coalesce as usual (§4.4). (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Reactive sets](reactive-sets.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
