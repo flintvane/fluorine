@@ -24,8 +24,7 @@ namespace Fluorine
         Version _version;
         Membership _nullMembership;
 
-        public ReactiveSet()
-            : this((IEqualityComparer<T>)null)
+        public ReactiveSet(): this(null)
         {
         }
 
@@ -34,17 +33,11 @@ namespace Fluorine
             _comparer = comparer ?? EqualityComparer<T>.Default;
             _empty = Version.CreateEmpty(_comparer);
             _version = _empty;
-            _allowsNull = (object)default(T) == null;
+            _allowsNull = default(T) == null;
             _memberships = new Dictionary<T, Membership>(_comparer);
         }
 
-        public ReactiveSet(IEnumerable<T> items)
-            : this(items, null)
-        {
-        }
-
-        public ReactiveSet(IEnumerable<T> items, IEqualityComparer<T> comparer)
-            : this(comparer)
+        public ReactiveSet(IEnumerable<T> items, IEqualityComparer<T> comparer = null): this(comparer)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
@@ -193,10 +186,7 @@ namespace Fluorine
             }
         }
 
-        bool IsNullItem(T item)
-        {
-            return _allowsNull && (object)item == null;
-        }
+        bool IsNullItem(T item) => _allowsNull && item == null;
 
         bool TryGetMembership(T item, out Membership membership)
         {
@@ -244,8 +234,6 @@ namespace Fluorine
 
             public T Item { get; }
 
-            // I am a bit surprised on why this is done like thiat
-            // So the syncroot would effectively 
             protected override object SyncRoot => _owner;
 
             internal override bool AddListener(Reaction reaction)
@@ -325,16 +313,9 @@ namespace Fluorine
                     return Array.Empty<Change>();
                 return changes.ToArray();
             }
-
-            public IEnumerator<T> GetEnumerator() 
-                => _root == null ? Empty() : _root.GetEnumerator();
-
+            
+            public IEnumerator<T> GetEnumerator() => _root.GetEnumerator();
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-            static IEnumerator<T> Empty()
-            {
-                yield break;
-            }
 
             internal Version Added(T item)
             {
@@ -496,26 +477,83 @@ namespace Fluorine
                 var child = Join(hashA, a, hashB, b, shift + 5, comparer);
                 return new Branch(1u << ia, new[] { child });
             }
+            
+            
+            sealed class Enumerator : IEnumerator<T>
+            {
+                // 32-bit hash, 5 bits per level: at most 7 branch levels, plus the root slot.
+                const int MaxDepth = 8;
+                readonly Node[][] _nodes = new Node[MaxDepth][];
+                readonly int[] _next = new int[MaxDepth];
+                int _depth;
+                T[] _collision;
+                int _collisionNext;
+                public Enumerator(Node root)
+                {
+                    _nodes[0] = new[] { root };
+                }
+                public T Current { get; private set; }
+                object IEnumerator.Current => Current;
+                public bool MoveNext()
+                {
+                    if (_collision != null)
+                    {
+                        if (_collisionNext < _collision.Length)
+                        {
+                            Current = _collision[_collisionNext++];
+                            return true;
+                        }
+                        _collision = null;
+                    }
+                    while (_depth >= 0)
+                    {
+                        var nodes = _nodes[_depth];
+                        if (_next[_depth] == nodes.Length)
+                        {
+                            _depth--;
+                            continue;
+                        }
+                        switch (nodes[_next[_depth]++])
+                        {
+                            case Leaf leaf:
+                                Current = leaf.Item;
+                                return true;
+                            case Collision collision:
+                                _collision = collision.Items;
+                                _collisionNext = 1;
+                                Current = collision.Items[0];
+                                return true;
+                            case Branch branch:
+                                _depth++;
+                                _nodes[_depth] = branch.Children;
+                                _next[_depth] = 0;
+                                break;
+                        }
+                    }
+                    return false;
+                }
+                public void Reset()
+                {
+                    _depth = 0;
+                    _next[0] = 0;
+                    _collision = null;
+                }
+                public void Dispose()
+                {
+                }
+            }
 
-            public abstract IEnumerator<T> GetEnumerator();
+            public IEnumerator<T> GetEnumerator() => new Enumerator(this);
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
-        sealed class Leaf : Node
+        sealed class Leaf(int hash, T item) : Node
         {
-            public Leaf(int hash, T item)
-            {
-                Hash = hash;
-                Item = item;
-            }
+            public int Hash { get; } = hash;
+            public T Item { get; } = item;
 
-            public int Hash { get; }
-            public T Item { get; }
-
-            public override bool Contains(int hash, T item, int shift, IEqualityComparer<T> comparer)
-            {
-                return Hash == hash && comparer.Equals(Item, item);
-            }
+            public override bool Contains(int hash, T item, int shift, IEqualityComparer<T> comparer) 
+                => Hash == hash && comparer.Equals(Item, item);
 
             public override Node Add(int hash, T item, int shift, IEqualityComparer<T> comparer, out bool added)
             {
@@ -541,11 +579,6 @@ namespace Fluorine
 
                 removed = false;
                 return this;
-            }
-            
-            public override IEnumerator<T> GetEnumerator()
-            {
-                yield return Item;
             }
         }
 
@@ -654,21 +687,12 @@ namespace Fluorine
                 Array.Copy(Items, index + 1, next, index, Items.Length - index - 1);
                 return new Collision(Hash, next);
             }
-
-            public override IEnumerator<T> GetEnumerator() 
-                => ((IEnumerable<T>)Items).GetEnumerator();
         }
 
-        sealed class Branch : Node
+        sealed class Branch(uint bitmap, Node[] children) : Node
         {
-            public Branch(uint bitmap, Node[] children)
-            {
-                Bitmap = bitmap;
-                Children = children;
-            }
-
-            public uint Bitmap { get; }
-            public Node[] Children { get; }
+            public uint Bitmap { get; } = bitmap;
+            public Node[] Children { get; } = children;
 
             public int Slot(uint bit)
             {
@@ -734,13 +758,6 @@ namespace Fluorine
                 var replaced = (Node[])Children.Clone();
                 replaced[slot] = updated;
                 return new Branch(Bitmap, replaced);
-            }
-
-            public override IEnumerator<T> GetEnumerator()
-            {
-                foreach (var a in Children)
-                     foreach(var b in a)
-                         yield return b;
             }
 
             static Node Collapse(Branch branch)
