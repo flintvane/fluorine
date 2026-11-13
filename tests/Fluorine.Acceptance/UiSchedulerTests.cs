@@ -318,7 +318,12 @@ namespace Fluorine.Acceptance
             Assert.True(ran);
             Assert.Equal(initialThread, ranOn);
         }
-        
+
+        [Fact(DisplayName = "cs5.2-06", Skip = "not testable through the public API (spec gap)")]
+        public void cs5_2_06()
+        {
+        }
+
         [Fact(DisplayName = "cs5.3-01")]
         public void cs5_3_01()
         {

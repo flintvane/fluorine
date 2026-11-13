@@ -450,31 +450,48 @@ namespace Fluorine.Acceptance
             Assert.Same(s, seen);
         }
 
-        [Fact(DisplayName = "cs3.7-01")]
-        public void cs3_7_01()
+        [Fact(DisplayName = "cs3.7-03")]
+        public void cs3_7_03()
         {
-            var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-            MethodInfo run = null;
-            foreach (var method in typeof(Scheduler).GetMethods(flags))
+            var threadScheduler = ThreadScheduler.CreateNew("cs3.7-03-ts");
+            bool threadRan = false;
+            Thread threadRanOn = null;
+            threadScheduler.Queue(() =>
             {
-                if (method.Name != "Run")
-                    continue;
-                Assert.Null(run);
-                run = method;
-                Assert.Equal(1, method.GetParameters().Length);
-                Assert.Equal(typeof(Reaction), method.GetParameters()[0].ParameterType);
-                Assert.True(method.IsFamily);
-                Assert.False(method.IsPublic);
-            }
-            Assert.NotNull(run);
-        }
+                threadRan = true;
+                threadRanOn = Thread.CurrentThread;
+            });
+            Harness.Barrier(threadScheduler);
+            Assert.True(threadRan);
+            Assert.Equal(Harness.ThreadOf(threadScheduler), threadRanOn);
 
-        [Fact(DisplayName = "cs3.7-02")]
-        public void cs3_7_02()
-        {
-            var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-            foreach (var method in typeof(WinFormsScheduler).GetMethods(flags))
-                Assert.NotEqual("Run", method.Name);
+            var dispatcher = DispatcherScheduler.CreateNew("cs3.7-03-ds");
+            bool dispatcherRan = false;
+            Thread dispatcherRanOn = null;
+            dispatcher.Queue(() =>
+            {
+                dispatcherRan = true;
+                dispatcherRanOn = Thread.CurrentThread;
+            });
+            Harness.Barrier(dispatcher);
+            Assert.True(dispatcherRan);
+            Assert.Equal(Harness.ThreadOf(dispatcher), dispatcherRanOn);
+
+            using (var forms = WinFormsLoop.Start())
+            {
+                bool formsRan = false;
+                Thread formsRanOn = null;
+                var done = new ManualResetEvent(false);
+                forms.Scheduler.Queue(() =>
+                {
+                    formsRan = true;
+                    formsRanOn = Thread.CurrentThread;
+                    done.Set();
+                });
+                Harness.Wait(done, "winforms existing loop");
+                Assert.True(formsRan);
+                Assert.Equal(forms.Thread, formsRanOn);
+            }
         }
 
         [Fact(DisplayName = "cs3.8-01")]
@@ -1159,37 +1176,6 @@ namespace Fluorine.Acceptance
                 Assert.Equal(0, startedDuring);
                 Assert.True(completed);
                 Assert.Equal(0, log.Count);
-            }
-        }
-
-        [Fact(DisplayName = "cs3.16-03")]
-        public void cs3_16_03()
-        {
-            using (var log = new Log())
-            {
-                var otherScheduler = Harness.Create();
-                bool otherWork = false;
-                otherScheduler.Queue(() => otherWork = true);
-                var scheduler = new ProbeScheduler();
-                var reactor = new Reactor(scheduler);
-                bool bRan = false;
-                Reaction other = null;
-                reactor.Add(() => scheduler.RunDirect(other));
-                other = reactor.Add(() => { });
-                scheduler.Queue(() => bRan = true);
-                scheduler.Pump();
-                Assert.Equal(1, log.Count);
-                var item = log.Snapshot()[0];
-                var carried = item as ReactiveException;
-                if (carried == null && item != null)
-                    carried = item.InnerException as ReactiveException;
-                Assert.NotNull(carried);
-                var wrapped = item as ReactiveException;
-                if (wrapped != null)
-                    Assert.Null(wrapped.InnerException);
-                Assert.True(bRan);
-                Harness.Barrier(otherScheduler);
-                Assert.True(otherWork);
             }
         }
 

@@ -22,3 +22,7 @@ Rows and build tests that cannot be brought into line without changing the spec,
 ## Acceptance rows with no public test
 
 `cs4.2-07` and `cs5.2-06` say the bring-up failure is not testable through the public API: there is no public way to make `CreateNew` fail, and no fault-injection point. `acceptance/SPEC-GAPS.md` assigns no G number to that gap (`G6` is whether `ThreadScheduler` has `Run()`, and `G7` was the initial-action exception, which the spec now resolves). Each ID has one skipped test. The skip reason is `not testable through the public API (spec gap)`, because there is no `Gn` to cite. They are not asserted.
+
+## Library gaps
+
+`cs11.1-01`: `AutoNotify` is not abstract (`public class AutoNotify` in `src/Fluorine/AutoNotify.cs`). The row requires an abstract class. The test is kept as written and fails. The other shape checks (INotifyPropertyChanged, IDisposable, parameterless constructor, `AutoNotifyAttribute` on properties) were not reached.

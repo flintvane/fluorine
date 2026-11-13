@@ -359,6 +359,32 @@ namespace Fluorine.Acceptance
             Assert.Equal(2, plain.Value);
         }
 
+        [Fact(DisplayName = "cs8.6-04")]
+        public void cs8_6_04()
+        {
+            using (var log = new Log())
+            {
+                var s = Harness.Create();
+                var which = new Register<int>(0);
+                var thrown = new InvalidOperationException("dispose-x");
+                var first = new ThrowingBox(thrown);
+                var second = new ThrowingBox(null);
+                var dest = new Register<ThrowingBox>();
+                new Reactor(s).Computed(dest, () =>
+                {
+                    var unused = which.Value;
+                    return unused == 0 ? first : second;
+                }, true);
+                Harness.Barrier(s);
+                which.Value = 1;
+                Harness.Barrier2(s);
+                var items = log.Snapshot();
+                Assert.Single(items);
+                Assert.Same(thrown, items[0]);
+                Assert.IsNotType<ReactiveException>(items[0]);
+            }
+        }
+
         [Fact(DisplayName = "cs8.7-01")]
         public void cs8_7_01()
         {
@@ -446,6 +472,22 @@ namespace Fluorine.Acceptance
             public void Dispose()
             {
                 Disposed++;
+            }
+        }
+
+        sealed class ThrowingBox : IDisposable
+        {
+            readonly Exception _thrown;
+
+            public ThrowingBox(Exception thrown)
+            {
+                _thrown = thrown;
+            }
+
+            public void Dispose()
+            {
+                if (_thrown != null)
+                    throw _thrown;
             }
         }
 

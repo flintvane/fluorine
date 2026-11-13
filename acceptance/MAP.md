@@ -1,8 +1,8 @@
 # Build-test map
 
-Flagged: 27
+Flagged: 69
 
-Each row is one `[Fact]` in `tests/Fluorine.Tests` (156). Mapping uses the test name and its assert statements. Flag is `unspecified behaviour` when the test maps to no acceptance ID, or when an assert goes beyond the Expected column of the IDs it covers.
+Each row is one `[Fact]` in `tests/Fluorine.Tests` (218). Mapping uses the test name and its assert statements. Flag is `unspecified behaviour` when the test maps to no acceptance ID, or when an assert goes beyond the Expected column of the IDs it covers. Duplicate method names are qualified with the test class.
 
 | build test | IDs covered | flag |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (156). Mapping uses the test 
 | Rule_3_2_QueueReactionNeverInlineNeverThrowsAfterShutdownSilent | cs3.2-01, cs3.2-02 | |
 | Rule_3_5_RunRecordsReadsThenDisconnectsUnread | cs3.5-01 | |
 | Rule_3_6_CurrentIsThreadStaticAndClearedAfterShutdown | cs3.6-01, cs3.6-02, cs3.6-04, cs3.13-03 | |
-| Rule_3_7_BaseClassHasNoRun | cs3.7-01 | |
+| Rule_3_7_BaseClassHasNoRun | — | unspecified behaviour: asserts no public Scheduler.Run(); cs3.7-01 is retired (no explicit Run in the spec) |
 | Rule_3_9_SchedulersAreAnnouncedToReactive | cs3.9-01 | unspecified behaviour: asserts membership in Scheduler.SnapshotAll; cs3.9-01 only requires both schedulers finished |
 | Rule_3_10_OneSchedulerServesManyReactors | cs3.10-01 | |
 | Rule_3_11_ReactiveShutdownInformsAllThenWaits | cs3.11-01 | unspecified behaviour: asserts internal IsFinished; cs3.11-01 requires drained work and ForThread null |
@@ -162,3 +162,65 @@ Each row is one `[Fact]` in `tests/Fluorine.Tests` (156). Mapping uses the test 
 | Rule_8_1_AsyncLambdaIsOrdinaryAfterAwait | cs9.1-01 | |
 | Rule_8_2_ShutdownDetachesWithoutQueuedRun | cs3.8-02, s11.15-01 | |
 | Rule_7_1_HandlerThrowWritesWarningAndContinues | cs7.1-03, cs7.1-04 | |
+| Rule_11_1_ConstructorWithoutSchedulerThrows | cs2.2-02 | |
+| Rule_11_4_ChangeBeforeFirstRunStillNotifies | cs11.4-05 | unspecified behaviour: also records ctor/read log order not in the Expected column |
+| Rule_11_4_ChangedValueRaisesOnSchedulerThread | cs11.3-01, cs11.4-03 | |
+| Rule_11_4_EqualGetterValueDoesNotRaise | cs11.4-04 | unspecified behaviour: also asserts getter read counts |
+| Rule_11_5_DisposeStopsNotifications | cs11.5-01, cs11.5-02 | unspecified behaviour: also double-Dispose and attach-after-dispose |
+| Rule_11_3_MarkedPropertiesNotifyIndependently | cs11.3-02 | unspecified behaviour: also notifies a private marked property Secret |
+| Rule_11_2_OverrideKeepsAttributeAndUsesDerivedGetter | cs11.2-02 | unspecified behaviour: also asserts derived vs base getter read counts |
+| GetterExceptionReachesTheSubscriberUnwrapped | — | unspecified behaviour: getter throw on subscribe; no acceptance ID |
+| ReactiveMethodsRunAfterConstructorAndTrackReads | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ReactiveMethodExceptionIsLoggedUnwrapped | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ReactiveMethodStopsAfterDispose | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ReactiveVirtualMethodRunsDerivedBodyOnceAndNewMethodIsSeparate | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ReactiveAbstractMethodRunsConcreteOverride | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ReactiveMethodOnGenericClassTracksItsRegister | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ReactorScansReactiveMethodsOnAnyObject | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| AddReactiveMethodsRejectsNullAndIgnoresDisposedReactor | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ReactiveMethodAndAutoNotifyPropertyShareTheObject | — | unspecified behaviour: `[Reactive]` methods are not in TESTS.md |
+| ConstructorWithoutSchedulerThrows | — | unspecified behaviour: FormsReactor is not in TESTS.md |
+| ConvertersRoundTripAndRejectPartialText | — | unspecified behaviour: FormsReactor / WinForms binding is not in TESTS.md |
+| NullArgumentsThrow | — | unspecified behaviour: FormsReactor / WinForms binding is not in TESTS.md |
+| OneWayTextFollowsTheModelAndIgnoresEdits | — | unspecified behaviour: FormsReactor / WinForms binding is not in TESTS.md |
+| TwoWayStringWritesTheModelAndKeepsTheCaret | — | unspecified behaviour: FormsReactor / WinForms binding is not in TESTS.md |
+| TwoWayIntNormalizesAndKeepsPartialText | — | unspecified behaviour: FormsReactor / WinForms binding is not in TESTS.md |
+| VisibleAndEnabledAreSetOnly | — | unspecified behaviour: FormsReactor / WinForms binding is not in TESTS.md |
+| DisposeStopsBothDirections | — | unspecified behaviour: FormsReactor / WinForms binding is not in TESTS.md |
+| AddSetRemoveAndLookupFollowTheKeyComparer | cs12.2-01, cs12.5-01, cs12.5-02, cs12.5-03, cs12.5-06 | unspecified behaviour: enumerates the dictionary |
+| SetValueUsesObjectEqualsAndKeepsTheStoredInstance | cs12.2-02, cs12.2-03, cs12.6-02 | |
+| EqualsThrowLeavesTheStoredValue | cs12.2-05 | |
+| NullValueIsAnEntryAndNullKeyIsRejected | cs12.3-02, cs12.3-03 | |
+| MissingIndexerThrowsAfterTheValueWasRead | cs12.9-05, cs12.12-02 | |
+| ConstructorKeepsTheFirstValueAndDoesNotRequireAScheduler | cs12.23-01, cs12.23-03 | unspecified behaviour: duplicate keys in the items constructor keep the first value; TESTS.md leaves duplicates unspecified |
+| ClearDropsEveryEntry | cs12.5-06, cs12.13-04 | |
+| ReactiveDictionaryTests.DiffIsTheNetChangeBetweenTwoPictures | cs12.13-02, cs12.13-03, cs12.13-04 | |
+| SeparatelyBuiltEqualDictionariesDiffEmpty | cs12.13-03 | unspecified behaviour: asserts Version == is false; SameAs was removed and == is not an acceptance row |
+| OneChangedKeyDiffsAsThatKeyAlone | cs12.13-02 | |
+| ConstantHashAndRandomEditsMatchADictionary | — | unspecified behaviour: hash-collision parity with Dictionary is not an acceptance row |
+| ConcurrentAddsAndSetsKeepAConsistentMap | cs12.1-02 | |
+| ValueReadRerunsOnAnyChange | cs12.10-01 | unspecified behaviour: enumerates the dictionary inside the reaction |
+| ContainsKeyRerunsOnlyForThatKeysPresence | cs12.8-01, cs12.8-03, cs12.8-04 | |
+| ValueReadRerunsWhenThatKeyChanges | cs12.9-01 | |
+| IndexerGetterSubscribesThenThrowsWhenTheKeyIsAbsent | cs12.9-04 | |
+| PausedReadsDoNotSubscribe | — | unspecified behaviour: paused collection reads are not an acceptance row |
+| VersionReadsDoNotSubscribe | cs12.11-01 | |
+| PresenceAndValueWatchesDisposeOnTheirOwn | — | unspecified behaviour: internal watch disposal is not an acceptance row |
+| TwoValueReactionsShareOneWatch | — | unspecified behaviour: internal watch sharing is not an acceptance row |
+| ReactiveDictionaryTests.EarlyReturnKeepsThePreviousPicture | — | unspecified behaviour: no acceptance ID |
+| AddRemoveAndContainsFollowEqualsAndHashCode | cs12.2-01, cs12.4-01 | unspecified behaviour: enumerates the set |
+| NullElementIsAMember | cs12.3-01 | |
+| ConstructorKeepsDistinctItemsAndDoesNotRequireAScheduler | cs12.23-01, cs12.23-03 | unspecified behaviour: duplicate items in the constructor are collapsed; TESTS.md leaves duplicates unspecified |
+| ClearDropsEveryMember | cs12.4-02, cs12.13-04 | |
+| ReactiveSetTests.DiffIsTheNetChangeBetweenTwoPictures | cs12.13-01, cs12.13-03, cs12.13-04 | |
+| SeparatelyBuiltEqualSetsDiffEmpty | cs12.13-03 | unspecified behaviour: asserts Version == is false; SameAs was removed and == is not an acceptance row |
+| ConstantHashAndNegativeHashesMatchAHashSet | — | unspecified behaviour: hash-collision parity with HashSet is not an acceptance row |
+| ConcurrentAddsKeepEveryDistinctElement | cs12.1-02 | |
+| ValueReadRerunsOnAnyMembershipChange | cs12.10-01 | |
+| ContainsRerunsOnlyForThatElement | cs12.8-01, cs12.8-03 | |
+| PausedContainsDoesNotSubscribe | — | unspecified behaviour: paused collection reads are not an acceptance row |
+| TwoContainsReactionsShareOneMembershipAndDisposeReleasesIt | — | unspecified behaviour: internal membership sharing is not an acceptance row |
+| ReactiveSetTests.EarlyReturnKeepsThePreviousPicture | — | unspecified behaviour: no acceptance ID |
+| EqualReferenceReplacesTheStoredInstance | cs12.6-01, cs12.13-06 | |
+| AddingAnExistingMemberDoesNotRerun | cs12.6-01 | |
+| ObservableSet | — | unspecified behaviour: ObservableCollection converter is not an acceptance row |
