@@ -232,6 +232,9 @@ namespace Fluorine
             return Value.GetEnumerator();
         }
 
+        public IEnumerable<TKey> Keys => Value.Keys;
+        public IEnumerable<TValue> Values => Value.Values;
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
@@ -547,6 +550,9 @@ namespace Fluorine
                 yield break;
             }
 
+            public IEnumerable<TKey> Keys => new KeyView(_root);
+            public IEnumerable<TValue> Values => new ValueView(_root);
+
             internal Version Added(TKey key, TValue value)
             {
                 var hash = _comparer.GetHashCode(key);
@@ -722,8 +728,79 @@ namespace Fluorine
                 return new Branch(1u << ia, new[] { child });
             }
 
-            public abstract IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator();
+            internal sealed class Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
+            {
+                // 32-bit hash, 5 bits per level: at most 7 branch levels, plus the root slot.
+                const int MaxDepth = 8;
+                readonly Node[][] _nodes = new Node[MaxDepth][];
+                readonly int[] _next = new int[MaxDepth];
+                int _depth;
+                KeyValuePair<TKey, TValue>[] _collision;
+                int _collisionNext;
 
+                public Enumerator(Node root)
+                {
+                    _nodes[0] = new[] { root };
+                }
+
+                public KeyValuePair<TKey, TValue> Current { get; private set; }
+                object IEnumerator.Current => Current;
+
+                public bool MoveNext()
+                {
+                    if (_collision != null)
+                    {
+                        if (_collisionNext < _collision.Length)
+                        {
+                            Current = _collision[_collisionNext++];
+                            return true;
+                        }
+                        _collision = null;
+                    }
+
+                    while (_depth >= 0)
+                    {
+                        var nodes = _nodes[_depth];
+                        if (_next[_depth] == nodes.Length)
+                        {
+                            _depth--;
+                            continue;
+                        }
+
+                        switch (nodes[_next[_depth]++])
+                        {
+                            case Leaf leaf:
+                                Current = Pair(leaf.Key, leaf.Value);
+                                return true;
+                            case Collision collision:
+                                _collision = collision.Items;
+                                _collisionNext = 1;
+                                Current = collision.Items[0];
+                                return true;
+                            case Branch branch:
+                                _depth++;
+                                _nodes[_depth] = branch.Children;
+                                _next[_depth] = 0;
+                                break;
+                        }
+                    }
+
+                    return false;
+                }
+
+                public void Reset()
+                {
+                    _depth = 0;
+                    _next[0] = 0;
+                    _collision = null;
+                }
+
+                public void Dispose()
+                {
+                }
+            }
+
+            public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => new Enumerator(this);
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
@@ -811,11 +888,6 @@ namespace Fluorine
                 removed = false;
                 removedValue = default(TValue);
                 return this;
-            }
-
-            public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-            {
-                yield return Pair(Key, Value);
             }
         }
 
@@ -953,9 +1025,6 @@ namespace Fluorine
                 return new Collision(Hash, next);
             }
 
-            public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() 
-                => ((IEnumerable<KeyValuePair<TKey, TValue>>)Items).GetEnumerator();
-
             int IndexOf(int hash, TKey key, IEqualityComparer<TKey> comparer)
             {
                 if (Hash != hash)
@@ -1085,19 +1154,48 @@ namespace Fluorine
                 return new Branch(Bitmap, replaced);
             }
 
-            public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-            {
-                for (var i = 0; i < Children.Length; i++)
-                    foreach (var b in Children[i])
-                        yield return b;
-            }
-
             static Node Collapse(Branch branch)
             {
                 if (branch.Children.Length == 1 && !(branch.Children[0] is Branch))
                     return branch.Children[0];
                 return branch;
             }
+        }
+
+        sealed class KeyView(Node root) : IEnumerable<TKey>
+        {
+            public IEnumerator<TKey> GetEnumerator() => root == null
+                ? ((IEnumerable<TKey>)Array.Empty<TKey>()).GetEnumerator()
+                : new KeyEnumerator(new Node.Enumerator(root));
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        sealed class ValueView(Node root) : IEnumerable<TValue>
+        {
+            public IEnumerator<TValue> GetEnumerator() => root == null
+                ? ((IEnumerable<TValue>)Array.Empty<TValue>()).GetEnumerator()
+                : new ValueEnumerator(new Node.Enumerator(root));
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        sealed class KeyEnumerator(Node.Enumerator inner) : IEnumerator<TKey>
+        {
+            public TKey Current => inner.Current.Key;
+            object IEnumerator.Current => Current;
+            public bool MoveNext() => inner.MoveNext();
+            public void Reset() => inner.Reset();
+            public void Dispose() { }
+        }
+
+        sealed class ValueEnumerator(Node.Enumerator inner) : IEnumerator<TValue>
+        {
+            public TValue Current => inner.Current.Value;
+            object IEnumerator.Current => Current;
+            public bool MoveNext() => inner.MoveNext();
+            public void Reset() => inner.Reset();
+            public void Dispose() { }
         }
 
         static KeyValuePair<TKey, TValue> Pair(TKey key, TValue value) => new(key, value);
