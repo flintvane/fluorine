@@ -181,7 +181,7 @@ first change after a handler attaches (11.4).
 
 ## 12. Reactive collections
 
-Construction and enumeration of these collections are not yet specified.
+Enumeration of these collections is not yet specified.
 
 12.1 `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` derive from `Register`. `Value` returns a `Version`, an immutable picture of the current contents. Reading and writing a collection can be done from any thread, and creating one needs no scheduler (1.13).
 12.2 Set elements and dictionary keys are matched with the comparer of the collection (`Comparer`), using its `Equals` and `GetHashCode`. A hash code must stay stable while its element or key is present. Dictionary values are compared as register values (1.16, 1.17).
@@ -213,3 +213,7 @@ Construction and enumeration of these collections are not yet specified.
 12.20 While a batch runs, other writes to the same collection, from any thread, wait until it ends. Reads of the collection from other threads are not delayed; they see the picture from before the batch.
 12.21 Inside `edit`, the collection itself must not be written, and `Batch` must not be called on it again; that throws `ReactiveException` (section 10). Using an editor after its `edit` has returned throws `ReactiveException`.
 12.22 A batch is atomic for one collection only. It does not make writes to other registers atomic with it (main 11.13).
+
+**Construction**
+12.23 Both collections have a parameterless constructor, one taking a comparer, one taking initial contents, and one taking initial contents and a comparer. A null comparer means the default comparer; null initial contents throw `ArgumentNullException`.
+12.24 Initial contents are taken as if added one by one with `Add` (12.4, 12.5): a duplicate element or key is ignored, and for a dictionary the first value for a key is kept. Nothing is thrown or reported for duplicates.
