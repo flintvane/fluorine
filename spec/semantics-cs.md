@@ -216,4 +216,3 @@ Enumeration of these collections is not yet specified.
 
 **Construction**
 12.23 Both collections have a parameterless constructor, one taking a comparer, one taking initial contents, and one taking initial contents and a comparer. A null comparer means the default comparer; null initial contents throw `ArgumentNullException`.
-12.24 Initial contents are taken as if added one by one with `Add` (12.4, 12.5): a duplicate element or key is ignored, and for a dictionary the first value for a key is kept. Nothing is thrown or reported for duplicates.
