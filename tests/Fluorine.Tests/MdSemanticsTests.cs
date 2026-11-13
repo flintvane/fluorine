@@ -1057,10 +1057,9 @@ namespace Fluorine.Tests
             }
         }
 
-        struct Big
+        struct Big(long x, long y)
         {
-            public readonly long X, Y;
-            public Big(long x, long y) { X = x; Y = y; }
+            public readonly long X = x, Y = y;
         }
     }
 

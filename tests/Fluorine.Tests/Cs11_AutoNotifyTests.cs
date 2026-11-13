@@ -468,7 +468,7 @@ namespace Fluorine.Tests
 
         sealed class CtorOrder : AutoNotify
         {
-            public readonly List<string> Log = new List<string>();
+            public readonly List<string> Log = [];
             public readonly Register<int> Source = new Register<int>(1);
 
             public CtorOrder()
@@ -497,14 +497,9 @@ namespace Fluorine.Tests
             public int Value => Source.Value;
         }
 
-        sealed class Mark
+        sealed class Mark(int n)
         {
-            public readonly int N;
-
-            public Mark(int n)
-            {
-                N = n;
-            }
+            public readonly int N = n;
 
             public override bool Equals(object obj)
             {
@@ -608,7 +603,7 @@ namespace Fluorine.Tests
         sealed class MethodModel : AutoNotify
         {
             public readonly Register<int> Source = new Register<int>(1);
-            public readonly List<int> Seen = new List<int>();
+            public readonly List<int> Seen = [];
             public int SecretRuns;
             public int WithArgRuns;
             public int NonVoidRuns;
@@ -662,7 +657,7 @@ namespace Fluorine.Tests
         class BaseMethods : AutoNotify
         {
             public readonly Register<int> Source = new Register<int>(1);
-            public readonly List<string> Log = new List<string>();
+            public readonly List<string> Log = [];
 
             [Reactive]
             public virtual void Watch()
@@ -700,7 +695,7 @@ namespace Fluorine.Tests
         abstract class AbstractMethods : AutoNotify
         {
             public readonly Register<int> Source = new Register<int>(1);
-            public readonly List<string> Log = new List<string>();
+            public readonly List<string> Log = [];
 
             [Reactive]
             public abstract void Watch();
@@ -714,16 +709,11 @@ namespace Fluorine.Tests
             }
         }
 
-        sealed class Box<T> : AutoNotify
+        sealed class Box<T>(T value) : AutoNotify
         {
-            public readonly Register<T> Source;
+            public readonly Register<T> Source = new(value);
             public T Seen;
             public int Runs;
-
-            public Box(T value)
-            {
-                Source = new Register<T>(value);
-            }
 
             [Reactive]
             void Watch()
@@ -736,7 +726,7 @@ namespace Fluorine.Tests
         sealed class PlainReactive
         {
             public readonly Register<int> Source = new Register<int>(1);
-            public readonly List<int> Seen = new List<int>();
+            public readonly List<int> Seen = [];
 
             [Reactive]
             public void Watch()

@@ -264,16 +264,10 @@ namespace App
             return text.Replace("\r\n", "\n").Replace("\r", "\n");
         }
 
-        sealed class Generation
+        sealed class Generation(List<Generated> sources, List<Diagnostic> diagnostics)
         {
-            public Generation(List<Generated> sources, List<Diagnostic> diagnostics)
-            {
-                Sources = sources;
-                Diagnostics = diagnostics;
-            }
-
-            public List<Generated> Sources { get; }
-            public List<Diagnostic> Diagnostics { get; }
+            public List<Generated> Sources { get; } = sources;
+            public List<Diagnostic> Diagnostics { get; } = diagnostics;
 
             public Generated Single()
             {
@@ -282,16 +276,10 @@ namespace App
             }
         }
 
-        sealed class Generated
+        sealed class Generated(string hint, string text)
         {
-            public Generated(string hint, string text)
-            {
-                Hint = hint;
-                Text = text;
-            }
-
-            public string Hint { get; }
-            public string Text { get; }
+            public string Hint { get; } = hint;
+            public string Text { get; } = text;
         }
     }
 }

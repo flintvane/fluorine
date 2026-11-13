@@ -193,21 +193,15 @@ namespace Fluorine.Acceptance
         }
     }
 
-    public sealed class Hold : IDisposable
+    public sealed class Hold(ManualResetEvent release) : IDisposable
     {
-        readonly ManualResetEvent _release;
         int _done;
-
-        public Hold(ManualResetEvent release)
-        {
-            _release = release;
-        }
 
         public void Release()
         {
             if (Interlocked.Exchange(ref _done, 1) != 0)
                 return;
-            _release.Set();
+            release.Set();
         }
 
         public void Dispose()
@@ -218,7 +212,7 @@ namespace Fluorine.Acceptance
 
     public sealed class Log : IDisposable
     {
-        readonly List<Exception> _items = new List<Exception>();
+        readonly List<Exception> _items = [];
 
         public Log()
         {
@@ -249,7 +243,7 @@ namespace Fluorine.Acceptance
         public Exception[] Snapshot()
         {
             lock (_items)
-                return _items.ToArray();
+                return [.. _items];
         }
 
         public void Dispose()
@@ -287,7 +281,7 @@ namespace Fluorine.Acceptance
 
     public sealed class Order
     {
-        readonly List<string> _items = new List<string>();
+        readonly List<string> _items = [];
 
         public void Add(string item)
         {
@@ -298,7 +292,7 @@ namespace Fluorine.Acceptance
         public string[] Snapshot()
         {
             lock (_items)
-                return _items.ToArray();
+                return [.. _items];
         }
     }
 

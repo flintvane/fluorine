@@ -54,7 +54,7 @@ namespace Fluorine.Acceptance
                 hold.Release();
             }
             Harness.Barrier2(s);
-            Assert.Equal(new[] { "r1", "a", "r2" }, order.Snapshot());
+            Assert.Equal(["r1", "a", "r2"], order.Snapshot());
         }
 
         [Fact(DisplayName = "cs2.2-01")]

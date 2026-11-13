@@ -39,7 +39,7 @@ namespace Fluorine.Tests
                 var reactor = host.NewReactor();
                 reactor.Name = "r";
                 Assert.Equal("r", reactor.Name);
-                Assert.Null(typeof(Reactor).GetConstructor(new[] { typeof(string) }));
+                Assert.Null(typeof(Reactor).GetConstructor([typeof(string)]));
             }
         }
 

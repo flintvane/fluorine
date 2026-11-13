@@ -332,13 +332,8 @@ namespace Fluorine.Acceptance
             Assert.True(protectedMembers >= 1, "no protected backing member");
         }
 
-        sealed class BackingProbe : Register<string>
+        sealed class BackingProbe(string initial) : Register<string>(initial)
         {
-            public BackingProbe(string initial)
-                : base(initial)
-            {
-            }
-
             public object ReadBacking()
             {
                 var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -633,30 +628,17 @@ namespace Fluorine.Acceptance
             Assert.True(finalValue.A == finalValue.B && finalValue.B == finalValue.C && finalValue.C == finalValue.D);
         }
 
-        struct Big
+        struct Big(long value)
         {
-            public long A;
-            public long B;
-            public long C;
-            public long D;
-
-            public Big(long value)
-            {
-                A = value;
-                B = value;
-                C = value;
-                D = value;
-            }
+            public long A = value;
+            public long B = value;
+            public long C = value;
+            public long D = value;
         }
 
-        sealed class EqualByValue
+        sealed class EqualByValue(int token)
         {
-            public readonly int Token;
-
-            public EqualByValue(int token)
-            {
-                Token = token;
-            }
+            public readonly int Token = token;
 
             public override bool Equals(object obj)
             {
@@ -669,14 +651,9 @@ namespace Fluorine.Acceptance
             }
         }
 
-        sealed class EquatableOnly : IEquatable<EquatableOnly>
+        sealed class EquatableOnly(int id) : IEquatable<EquatableOnly>
         {
-            public readonly int Id;
-
-            public EquatableOnly(int id)
-            {
-                Id = id;
-            }
+            public readonly int Id = id;
 
             public bool Equals(EquatableOnly other)
             {

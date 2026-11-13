@@ -29,7 +29,7 @@ namespace Fluorine.Tests
 
     static class SkipLog
     {
-        public static readonly ConcurrentBag<string> Entries = new ConcurrentBag<string>();
+        public static readonly ConcurrentBag<string> Entries = [];
 
         public static void CouldNotRun(string test, string reason)
         {
@@ -39,14 +39,9 @@ namespace Fluorine.Tests
         }
     }
 
-    sealed class ThreadHost : IDisposable
+    sealed class ThreadHost(Action initial = null) : IDisposable
     {
-        public ThreadScheduler Scheduler { get; private set; }
-
-        public ThreadHost(Action initial = null)
-        {
-            Scheduler = ThreadScheduler.CreateNew("test", initial);
-        }
+        public ThreadScheduler Scheduler { get; private set; } = ThreadScheduler.CreateNew("test", initial);
 
         public Reactor NewReactor()
         {
@@ -124,18 +119,17 @@ namespace Fluorine.Tests
 
     sealed class WinFormsHost : IDisposable
     {
-        readonly Thread _thread;
         readonly ManualResetEventSlim _ready = new ManualResetEventSlim(false);
         readonly ManualResetEventSlim _exited = new ManualResetEventSlim(false);
-        Form _form;
-        Exception _startError;
+        private Form _form;
+        private Exception _startError;
 
         public WinFormsScheduler Scheduler { get; private set; }
         public SynchronizationContext Context { get; private set; }
 
         public WinFormsHost()
         {
-            _thread = new Thread(() =>
+            var thread = new Thread(() =>
             {
                 try
                 {
@@ -168,10 +162,10 @@ namespace Fluorine.Tests
                     _exited.Set();
                 }
             });
-            _thread.SetApartmentState(ApartmentState.STA);
-            _thread.IsBackground = true;
-            _thread.Name = "Fluorine WinForms test";
-            _thread.Start();
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.IsBackground = true;
+            thread.Name = "Fluorine WinForms test";
+            thread.Start();
             if (!_ready.Wait(TimeSpan.FromSeconds(15)))
                 throw new TimeoutException("WinForms host did not start.");
             if (Scheduler == null)
@@ -206,7 +200,7 @@ namespace Fluorine.Tests
         {
             try
             {
-                if (Scheduler != null && !Scheduler.HasStartedShutdown)
+                if (Scheduler is { HasStartedShutdown: false })
                     Scheduler.Shutdown();
             }
             catch

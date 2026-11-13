@@ -6,11 +6,11 @@ namespace Fluorine
 {
     public abstract class Scheduler
     {
-        [ThreadStatic] static Scheduler t_current;
+        [ThreadStatic] static Scheduler _tCurrent;
 
-        [ThreadStatic] static Type t_claimType;
+        [ThreadStatic] static Type _tClaimType;
 
-        [ThreadStatic] static int t_drainDepth;
+        [ThreadStatic] static int _tDrainDepth;
 
         static readonly object StaticLock = new object();
         static readonly Dictionary<Thread, Scheduler> ByThread = new Dictionary<Thread, Scheduler>();
@@ -37,7 +37,7 @@ namespace Fluorine
                 InstallOnCurrentThread();
         }
 
-        public static Scheduler Current => t_current;
+        public static Scheduler Current => _tCurrent;
 
         public static Scheduler ForThread(Thread thread)
         {
@@ -87,7 +87,7 @@ namespace Fluorine
             RequestShutdown();
             if (IsOwnerThread)
                 DrainAndFinishOnOwnerThread();
-            if (t_drainDepth > 0 && IsOwnerThread)
+            if (_tDrainDepth > 0 && IsOwnerThread)
                 return;
             _finished.Wait();
         }
@@ -119,9 +119,9 @@ namespace Fluorine
         {
             if (!IsOwnerThread)
                 return;
-            if (t_drainDepth > 0)
+            if (_tDrainDepth > 0)
                 return;
-            t_drainDepth++;
+            _tDrainDepth++;
             try
             {
                 DrainOnOwnerThread();
@@ -129,7 +129,7 @@ namespace Fluorine
             }
             finally
             {
-                t_drainDepth--;
+                _tDrainDepth--;
             }
         }
 
@@ -218,8 +218,8 @@ namespace Fluorine
             {
                 if (ByThread.TryGetValue(thread, out var mapped) && mapped != this)
                 {
-                    if (t_current == this)
-                        t_current = null;
+                    if (_tCurrent == this)
+                        _tCurrent = null;
                     _ownerThread = null;
                     throw AlreadyHas(mapped.GetType(), GetType());
                 }
@@ -239,12 +239,12 @@ namespace Fluorine
         internal static void ClaimCurrentThread(Type schedulerType)
         {
             ThrowIfOccupied(schedulerType);
-            t_claimType = schedulerType;
+            _tClaimType = schedulerType;
         }
 
         internal static void ReleaseClaim()
         {
-            t_claimType = null;
+            _tClaimType = null;
         }
 
         // The first message is queued before publication. Reactive.Shutdown can see a
@@ -352,7 +352,7 @@ namespace Fluorine
 
         static void ThrowIfOccupied(Type incoming)
         {
-            var existing = t_current;
+            var existing = _tCurrent;
             if (existing == null)
             {
                 lock (StaticLock)
@@ -364,8 +364,8 @@ namespace Fluorine
 
             if (existing != null)
                 throw AlreadyHas(existing.GetType(), incoming);
-            if (t_claimType != null)
-                throw AlreadyHas(t_claimType, incoming);
+            if (_tClaimType != null)
+                throw AlreadyHas(_tClaimType, incoming);
         }
 
         static ReactiveException AlreadyHas(Type existing, Type incoming)
@@ -378,8 +378,8 @@ namespace Fluorine
         void AdoptCurrentThread(bool publish)
         {
             var thread = Thread.CurrentThread;
-            if (t_current != null && t_current != this)
-                throw AlreadyHas(t_current.GetType(), GetType());
+            if (_tCurrent != null && _tCurrent != this)
+                throw AlreadyHas(_tCurrent.GetType(), GetType());
 
             lock (StaticLock)
             {
@@ -387,8 +387,8 @@ namespace Fluorine
                     throw AlreadyHas(mapped.GetType(), GetType());
 
                 _ownerThread = thread;
-                t_current = this;
-                t_claimType = null;
+                _tCurrent = this;
+                _tClaimType = null;
                 if (!publish)
                     return;
 
@@ -414,8 +414,8 @@ namespace Fluorine
 
         void Uninstall()
         {
-            if (t_current == this)
-                t_current = null;
+            if (_tCurrent == this)
+                _tCurrent = null;
             lock (StaticLock)
             {
                 if (_ownerThread != null && ByThread.TryGetValue(_ownerThread, out var mapped) && mapped == this)

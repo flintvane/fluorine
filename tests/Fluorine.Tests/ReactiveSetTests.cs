@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
-using System.Windows.Controls;
 using Xunit;
 
 namespace Fluorine.Tests
@@ -45,20 +44,20 @@ namespace Fluorine.Tests
         [Fact]
         public void ConstructorKeepsDistinctItemsAndDoesNotRequireAScheduler()
         {
-            var set = new ReactiveSet<int>(new[] { 1, 2, 2, 3 });
+            var set = new ReactiveSet<int>([1, 2, 2, 3]);
             Assert.Equal(3, set.Count);
-            Assert.Equal(new[] { 1, 2, 3 }, set.OrderBy(x => x).ToArray());
+            Assert.Equal([1, 2, 3], set.OrderBy(x => x).ToArray());
             Assert.Throws<ArgumentNullException>(() => new ReactiveSet<int>((IEnumerable<int>)null));
         }
 
         [Fact]
         public void ClearDropsEveryMember()
         {
-            var set = new ReactiveSet<int>(new[] { 1, 2, 3 });
+            var set = new ReactiveSet<int>([1, 2, 3]);
             var before = set.Value;
             set.Clear();
             Assert.Equal(0, set.Count);
-            Assert.Equal(new[] { Change(false, 1), Change(false, 2), Change(false, 3) },
+            Assert.Equal([Change(false, 1), Change(false, 2), Change(false, 3)],
                 Names(set.Value.Diff(before)).OrderBy(x => x).ToArray());
             set.Clear();
             Assert.Empty(set.Value.Diff(before).Where(c => c.Kind == ReactiveSet<int>.ChangeKind.Added));
@@ -72,23 +71,25 @@ namespace Fluorine.Tests
             set.Add(1);
             set.Add(2);
             var both = set.Value;
-            Assert.Equal(new[] { "Added:1", "Added:2" }, Names(both.Diff(empty)).OrderBy(x => x).ToArray());
+            Assert.Equal(["Added:1", "Added:2"], Names(both.Diff(empty)).OrderBy(x => x).ToArray());
             Assert.Empty(both.Diff(both));
 
             set.Remove(1);
             set.Add(3);
-            Assert.Equal(new[] { "Added:3", "Removed:1" }, Names(set.Value.Diff(both)).OrderBy(x => x).ToArray());
-            Assert.Equal(new[] { "Added:2", "Added:3" }, Names(set.Value.Diff(null)).OrderBy(x => x).ToArray());
+            Assert.Equal(["Added:3", "Removed:1"], Names(set.Value.Diff(both)).OrderBy(x => x).ToArray());
+            Assert.Equal(["Added:2", "Added:3"], Names(set.Value.Diff(null)).OrderBy(x => x).ToArray());
         }
 
         [Fact]
         public void SeparatelyBuiltEqualSetsDiffEmpty()
         {
-            var first = new ReactiveSet<int>(new[] { 3, 1, 2 });
-            var second = new ReactiveSet<int>();
-            second.Add(2);
-            second.Add(1);
-            second.Add(3);
+            var first = new ReactiveSet<int>([3, 1, 2]);
+            var second = new ReactiveSet<int>
+            {
+                2,
+                1,
+                3
+            };
             Assert.Empty(first.Value.Diff(second.Value));
             Assert.False(first.Value == second.Value);
         }
@@ -339,12 +340,12 @@ namespace Fluorine.Tests
 
                 ready.Value = true;
                 scheduler.Pump();
-                Assert.Equal(new[] { "Added:2" }, applied.OrderBy(x => x).ToArray());
+                Assert.Equal(["Added:2"], applied.OrderBy(x => x).ToArray());
 
                 set.Add(3);
                 set.Remove(2);
                 scheduler.Pump();
-                Assert.Equal(new[] { "Added:2", "Added:3", "Removed:2" }, applied.OrderBy(x => x).ToArray());
+                Assert.Equal(["Added:2", "Added:3", "Removed:2"], applied.OrderBy(x => x).ToArray());
             }
             finally
             {
@@ -409,16 +410,10 @@ namespace Fluorine.Tests
 
         static IEnumerable<string> Names<T>(ReactiveSet<T>.Change[] changes) => changes.Select(change => change.Kind + ":" + change.Item);
 
-        sealed class Entity
+        sealed class Entity(int id, string name)
         {
-            public Entity(int id, string name)
-            {
-                Id = id;
-                Name = name;
-            }
-
-            public int Id { get; }
-            public string Name { get; }
+            public int Id { get; } = id;
+            public string Name { get; } = name;
 
             public override bool Equals(object obj)
             {

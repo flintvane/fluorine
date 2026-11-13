@@ -371,21 +371,14 @@ namespace Fluorine
             public ValueWatch Value;
         }
 
-        sealed class Presence : Register
+        sealed class Presence(ReactiveDictionary<TKey, TValue> owner, TKey key) : Register
         {
-            readonly ReactiveDictionary<TKey, TValue> _owner;
             int _listeners;
 
-            public Presence(ReactiveDictionary<TKey, TValue> owner, TKey key)
-            {
-                _owner = owner;
-                Key = key;
-            }
-
-            public TKey Key { get; }
+            public TKey Key { get; } = key;
 
             // Publication and the listener list share the dictionary lock.
-            protected override object SyncRoot => _owner;
+            protected override object SyncRoot => owner;
 
             internal override bool AddListener(Reaction reaction)
             {
@@ -410,27 +403,20 @@ namespace Fluorine
                         return false;
                     _listeners--;
                     if (_listeners == 0)
-                        _owner.RemovePresenceLocked(this);
+                        owner.RemovePresenceLocked(this);
                     return true;
                 }
             }
         }
 
-        sealed class ValueWatch : Register
+        sealed class ValueWatch(ReactiveDictionary<TKey, TValue> owner, TKey key) : Register
         {
-            readonly ReactiveDictionary<TKey, TValue> _owner;
             int _listeners;
 
-            public ValueWatch(ReactiveDictionary<TKey, TValue> owner, TKey key)
-            {
-                _owner = owner;
-                Key = key;
-            }
-
-            public TKey Key { get; }
+            public TKey Key { get; } = key;
 
             // Publication and the listener list share the dictionary lock.
-            protected override object SyncRoot => _owner;
+            protected override object SyncRoot => owner;
 
             internal override bool AddListener(Reaction reaction)
             {
@@ -455,7 +441,7 @@ namespace Fluorine
                         return false;
                     _listeners--;
                     if (_listeners == 0)
-                        _owner.RemoveValueLocked(this);
+                        owner.RemoveValueLocked(this);
                     return true;
                 }
             }
@@ -638,20 +624,12 @@ namespace Fluorine
             Updated
         }
 
-        public readonly struct Change
+        public readonly struct Change(ChangeKind kind, TKey key, TValue value, TValue previousValue)
         {
-            public Change(ChangeKind kind, TKey key, TValue value, TValue previousValue)
-            {
-                Kind = kind;
-                Key = key;
-                Value = value;
-                PreviousValue = previousValue;
-            }
-
-            public ChangeKind Kind { get; }
-            public TKey Key { get; }
-            public TValue Value { get; }
-            public TValue PreviousValue { get; }
+            public ChangeKind Kind { get; } = kind;
+            public TKey Key { get; } = key;
+            public TValue Value { get; } = value;
+            public TValue PreviousValue { get; } = previousValue;
         }
 
         abstract class Node : IEnumerable<KeyValuePair<TKey, TValue>>
@@ -775,18 +753,11 @@ namespace Fluorine
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
-        sealed class Leaf : Node
+        sealed class Leaf(int hash, TKey key, TValue value) : Node
         {
-            public Leaf(int hash, TKey key, TValue value)
-            {
-                Hash = hash;
-                Key = key;
-                Value = value;
-            }
-
-            public int Hash { get; }
-            public TKey Key { get; }
-            public TValue Value { get; }
+            public int Hash { get; } = hash;
+            public TKey Key { get; } = key;
+            public TValue Value { get; } = value;
 
             public override bool Contains(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer)
             {
@@ -873,17 +844,11 @@ namespace Fluorine
             }
         }
 
-        sealed class Collision : Node
+        sealed class Collision(int hash, KeyValuePair<TKey, TValue>[] items) : Node
         {
-            public Collision(int hash, KeyValuePair<TKey, TValue>[] items)
-            {
-                Hash = hash;
-                Items = items;
-            }
+            public int Hash { get; } = hash;
+            public KeyValuePair<TKey, TValue>[] Items { get; } = items;
 
-            public int Hash { get; }
-            public KeyValuePair<TKey, TValue>[] Items { get; }
-            
             public override bool Contains(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer) 
                 => IndexOf(hash, key, comparer) >= 0;
 
@@ -999,16 +964,10 @@ namespace Fluorine
             }
         }
 
-        sealed class Branch : Node
+        sealed class Branch(uint bitmap, Node[] children) : Node
         {
-            public Branch(uint bitmap, Node[] children)
-            {
-                Bitmap = bitmap;
-                Children = children;
-            }
-
-            public uint Bitmap { get; }
-            public Node[] Children { get; }
+            public uint Bitmap { get; } = bitmap;
+            public Node[] Children { get; } = children;
 
             public int Slot(uint bit)
             {

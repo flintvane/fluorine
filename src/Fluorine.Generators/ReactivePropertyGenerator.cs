@@ -77,7 +77,7 @@ namespace Fluorine.Generators
                     continue;
                 if (!byType.TryGetValue(model.TypeKey, out var list))
                 {
-                    list = new List<ReactiveModel>();
+                    list = [];
                     byType.Add(model.TypeKey, list);
                 }
 
@@ -210,7 +210,7 @@ namespace Fluorine.Generators
         public string Render(List<ReactiveModel> properties)
         {
             var taken = new HashSet<string>(StringComparer.Ordinal);
-            var existing = ExistingMembers.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var existing = ExistingMembers.Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
             foreach (var name in existing)
                 taken.Add(name);
 

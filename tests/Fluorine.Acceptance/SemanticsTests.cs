@@ -259,7 +259,7 @@ namespace Fluorine.Acceptance
             });
             Harness.Wait(ready, "setup");
             Harness.Barrier(s);
-            Assert.Equal(new[] { "Ada Lovelace" }, Snapshot(labels));
+            Assert.Equal(["Ada Lovelace"], Snapshot(labels));
 
             using (var hold = Harness.Gate(s))
             {
@@ -268,7 +268,7 @@ namespace Fluorine.Acceptance
                 hold.Release();
             }
             Harness.Barrier(s);
-            Assert.Equal(new[] { "Ada Lovelace", "Augusta Byron" }, Snapshot(labels));
+            Assert.Equal(["Ada Lovelace", "Augusta Byron"], Snapshot(labels));
             Assert.Equal(2, Volatile.Read(ref runs));
 
             first.Value = "Augusta";
@@ -842,7 +842,7 @@ namespace Fluorine.Acceptance
                 hold.Release();
             }
             Harness.Barrier(s);
-            Assert.Equal(new[] { 1, 2, 3 }, order.ToArray());
+            Assert.Equal([1, 2, 3], order.ToArray());
         }
 
         [Fact(DisplayName = "s11.9-02")]
@@ -863,7 +863,7 @@ namespace Fluorine.Acceptance
                 hold.Release();
             }
             Harness.Barrier(s);
-            Assert.Equal(new[] { 1, 2 }, order.ToArray());
+            Assert.Equal([1, 2], order.ToArray());
         }
 
         [Fact(DisplayName = "s11.10-01")]
@@ -1200,7 +1200,7 @@ namespace Fluorine.Acceptance
                 r3.Trigger();
                 release.Set();
                 Harness.Barrier2(s);
-                Assert.Equal(new[] { "r1", "r2", "r3", "r1", "r1", "r1" }, order.Snapshot());
+                Assert.Equal(["r1", "r2", "r3", "r1", "r1", "r1"], order.Snapshot());
             }
             finally
             {
@@ -1315,7 +1315,7 @@ namespace Fluorine.Acceptance
         static string[] Snapshot(List<string> items)
         {
             lock (items)
-                return items.ToArray();
+                return [.. items];
         }
 
         static string Last(List<string> items)

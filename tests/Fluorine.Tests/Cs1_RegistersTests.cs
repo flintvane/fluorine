@@ -141,8 +141,8 @@ namespace Fluorine.Tests
             var typed = new Register<int>();
             typed.Name = "beta";
             Assert.Equal("beta", typed.Name);
-            Assert.Null(typeof(Register).GetConstructor(new[] { typeof(string) }));
-            Assert.Null(typeof(Register<int>).GetConstructor(new[] { typeof(string) }));
+            Assert.Null(typeof(Register).GetConstructor([typeof(string)]));
+            Assert.Null(typeof(Register<int>).GetConstructor([typeof(string)]));
         }
 
         [Fact]
@@ -283,21 +283,16 @@ namespace Fluorine.Tests
             }
         }
 
-        sealed class EquatableOnly : IEquatable<EquatableOnly>
+        sealed class EquatableOnly(int n) : IEquatable<EquatableOnly>
         {
-            public readonly int N;
-            public EquatableOnly(int n) { N = n; }
+            public readonly int N = n;
             public bool Equals(EquatableOnly other) { return other != null && N == other.N; }
             public override int GetHashCode() { return N; }
         }
 
-        struct BigStruct
+        struct BigStruct(long a, long b, long c, long d)
         {
-            public readonly long A, B, C, D;
-            public BigStruct(long a, long b, long c, long d)
-            {
-                A = a; B = b; C = c; D = d;
-            }
+            public readonly long A = a, B = b, C = c, D = d;
         }
     }
 }

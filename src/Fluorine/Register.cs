@@ -59,18 +59,12 @@ namespace Fluorine
         }
     }
 
-    public class Register<T> : Register
+    public class Register<T>(T initial) : Register
     {
-        T _value;
+        T _value = initial;
 
-        public Register()
+        public Register() : this(default(T))
         {
-            _value = default(T);
-        }
-
-        public Register(T initial)
-        {
-            _value = initial;
         }
 
         protected T StoredValue

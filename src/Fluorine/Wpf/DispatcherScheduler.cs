@@ -6,14 +6,14 @@ namespace Fluorine
 {
     public sealed class DispatcherScheduler : Scheduler
     {
-        [ThreadStatic] static int t_executing;
+        [ThreadStatic] static int _tExecuting;
 
         readonly Dispatcher _dispatcher;
         readonly bool _ownsDispatcher;
         int _pending;
         DispatcherFrame _drainFrame;
 
-        DispatcherScheduler(Dispatcher dispatcher, bool ownsDispatcher, bool announceImmediately)
+        internal DispatcherScheduler(Dispatcher dispatcher, bool ownsDispatcher, bool announceImmediately)
             : base(announceImmediately)
         {
             _dispatcher = dispatcher;
@@ -65,7 +65,7 @@ namespace Fluorine
             }
         }
 
-        protected override int ExecutingWorkDepth => t_executing;
+        protected override int ExecutingWorkDepth => _tExecuting;
 
         protected override int PendingWork => _pending;
 
@@ -115,7 +115,7 @@ namespace Fluorine
 
         protected override void DrainOnOwnerThread()
         {
-            PumpUntilPendingEquals(t_executing);
+            PumpUntilPendingEquals(_tExecuting);
         }
 
         protected override void OnShutdownFinished()
@@ -131,7 +131,7 @@ namespace Fluorine
 
         void InvokeWork(Action action)
         {
-            t_executing++;
+            _tExecuting++;
             try
             {
                 action?.Invoke();
@@ -142,7 +142,7 @@ namespace Fluorine
             }
             finally
             {
-                t_executing--;
+                _tExecuting--;
                 NoteWorkFinished();
             }
         }
@@ -154,11 +154,11 @@ namespace Fluorine
             {
                 if (_pending > 0)
                     _pending--;
-                if (HasStartedShutdown && !IsFinished && _pending <= t_executing)
+                if (HasStartedShutdown && !IsFinished && _pending <= _tExecuting)
                 {
-                    if (t_executing == 0)
+                    if (_tExecuting == 0)
                         complete = true;
-                    if (_drainFrame != null && _pending <= t_executing)
+                    if (_drainFrame != null && _pending <= _tExecuting)
                         _drainFrame.Continue = false;
                 }
             }

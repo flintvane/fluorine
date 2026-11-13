@@ -24,8 +24,7 @@ namespace Fluorine.Tests
             Assert.Same(picture, map.Value);
             Assert.Equal("Ada", map.Single().Key);
 
-            int old;
-            Assert.True(map.SetValue("ada", 4, out old));
+            Assert.True(map.SetValue("ada", 4, out var old));
             Assert.Equal(1, old);
             Assert.Equal("Ada", map.Single().Key);
             Assert.Equal(4, map["aDa"]);
@@ -93,7 +92,7 @@ namespace Fluorine.Tests
             Assert.Throws<ArgumentNullException>(() => map.ContainsKey(null));
             Assert.Throws<ArgumentNullException>(() => map.TryGetValue(null, out _));
             Assert.Throws<ArgumentNullException>(() => map[null] = "x");
-            Assert.Throws<ArgumentNullException>(() => map[null].ToString());
+            Assert.Throws<ArgumentNullException>(() => map[null]);
             Assert.Throws<ArgumentNullException>(() => map.Value.ContainsKey(null));
             Assert.Throws<ArgumentNullException>(() => map.Value.TryGetValue(null, out _));
             Assert.Equal(1, map.Count);
@@ -112,27 +111,26 @@ namespace Fluorine.Tests
         [Fact]
         public void ConstructorKeepsTheFirstValueAndDoesNotRequireAScheduler()
         {
-            var map = new ReactiveDictionary<string, int>(new[]
-            {
+            var map = new ReactiveDictionary<string, int>([
                 Pair("a", 1),
                 Pair("b", 2),
                 Pair("a", 3)
-            });
+            ]);
             Assert.Equal(2, map.Count);
             Assert.Equal(1, map["a"]);
             Assert.Equal(2, map["b"]);
             Assert.Throws<ArgumentNullException>(() => new ReactiveDictionary<string, int>((IEnumerable<KeyValuePair<string, int>>)null));
-            Assert.Throws<ArgumentNullException>(() => new ReactiveDictionary<string, int>(new[] { Pair<string, int>(null, 1) }));
+            Assert.Throws<ArgumentNullException>(() => new ReactiveDictionary<string, int>([Pair<string, int>(null, 1)]));
         }
 
         [Fact]
         public void ClearDropsEveryEntry()
         {
-            var map = new ReactiveDictionary<string, int>(new[] { Pair("a", 1), Pair("b", 2) });
+            var map = new ReactiveDictionary<string, int>([Pair("a", 1), Pair("b", 2)]);
             var before = map.Value;
             map.Clear();
             Assert.Equal(0, map.Count);
-            Assert.Equal(new[] { "Removed:a=1", "Removed:b=2" }, Names(map.Value.Diff(before)).OrderBy(x => x).ToArray());
+            Assert.Equal(["Removed:a=1", "Removed:b=2"], Names(map.Value.Diff(before)).OrderBy(x => x).ToArray());
             var empty = map.Value;
             map.Clear();
             Assert.Same(empty, map.Value);
@@ -146,15 +144,15 @@ namespace Fluorine.Tests
             map.Add("a", 1);
             map["b"] = 2;
             var both = map.Value;
-            Assert.Equal(new[] { "Added:a=1", "Added:b=2" }, Names(both.Diff(empty)).OrderBy(x => x).ToArray());
+            Assert.Equal(["Added:a=1", "Added:b=2"], Names(both.Diff(empty)).OrderBy(x => x).ToArray());
             Assert.Empty(both.Diff(both));
 
             map.SetValue("a", 4);
             map.Remove("b");
             map.Add("c", 3);
-            Assert.Equal(new[] { "Added:c=3", "Removed:b=2", "Updated:a=1->4" },
+            Assert.Equal(["Added:c=3", "Removed:b=2", "Updated:a=1->4"],
                 Names(map.Value.Diff(both)).OrderBy(x => x).ToArray());
-            Assert.Equal(new[] { "Added:a=4", "Added:c=3" }, Names(map.Value.Diff(null)).OrderBy(x => x).ToArray());
+            Assert.Equal(["Added:a=4", "Added:c=3"], Names(map.Value.Diff(null)).OrderBy(x => x).ToArray());
 
             var updated = map.Value.Diff(both).Single(change => change.Key == "a");
             Assert.Equal(ReactiveDictionary<string, int>.ChangeKind.Updated, updated.Kind);
@@ -167,9 +165,8 @@ namespace Fluorine.Tests
         [Fact]
         public void SeparatelyBuiltEqualDictionariesDiffEmpty()
         {
-            var first = new ReactiveDictionary<string, int>(new[] { Pair("b", 2), Pair("a", 1) });
-            var second = new ReactiveDictionary<string, int>();
-            second.Add("a", 1);
+            var first = new ReactiveDictionary<string, int>([Pair("b", 2), Pair("a", 1)]);
+            var second = new ReactiveDictionary<string, int> { { "a", 1 } };
             second["b"] = 2;
             Assert.Empty(first.Value.Diff(second.Value));
             Assert.False(first.Value==second.Value);
@@ -481,7 +478,7 @@ namespace Fluorine.Tests
                     Assert.True(picture.TryGetValue(1, out var value));
                     Assert.Equal(1, value);
                     Assert.Equal(1, picture[1]);
-                    Assert.Equal(new[] { 1 }, picture.Select(pair => pair.Key).ToArray());
+                    Assert.Equal([1], picture.Select(pair => pair.Key).ToArray());
                 });
                 scheduler.Pump();
                 Assert.Equal(1, runs);
@@ -590,12 +587,12 @@ namespace Fluorine.Tests
 
                 ready.Value = true;
                 scheduler.Pump();
-                Assert.Equal(new[] { "Added:a=2" }, applied.OrderBy(x => x).ToArray());
+                Assert.Equal(["Added:a=2"], applied.OrderBy(x => x).ToArray());
 
                 map.SetValue("a", 4);
                 map.Remove("a");
                 scheduler.Pump();
-                Assert.Equal(new[] { "Added:a=2", "Removed:a=2" }, applied.OrderBy(x => x).ToArray());
+                Assert.Equal(["Added:a=2", "Removed:a=2"], applied.OrderBy(x => x).ToArray());
             }
             finally
             {
@@ -661,13 +658,13 @@ namespace Fluorine.Tests
         {
             if (mirror.TryGetValue(key, out old))
             {
-                if (object.Equals(old, value))
+                if (Equals(old, value))
                     return false;
                 mirror[key] = value;
                 return true;
             }
 
-            old = default(int);
+            old = 0;
             mirror.Add(key, value);
             return true;
         }
@@ -682,7 +679,7 @@ namespace Fluorine.Tests
             {
                 if (!newer.TryGetValue(pair.Key, out var value))
                     expected.Add("Removed:" + pair.Key + "=" + pair.Value);
-                else if (!object.Equals(pair.Value, value))
+                else if (!Equals(pair.Value, value))
                     expected.Add("Updated:" + pair.Key + "=" + pair.Value + "->" + value);
             }
 
@@ -692,7 +689,7 @@ namespace Fluorine.Tests
                     expected.Add("Added:" + pair.Key + "=" + pair.Value);
             }
 
-            Assert.Equal(expected.OrderBy(x => x).ToArray(), Names(changes).OrderBy(x => x).ToArray());
+            Assert.Equal([.. expected.OrderBy(x => x)], Names(changes).OrderBy(x => x).ToArray());
         }
 
         static void AssertSame(Dictionary<int, int> expected, ReactiveDictionary<int, int> actual)
@@ -732,34 +729,18 @@ namespace Fluorine.Tests
             });
         }
 
-        sealed class ByValue
+        sealed class ByValue(int number)
         {
-            public ByValue(int number)
-            {
-                Number = number;
-            }
+            public int Number { get; } = number;
 
-            public int Number { get; }
+            public override bool Equals(object obj) => obj is ByValue other && other.Number == Number;
 
-            public override bool Equals(object obj)
-            {
-                return obj is ByValue other && other.Number == Number;
-            }
-
-            public override int GetHashCode()
-            {
-                return Number;
-            }
+            public override int GetHashCode() => Number;
         }
 
-        sealed class EquatableOnly : IEquatable<EquatableOnly>
+        sealed class EquatableOnly(int number) : IEquatable<EquatableOnly>
         {
-            public EquatableOnly(int number)
-            {
-                Number = number;
-            }
-
-            public int Number { get; }
+            public int Number { get; } = number;
 
             public bool Equals(EquatableOnly other)
             {

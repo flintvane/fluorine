@@ -136,7 +136,7 @@ namespace Fluorine.Acceptance
                 hold.Release();
             }
             Harness.Barrier(s);
-            Assert.Equal(new[] { "r1", "a1", "r2", "a2" }, order.Snapshot());
+            Assert.Equal(["r1", "a1", "r2", "a2"], order.Snapshot());
         }
 
         [Fact(DisplayName = "cs3.3-03")]
@@ -267,7 +267,7 @@ namespace Fluorine.Acceptance
                 "Schedule",
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
-                new[] { typeof(Action) },
+                [typeof(Action)],
                 null);
             Assert.NotNull(schedule);
             Assert.True(schedule.IsAbstract);
@@ -276,7 +276,7 @@ namespace Fluorine.Acceptance
                 "Run",
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
-                new[] { typeof(Reaction) },
+                [typeof(Reaction)],
                 null);
             Assert.NotNull(run);
             Assert.True(run.IsFamily);
@@ -301,10 +301,10 @@ namespace Fluorine.Acceptance
             Assert.Equal(before + 1, ts.ScheduleCalls);
             ts.Queue(reaction);
             Assert.Equal(before + 2, ts.ScheduleCalls);
-            Assert.Equal(new[] { "r" }, order.Snapshot());
+            Assert.Equal(["r"], order.Snapshot());
             Assert.Equal(1, runs);
             ts.Pump();
-            Assert.Equal(new[] { "r", "a", "r" }, order.Snapshot());
+            Assert.Equal(["r", "a", "r"], order.Snapshot());
             Assert.Equal(2, runs);
         }
 

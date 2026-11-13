@@ -6,11 +6,11 @@ namespace Fluorine
 {
     public sealed class Reaction : IDisposable
     {
-        [ThreadStatic] static Reaction t_current;
-        public static Reaction Current => t_current;
+        [ThreadStatic] static Reaction _tCurrent;
+        public static Reaction Current => _tCurrent;
 
-        [ThreadStatic] static int t_pause;
-        public static bool IsRecording => t_current != null && t_pause == 0;
+        [ThreadStatic] static int _tPause;
+        public static bool IsRecording => _tCurrent != null && _tPause == 0;
 
         readonly Reactor _reactor;
         readonly Dictionary<Register, int> _deps = new Dictionary<Register, int>();
@@ -31,18 +31,18 @@ namespace Fluorine
 
         public static void PauseRecording()
         {
-            if (t_current == null)
+            if (_tCurrent == null)
                 return;
-            t_pause++;
+            _tPause++;
         }
 
         public static void ContinueRecording()
         {
-            if (t_current == null)
+            if (_tCurrent == null)
                 return;
-            if (t_pause <= 0)
+            if (_tPause <= 0)
                 throw new ReactiveException("ContinueRecording called with a pause count of zero.");
-            t_pause--;
+            _tPause--;
         }
 
         public static PauseScope Pause()
@@ -118,8 +118,8 @@ namespace Fluorine
             Interlocked.Exchange(ref _queued, 0);
             Interlocked.Increment(ref _executionCount);
             var lambda = Volatile.Read(ref _lambda);
-            t_pause = 0;
-            t_current = this;
+            _tPause = 0;
+            _tCurrent = this;
             try
             {
                 lambda?.Invoke();
@@ -131,8 +131,8 @@ namespace Fluorine
             finally
             {
                 UnsubscribeStale(_executionCount);
-                t_pause = 0;
-                t_current = null;
+                _tPause = 0;
+                _tCurrent = null;
             }
         }
 
