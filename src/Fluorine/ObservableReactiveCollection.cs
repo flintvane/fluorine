@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 
 namespace Fluorine;
 
@@ -31,33 +33,51 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
         }
     }
 
+    private bool _changeAllowed;
+
+    protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+    {
+        if (!_changeAllowed) throw new InvalidOperationException("Cannot change an observable collection that view a reactive set");
+        base.OnCollectionChanged(e);
+    }
+
     private void TeardownReaction() => _reactor.Clear();
-    ReactiveSet<T>.Version applied;
+    private ReactiveSet<T>.Version applied;
 
     private void SetupReaction()
     {
         _reactor.Add(() =>
         {
             var current = set.Value;
-            foreach (var change in current.Diff(applied))
+            _changeAllowed = true;
+            try
             {
-                switch (change.Kind)
+                foreach (var change in current.Diff(applied))
                 {
-                    case ReactiveSet<T>.ChangeKind.Added:
-                        SetIndex(change.Item, Count);
-                        Add(change.Item);
-                        break;
-                    case ReactiveSet<T>.ChangeKind.Removed:
-                        RemoveItem(change.Item);
-                        break;
-                    case ReactiveSet<T>.ChangeKind.Replaced:
-                        var at = TakeIndex(change.Previous);
-                        SetIndex(change.Item, at);
-                        this[at] = change.Item;
-                        break;
+                    switch (change.Kind)
+                    {
+                        case ReactiveSet<T>.ChangeKind.Added:
+                            SetIndex(change.Item, Count);
+                            using (Reaction.Pause())
+                                Add(change.Item);
+                            break;
+                        case ReactiveSet<T>.ChangeKind.Removed:
+                            using (Reaction.Pause())
+                                RemoveItem(change.Item);
+                            break;
+                        case ReactiveSet<T>.ChangeKind.Replaced:
+                            var at = TakeIndex(change.Previous);
+                            SetIndex(change.Item, at);
+                            using (Reaction.Pause())
+                                this[at] = change.Item;
+                            break;
+                    }
                 }
             }
-
+            finally
+            {
+                _changeAllowed = false;
+            }
             applied = current;
         });
     }
@@ -80,8 +100,8 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
 
     // Position of each item, keyed with the set's comparer. A dictionary takes
     // no null key, and the set may hold null, so null keeps its own slot.
-    Dictionary<T, int> _index;
-    int _nullIndex = -1;
+    private Dictionary<T, int> _index;
+    private int _nullIndex = -1;
 
     void SetIndex(T item, int at)
     {
