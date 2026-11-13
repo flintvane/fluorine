@@ -11,7 +11,7 @@ namespace Fluorine
             new Dictionary<MethodInfo, Action<object>>();
 
         readonly Scheduler _scheduler;
-        readonly HashSet<Reaction> _reactions = new HashSet<Reaction>();
+        readonly HashSet<Reaction> _reactions = [];
         int _disposed;
 
         public Reactor()

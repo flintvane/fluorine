@@ -143,7 +143,7 @@ namespace Fluorine
             foreach (var pair in _deps)
                 if (pair.Value != keep)
                 {
-                    stale = stale ?? new List<Register>();
+                    stale = stale ?? [];
                     stale.Add(pair.Key);
                 }
 

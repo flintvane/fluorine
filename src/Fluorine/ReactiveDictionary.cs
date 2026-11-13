@@ -518,12 +518,12 @@ namespace Fluorine
             {
                 var older = previous == null ? null : previous._root;
                 if (ReferenceEquals(_root, older))
-                    return Array.Empty<Change>();
+                    return [];
                 var changes = new List<Change>();
                 DiffNodes(older, _root, _comparer, changes);
                 if (changes.Count == 0)
-                    return Array.Empty<Change>();
-                return changes.ToArray();
+                    return [];
+                return [.. changes];
             }
 
             public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _root == null ? Empty() : _root.GetEnumerator();
@@ -683,9 +683,9 @@ namespace Fluorine
             protected static Node Join(int hashA, Node a, int hashB, Node b, int shift, IEqualityComparer<TKey> comparer)
             {
                 if (hashA == hashB)
-                    return Collision.Merge(hashA, a, b, comparer);
+                    throw new InvalidOperationException("Cannot join similar hashes");
                 if (shift > 30)
-                    throw new ReactiveException("Hash trie could not place two different hashes.");
+                    throw new InvalidOperationException("Hash trie could not place two different hashes.");
                 var ia = Index(hashA, shift);
                 var ib = Index(hashB, shift);
                 if (ia != ib)
@@ -696,7 +696,7 @@ namespace Fluorine
                 }
 
                 var child = Join(hashA, a, hashB, b, shift + 5, comparer);
-                return new Branch(1u << ia, new[] { child });
+                return new Branch(1u << ia, [child]);
             }
 
             internal sealed class Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
@@ -711,7 +711,7 @@ namespace Fluorine
 
                 public Enumerator(Node root)
                 {
-                    _nodes[0] = new[] { root };
+                    _nodes[0] = [root];
                 }
 
                 public KeyValuePair<TKey, TValue> Current { get; private set; }
@@ -817,7 +817,7 @@ namespace Fluorine
 
                 added = true;
                 if (Hash == hash)
-                    return new Collision(hash, new[] { Pair(Key, Value), Pair(key, value) });
+                    return new Collision(hash, [Pair(Key, Value), Pair(key, value)]);
                 return Join(Hash, this, hash, new Leaf(hash, key, value), shift, comparer);
             }
 
@@ -842,7 +842,7 @@ namespace Fluorine
                 changed = true;
                 inserted = true;
                 if (Hash == hash)
-                    return new Collision(hash, new[] { Pair(Key, Value), Pair(key, value) });
+                    return new Collision(hash, [Pair(Key, Value), Pair(key, value)]);
                 return Join(Hash, this, hash, new Leaf(hash, key, value), shift, comparer);
             }
 
@@ -883,31 +883,9 @@ namespace Fluorine
 
             public int Hash { get; }
             public KeyValuePair<TKey, TValue>[] Items { get; }
-
-            public static Collision Merge(int hash, Node a, Node b, IEqualityComparer<TKey> comparer)
-            {
-                var items = new List<KeyValuePair<TKey, TValue>>(a);
-                foreach (var ie in b)
-                {
-                    var found = false;
-                    foreach (var t in items)
-                    {
-                        if (!comparer.Equals(t.Key, ie.Key)) continue;
-                        found = true;
-                        break;
-                    }
-
-                    if (!found)
-                        items.Add(ie);
-                }
-
-                return new Collision(hash, items.ToArray());
-            }
-
-            public override bool Contains(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer)
-            {
-                return IndexOf(hash, key, comparer) >= 0;
-            }
+            
+            public override bool Contains(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer) 
+                => IndexOf(hash, key, comparer) >= 0;
 
             public override bool TryGet(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer,
                 out TValue value)
@@ -1147,7 +1125,7 @@ namespace Fluorine
         sealed class KeyView(Node root) : IEnumerable<TKey>
         {
             public IEnumerator<TKey> GetEnumerator() => root == null
-                ? ((IEnumerable<TKey>)Array.Empty<TKey>()).GetEnumerator()
+                ? ((IEnumerable<TKey>)[]).GetEnumerator()
                 : new KeyEnumerator(new Node.Enumerator(root));
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -1156,7 +1134,7 @@ namespace Fluorine
         sealed class ValueView(Node root) : IEnumerable<TValue>
         {
             public IEnumerator<TValue> GetEnumerator() => root == null
-                ? ((IEnumerable<TValue>)Array.Empty<TValue>()).GetEnumerator()
+                ? ((IEnumerable<TValue>)[]).GetEnumerator()
                 : new ValueEnumerator(new Node.Enumerator(root));
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

@@ -14,9 +14,9 @@ namespace Fluorine
 
         static readonly object StaticLock = new object();
         static readonly Dictionary<Thread, Scheduler> ByThread = new Dictionary<Thread, Scheduler>();
-        static readonly List<Scheduler> All = new List<Scheduler>();
+        static readonly List<Scheduler> All = [];
 
-        readonly HashSet<Reactor> _reactors = new HashSet<Reactor>();
+        readonly HashSet<Reactor> _reactors = [];
         readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
 
         const int StateRunning = 0;
@@ -95,7 +95,7 @@ namespace Fluorine
         internal static Scheduler[] SnapshotAll()
         {
             lock (StaticLock)
-                return All.ToArray();
+                return [.. All];
         }
 
         internal void RequestShutdown()

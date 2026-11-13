@@ -13,7 +13,7 @@ namespace Fluorine
     // them back would replace the model's desired value with the effective one.
     public class FormsReactor : Reactor
     {
-        readonly List<Action> _unhooks = new List<Action>();
+        readonly List<Action> _unhooks = [];
         int _unhooked;
 
         public FormsReactor()
@@ -195,7 +195,7 @@ namespace Fluorine
             Action[] copy;
             lock (_unhooks)
             {
-                copy = _unhooks.ToArray();
+                copy = [.. _unhooks];
                 _unhooks.Clear();
             }
             for (var i = 0; i < copy.Length; i++)

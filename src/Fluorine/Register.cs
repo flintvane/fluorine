@@ -4,7 +4,7 @@ namespace Fluorine
 {
     public class Register
     {
-        readonly HashSet<Reaction> _listeners = new HashSet<Reaction>();
+        readonly HashSet<Reaction> _listeners = [];
 
         public string Name { get; set; }
 

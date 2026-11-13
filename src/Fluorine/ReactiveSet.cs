@@ -11,7 +11,7 @@ namespace Fluorine
     /// A version shares unchanged structure with the version it was built from
     /// and does not point back at it, so a version nobody holds can be collected.
     /// Membership uses <see cref="EqualityComparer{T}"/> (Equals and GetHashCode).
-    /// Add leaves an existing member in place. Diff reports <see cref="ChangeKind.Replace"/>
+    /// Add leaves an existing member in place. Diff reports <see cref="ChangeKind.Replaced"/>
     /// when two pictures hold different instances of the same member.
     /// Hash codes must stay stable while an element is in the set.
     /// </summary>
@@ -292,12 +292,10 @@ namespace Fluorine
             {
                 var older = previous?._root;
                 if (ReferenceEquals(_root, older))
-                    return Array.Empty<Change>();
+                    return [];
                 var changes = new List<Change>();
                 DiffNodes(older, _root, _comparer, changes);
-                if (changes.Count == 0)
-                    return Array.Empty<Change>();
-                return changes.ToArray();
+                return changes.Count == 0 ? [] : [.. changes];
             }
             
             public IEnumerator<T> GetEnumerator() => _root.GetEnumerator();
@@ -372,7 +370,7 @@ namespace Fluorine
                     }
                     matched[j] = true;
                     if (!SameInstance(old, newItems[j]))
-                        changes.Add(new Change(ChangeKind.Replace, newItems[j], old));
+                        changes.Add(new Change(ChangeKind.Replaced, newItems[j], old));
                 }
                 for (var j = 0; j < newItems.Count; j++)
                     if (!matched[j])
@@ -384,7 +382,7 @@ namespace Fluorine
         {
             Added,
             Removed,
-            Replace
+            Replaced
         }
 
         public readonly struct Change(ChangeKind kind, T item, T previous)
@@ -398,7 +396,7 @@ namespace Fluorine
             /// <summary>The added instance, the removed instance, or the instance now stored.</summary>
             public T Item { get; } = item;
 
-            /// <summary>The instance that was stored, when <see cref="Kind"/> is <see cref="ChangeKind.Replace"/>.</summary>
+            /// <summary>The instance that was stored, when <see cref="Kind"/> is <see cref="ChangeKind.Replaced"/>.</summary>
             public T Previous { get; } = previous;
         }
 
@@ -416,15 +414,8 @@ namespace Fluorine
             public abstract Node Add(int hash, T item, int shift, IEqualityComparer<T> comparer, out bool added);
             public abstract Node Remove(int hash, T item, int shift, IEqualityComparer<T> comparer, out bool removed);
 
-            protected static int Index(int hash, int shift)
-            {
-                return (int)(((uint)hash >> shift) & 31);
-            }
-
-            protected static uint Bit(int hash, int shift)
-            {
-                return 1u << Index(hash, shift);
-            }
+            private static int Index(int hash, int shift) => (int)(((uint)hash >> shift) & 31);
+            protected static uint Bit(int hash, int shift) => 1u << Index(hash, shift);
 
             protected static int PopCount(uint value)
             {
@@ -438,10 +429,10 @@ namespace Fluorine
                 return count;
             }
 
-            protected static Node Join(int hashA, Node a, int hashB, Node b, int shift, IEqualityComparer<T> comparer)
+            protected static Node Join(int hashA, Node a, int hashB, Node b, int shift)
             {
                 if (hashA == hashB)
-                    return Collision.Merge(hashA, a, b, comparer);
+                    throw new InvalidOperationException("Cannot join the same hashes");
                 if (shift > 30)
                     throw new ReactiveException("Hash trie could not place two different hashes.");
                 var ia = Index(hashA, shift);
@@ -453,10 +444,9 @@ namespace Fluorine
                     return new Branch(bitmap, children);
                 }
 
-                var child = Join(hashA, a, hashB, b, shift + 5, comparer);
+                var child = Join(hashA, a, hashB, b, shift + 5);
                 return new Branch(1u << ia, [child]);
             }
-            
             
             sealed class Enumerator : IEnumerator<T>
             {
@@ -469,7 +459,7 @@ namespace Fluorine
                 int _collisionNext;
                 public Enumerator(Node root)
                 {
-                    _nodes[0] = new[] { root };
+                    _nodes[0] = [root];
                 }
                 public T Current { get; private set; }
                 object IEnumerator.Current => Current;
@@ -544,8 +534,8 @@ namespace Fluorine
 
                 added = true;
                 if (Hash == hash)
-                    return new Collision(hash, new[] { Item, item });
-                return Join(Hash, this, hash, new Leaf(hash, item), shift, comparer);
+                    return new Collision(hash, [Item, item]);
+                return Join(Hash, this, hash, new Leaf(hash, item), shift);
             }
 
             public override Node Remove(int hash, T item, int shift, IEqualityComparer<T> comparer, out bool removed)
@@ -566,29 +556,6 @@ namespace Fluorine
             private int Hash { get; } = hash;
             public T[] Items { get; } = items;
 
-            public static Collision Merge(int hash, Node a, Node b, IEqualityComparer<T> comparer)
-            {
-                var items = new List<T>(a);
-                var more = new List<T>(b);
-                for (var i = 0; i < more.Count; i++)
-                {
-                    var found = false;
-                    for (var j = 0; j < items.Count; j++)
-                    {
-                        if (comparer.Equals(items[j], more[i]))
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found)
-                        items.Add(more[i]);
-                }
-
-                return new Collision(hash, items.ToArray());
-            }
-
             public override bool Contains(int hash, T item, int shift, IEqualityComparer<T> comparer)
             {
                 if (Hash != hash)
@@ -607,7 +574,7 @@ namespace Fluorine
                 if (Hash != hash)
                 {
                     added = true;
-                    return Join(Hash, this, hash, new Leaf(hash, item), shift, comparer);
+                    return Join(Hash, this, hash, new Leaf(hash, item), shift);
                 }
 
                 for (var i = 0; i < Items.Length; i++)

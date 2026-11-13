@@ -368,7 +368,7 @@ namespace Fluorine.Tests
             Assert.True(set.Remove(first));
             Assert.True(set.Add(second));
             var net = Assert.Single(set.Value.Diff(before));
-            Assert.Equal(ReactiveSet<Entity>.ChangeKind.Replace, net.Kind);
+            Assert.Equal(ReactiveSet<Entity>.ChangeKind.Replaced, net.Kind);
             Assert.Same(second, net.Item);
             Assert.Same(first, net.Previous);
         }
