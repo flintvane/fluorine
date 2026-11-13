@@ -469,21 +469,7 @@ namespace Fluorine
         {
             readonly IEqualityComparer<TKey> _comparer;
             readonly Node _root;
-
-            private bool Equals(Version other) 
-                => Equals(_comparer, other._comparer) && Equals(_root, other._root);
-
-            public override bool Equals(object obj) 
-                => ReferenceEquals(this, obj) || obj is Version other && Equals(other);
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    return ((_comparer != null ? _comparer.GetHashCode() : 0) * 397) ^ (_root != null ? _root.GetHashCode() : 0);
-                }
-            }
-
+            
             Version(Node root, int count, IEqualityComparer<TKey> comparer)
             {
                 _root = root;
