@@ -221,20 +221,13 @@ namespace Fluorine
                 _memberships.Remove(membership.Item);
         }
 
-        sealed class Membership : Register
+        sealed class Membership(ReactiveSet<T> owner, T item) : Register
         {
-            readonly ReactiveSet<T> _owner;
             int _listeners;
 
-            public Membership(ReactiveSet<T> owner, T item)
-            {
-                _owner = owner;
-                Item = item;
-            }
+            public T Item { get; } = item;
 
-            public T Item { get; }
-
-            protected override object SyncRoot => _owner;
+            protected override object SyncRoot => owner;
 
             internal override bool AddListener(Reaction reaction)
             {
@@ -259,7 +252,7 @@ namespace Fluorine
                         return false;
                     _listeners--;
                     if (_listeners == 0)
-                        _owner.RemoveMembershipLocked(this);
+                        owner.RemoveMembershipLocked(this);
                     return true;
                 }
             }
@@ -287,14 +280,7 @@ namespace Fluorine
             }
 
             public int Count { get; }
-
-            public bool SameAs(Version other)
-            {
-                if (ReferenceEquals(this, other))
-                    return true;
-                return ReferenceEquals(_root, other == null ? null : other._root);
-            }
-
+            
             public bool Contains(T item)
             {
                 if (_root == null)
@@ -304,7 +290,7 @@ namespace Fluorine
 
             public Change[] Diff(Version previous)
             {
-                var older = previous == null ? null : previous._root;
+                var older = previous?._root;
                 if (ReferenceEquals(_root, older))
                     return Array.Empty<Change>();
                 var changes = new List<Change>();
@@ -401,26 +387,19 @@ namespace Fluorine
             Replace
         }
 
-        public readonly struct Change
+        public readonly struct Change(ChangeKind kind, T item, T previous)
         {
             public Change(ChangeKind kind, T item) : this(kind, item, default)
             {
             }
 
-            public Change(ChangeKind kind, T item, T previous)
-            {
-                Kind = kind;
-                Item = item;
-                Previous = previous;
-            }
-
-            public ChangeKind Kind { get; }
+            public ChangeKind Kind { get; } = kind;
 
             /// <summary>The added instance, the removed instance, or the instance now stored.</summary>
-            public T Item { get; }
+            public T Item { get; } = item;
 
             /// <summary>The instance that was stored, when <see cref="Kind"/> is <see cref="ChangeKind.Replace"/>.</summary>
-            public T Previous { get; }
+            public T Previous { get; } = previous;
         }
 
         // Equals already matched. Value types have no instance to tell apart.
@@ -475,7 +454,7 @@ namespace Fluorine
                 }
 
                 var child = Join(hashA, a, hashB, b, shift + 5, comparer);
-                return new Branch(1u << ia, new[] { child });
+                return new Branch(1u << ia, [child]);
             }
             
             
@@ -547,9 +526,9 @@ namespace Fluorine
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
-        sealed class Leaf(int hash, T item) : Node
+        private sealed class Leaf(int hash, T item) : Node
         {
-            public int Hash { get; } = hash;
+            private int Hash { get; } = hash;
             public T Item { get; } = item;
 
             public override bool Contains(int hash, T item, int shift, IEqualityComparer<T> comparer) 
@@ -582,16 +561,10 @@ namespace Fluorine
             }
         }
 
-        sealed class Collision : Node
+        private sealed class Collision(int hash, T[] items) : Node
         {
-            public Collision(int hash, T[] items)
-            {
-                Hash = hash;
-                Items = items;
-            }
-
-            public int Hash { get; }
-            public T[] Items { get; }
+            private int Hash { get; } = hash;
+            public T[] Items { get; } = items;
 
             public static Collision Merge(int hash, Node a, Node b, IEqualityComparer<T> comparer)
             {

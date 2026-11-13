@@ -34,7 +34,6 @@ namespace Fluorine.Tests
             Assert.False(map.ContainsKey("Ada"));
             Assert.False(map.Remove("Ada"));
             Assert.Equal(0, map.Count);
-            Assert.True(map.Value.SameAs(null));
         }
 
         [Fact]
@@ -137,8 +136,6 @@ namespace Fluorine.Tests
             var empty = map.Value;
             map.Clear();
             Assert.Same(empty, map.Value);
-            Assert.True(empty.SameAs(null));
-            Assert.True(empty.SameAs(new ReactiveDictionary<string, int>().Value));
         }
 
         [Fact]
@@ -151,7 +148,6 @@ namespace Fluorine.Tests
             var both = map.Value;
             Assert.Equal(new[] { "Added:a=1", "Added:b=2" }, Names(both.Diff(empty)).OrderBy(x => x).ToArray());
             Assert.Empty(both.Diff(both));
-            Assert.True(both.SameAs(both));
 
             map.SetValue("a", 4);
             map.Remove("b");
@@ -176,7 +172,7 @@ namespace Fluorine.Tests
             second.Add("a", 1);
             second["b"] = 2;
             Assert.Empty(first.Value.Diff(second.Value));
-            Assert.False(first.Value.SameAs(second.Value));
+            Assert.False(first.Value==second.Value);
         }
 
         [Fact]

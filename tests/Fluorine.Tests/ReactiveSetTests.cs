@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Windows.Controls;
 using Xunit;
 
 namespace Fluorine.Tests
@@ -26,7 +27,6 @@ namespace Fluorine.Tests
             Assert.False(set.Contains("Ada"));
             Assert.False(set.Remove("Ada"));
             Assert.Equal(0, set.Count);
-            Assert.True(set.Value.SameAs(null));
         }
 
         [Fact]
@@ -72,7 +72,6 @@ namespace Fluorine.Tests
             var both = set.Value;
             Assert.Equal(new[] { "Added:1", "Added:2" }, Names(both.Diff(empty)).OrderBy(x => x).ToArray());
             Assert.Empty(both.Diff(both));
-            Assert.True(both.SameAs(both));
 
             set.Remove(1);
             set.Add(3);
@@ -89,7 +88,7 @@ namespace Fluorine.Tests
             second.Add(1);
             second.Add(3);
             Assert.Empty(first.Value.Diff(second.Value));
-            Assert.False(first.Value.SameAs(second.Value));
+            Assert.False(first.Value==second.Value);
         }
 
         [Fact]

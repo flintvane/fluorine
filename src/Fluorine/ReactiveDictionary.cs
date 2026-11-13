@@ -470,6 +470,20 @@ namespace Fluorine
             readonly IEqualityComparer<TKey> _comparer;
             readonly Node _root;
 
+            private bool Equals(Version other) 
+                => Equals(_comparer, other._comparer) && Equals(_root, other._root);
+
+            public override bool Equals(object obj) 
+                => ReferenceEquals(this, obj) || obj is Version other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return ((_comparer != null ? _comparer.GetHashCode() : 0) * 397) ^ (_root != null ? _root.GetHashCode() : 0);
+                }
+            }
+
             Version(Node root, int count, IEqualityComparer<TKey> comparer)
             {
                 _root = root;
@@ -492,13 +506,6 @@ namespace Fluorine
                         throw new KeyNotFoundException(MissingKeyMessage);
                     return value;
                 }
-            }
-
-            public bool SameAs(Version other)
-            {
-                if (ReferenceEquals(this, other))
-                    return true;
-                return ReferenceEquals(_root, other == null ? null : other._root);
             }
 
             public bool ContainsKey(TKey key)
@@ -533,17 +540,8 @@ namespace Fluorine
                 return changes.ToArray();
             }
 
-            public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-            {
-                if (_root == null)
-                    return Empty();
-                return _root.GetEnumerator();
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
+            public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _root == null ? Empty() : _root.GetEnumerator();
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             static IEnumerator<KeyValuePair<TKey, TValue>> Empty()
             {
@@ -673,28 +671,16 @@ namespace Fluorine
         abstract class Node : IEnumerable<KeyValuePair<TKey, TValue>>
         {
             public abstract bool Contains(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer);
+            public abstract bool TryGet(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer, out TValue value);
+            public abstract Node Add(int hash, TKey key, TValue value, int shift, IEqualityComparer<TKey> comparer, out bool added);
+            public abstract Node Set(int hash, TKey key, TValue value, int shift, IEqualityComparer<TKey> comparer, out TValue previous, out bool changed, out bool inserted);
+            public abstract Node Remove(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer, out bool removed, out TValue removedValue);
 
-            public abstract bool TryGet(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer,
-                out TValue value);
+            protected static int Index(int hash, int shift) 
+                => (int)(((uint)hash >> shift) & 31);
 
-            public abstract Node Add(int hash, TKey key, TValue value, int shift, IEqualityComparer<TKey> comparer,
-                out bool added);
-
-            public abstract Node Set(int hash, TKey key, TValue value, int shift, IEqualityComparer<TKey> comparer,
-                out TValue previous, out bool changed, out bool inserted);
-
-            public abstract Node Remove(int hash, TKey key, int shift, IEqualityComparer<TKey> comparer,
-                out bool removed, out TValue removedValue);
-
-            protected static int Index(int hash, int shift)
-            {
-                return (int)(((uint)hash >> shift) & 31);
-            }
-
-            protected static uint Bit(int hash, int shift)
-            {
-                return 1u << Index(hash, shift);
-            }
+            protected static uint Bit(int hash, int shift) 
+                => 1u << Index(hash, shift);
 
             protected static int PopCount(uint value)
             {
@@ -708,8 +694,7 @@ namespace Fluorine
                 return count;
             }
 
-            protected static Node Join(int hashA, Node a, int hashB, Node b, int shift,
-                IEqualityComparer<TKey> comparer)
+            protected static Node Join(int hashA, Node a, int hashB, Node b, int shift, IEqualityComparer<TKey> comparer)
             {
                 if (hashA == hashB)
                     return Collision.Merge(hashA, a, b, comparer);
@@ -831,7 +816,7 @@ namespace Fluorine
                     return true;
                 }
 
-                value = default(TValue);
+                value = default;
                 return false;
             }
 
@@ -888,6 +873,17 @@ namespace Fluorine
                 removed = false;
                 removedValue = default(TValue);
                 return this;
+            }
+            
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    var hashCode = Hash;
+                    hashCode = (hashCode * 397) ^ EqualityComparer<TKey>.Default.GetHashCode(Key);
+                    hashCode = (hashCode * 397) ^ EqualityComparer<TValue>.Default.GetHashCode(Value);
+                    return hashCode;
+                }
             }
         }
 
