@@ -11,6 +11,8 @@ namespace Fluorine
     /// A version shares unchanged structure with the version it was built from
     /// and does not point back at it, so a version nobody holds can be collected.
     /// Membership uses <see cref="EqualityComparer{T}"/> (Equals and GetHashCode).
+    /// Add leaves an existing member in place. Diff reports <see cref="ChangeKind.Replace"/>
+    /// when two pictures hold different instances of the same member.
     /// Hash codes must stay stable while an element is in the set.
     /// </summary>
     public sealed class ReactiveSet<T> : Register, IEnumerable<T>
@@ -179,15 +181,8 @@ namespace Fluorine
             }
         }
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            return Value.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        public IEnumerator<T> GetEnumerator() => Value.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         internal int WatchedMemberships
         {
@@ -331,19 +326,10 @@ namespace Fluorine
                 return changes.ToArray();
             }
 
-            public IEnumerator<T> GetEnumerator()
-            {
-                if (_root == null)
-                    return Empty();
-                var items = new List<T>(Count);
-                _root.Collect(items);
-                return items.GetEnumerator();
-            }
+            public IEnumerator<T> GetEnumerator() 
+                => _root == null ? Empty() : _root.GetEnumerator();
 
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             static IEnumerator<T> Empty()
             {
@@ -396,21 +382,36 @@ namespace Fluorine
                 }
 
                 var oldItems = new List<T>();
+                if (older!=null) oldItems.AddRange(older);
                 var newItems = new List<T>();
-                older?.Collect(oldItems);
-                newer?.Collect(newItems);
-                var newerHas = new HashSet<T>(newItems, comparer);
-                var olderHas = new HashSet<T>(oldItems, comparer);
+                if (newer!=null) newItems.AddRange(newer);
+                var matched = new bool[newItems.Count];
                 for (var i = 0; i < oldItems.Count; i++)
                 {
-                    if (!newerHas.Contains(oldItems[i]))
+                    var found = -1;
+                    for (var j = 0; j < newItems.Count; j++)
+                    {
+                        if (matched[j] || !comparer.Equals(oldItems[i], newItems[j]))
+                            continue;
+                        found = j;
+                        break;
+                    }
+
+                    if (found < 0)
+                    {
                         changes.Add(new Change(ChangeKind.Removed, oldItems[i]));
+                        continue;
+                    }
+
+                    matched[found] = true;
+                    if (!SameInstance(oldItems[i], newItems[found]))
+                        changes.Add(new Change(ChangeKind.Replace, newItems[found], oldItems[i]));
                 }
 
-                for (var i = 0; i < newItems.Count; i++)
+                for (var j = 0; j < newItems.Count; j++)
                 {
-                    if (!olderHas.Contains(newItems[i]))
-                        changes.Add(new Change(ChangeKind.Added, newItems[i]));
+                    if (!matched[j])
+                        changes.Add(new Change(ChangeKind.Added, newItems[j]));
                 }
             }
         }
@@ -418,27 +419,45 @@ namespace Fluorine
         public enum ChangeKind
         {
             Added,
-            Removed
+            Removed,
+            Replace
         }
 
         public readonly struct Change
         {
-            public Change(ChangeKind kind, T item)
+            public Change(ChangeKind kind, T item) : this(kind, item, default)
+            {
+            }
+
+            public Change(ChangeKind kind, T item, T previous)
             {
                 Kind = kind;
                 Item = item;
+                Previous = previous;
             }
 
             public ChangeKind Kind { get; }
+
+            /// <summary>The added instance, the removed instance, or the instance now stored.</summary>
             public T Item { get; }
+
+            /// <summary>The instance that was stored, when <see cref="Kind"/> is <see cref="ChangeKind.Replace"/>.</summary>
+            public T Previous { get; }
         }
 
-        abstract class Node
+        // Equals already matched. Value types have no instance to tell apart.
+        static bool SameInstance(T stored, T incoming)
+        {
+            if (typeof(T).IsValueType)
+                return true;
+            return ReferenceEquals(stored, incoming);
+        }
+
+        abstract class Node: IEnumerable<T>
         {
             public abstract bool Contains(int hash, T item, int shift, IEqualityComparer<T> comparer);
             public abstract Node Add(int hash, T item, int shift, IEqualityComparer<T> comparer, out bool added);
             public abstract Node Remove(int hash, T item, int shift, IEqualityComparer<T> comparer, out bool removed);
-            public abstract void Collect(List<T> into);
 
             protected static int Index(int hash, int shift)
             {
@@ -480,6 +499,9 @@ namespace Fluorine
                 var child = Join(hashA, a, hashB, b, shift + 5, comparer);
                 return new Branch(1u << ia, new[] { child });
             }
+
+            public abstract IEnumerator<T> GetEnumerator();
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         sealed class Leaf : Node
@@ -523,10 +545,10 @@ namespace Fluorine
                 removed = false;
                 return this;
             }
-
-            public override void Collect(List<T> into)
+            
+            public override IEnumerator<T> GetEnumerator()
             {
-                into.Add(Item);
+                yield return Item;
             }
         }
 
@@ -543,10 +565,8 @@ namespace Fluorine
 
             public static Collision Merge(int hash, Node a, Node b, IEqualityComparer<T> comparer)
             {
-                var items = new List<T>();
-                a.Collect(items);
-                var more = new List<T>();
-                b.Collect(more);
+                var items = new List<T>(a);
+                var more = new List<T>(b);
                 for (var i = 0; i < more.Count; i++)
                 {
                     var found = false;
@@ -638,11 +658,8 @@ namespace Fluorine
                 return new Collision(Hash, next);
             }
 
-            public override void Collect(List<T> into)
-            {
-                for (var i = 0; i < Items.Length; i++)
-                    into.Add(Items[i]);
-            }
+            public override IEnumerator<T> GetEnumerator() 
+                => ((IEnumerable<T>)Items).GetEnumerator();
         }
 
         sealed class Branch : Node
@@ -687,9 +704,9 @@ namespace Fluorine
                 var updated = Children[slot].Add(hash, item, shift + 5, comparer, out added);
                 if (ReferenceEquals(updated, Children[slot]))
                     return this;
-                var replaced = (Node[])Children.Clone();
-                replaced[slot] = updated;
-                return new Branch(Bitmap, replaced);
+                var copied = (Node[])Children.Clone();
+                copied[slot] = updated;
+                return new Branch(Bitmap, copied);
             }
 
             public override Node Remove(int hash, T item, int shift, IEqualityComparer<T> comparer, out bool removed)
@@ -722,10 +739,11 @@ namespace Fluorine
                 return new Branch(Bitmap, replaced);
             }
 
-            public override void Collect(List<T> into)
+            public override IEnumerator<T> GetEnumerator()
             {
-                for (var i = 0; i < Children.Length; i++)
-                    Children[i].Collect(into);
+                foreach (var a in Children)
+                     foreach(var b in a)
+                         yield return b;
             }
 
             static Node Collapse(Branch branch)

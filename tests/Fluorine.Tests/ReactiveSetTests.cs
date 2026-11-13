@@ -16,7 +16,7 @@ namespace Fluorine.Tests
             Assert.False(set.Add("ada"));
             Assert.True(set.Contains("ADA"));
             Assert.Equal(1, set.Count);
-            Assert.Same(set.Value, set.Value);
+            Assert.Same("Ada", set.Single());
 
             var picture = set.Value;
             Assert.False(set.Add("ADA"));
@@ -351,14 +351,89 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact]
+        public void EqualReferenceReplacesTheStoredInstance()
+        {
+            var set = new ReactiveSet<Entity>();
+            var first = new Entity(1, "Ada");
+            var other = new Entity(2, "Grace");
+            var second = new Entity(1, "Augusta");
+            Assert.True(set.Add(first));
+            Assert.True(set.Add(other));
+            var before = set.Value;
+            Assert.False(set.Add(second));
+            Assert.Same(before, set.Value);
+            Assert.Same(first, set.Single(item => item.Id == 1));
+            Assert.Empty(set.Value.Diff(before));
+
+            Assert.True(set.Remove(first));
+            Assert.True(set.Add(second));
+            var net = Assert.Single(set.Value.Diff(before));
+            Assert.Equal(ReactiveSet<Entity>.ChangeKind.Replace, net.Kind);
+            Assert.Same(second, net.Item);
+            Assert.Same(first, net.Previous);
+        }
+
+        [Fact]
+        public void AddingAnExistingMemberDoesNotRerun()
+        {
+            var scheduler = new ManualScheduler();
+            try
+            {
+                var set = new ReactiveSet<Entity>();
+                var first = new Entity(1, "Ada");
+                var second = new Entity(1, "Augusta");
+                set.Add(first);
+                var runs = 0;
+                new Reactor(scheduler).Add(() =>
+                {
+                    set.Value.Count.ToString();
+                    set.Contains(first);
+                    runs++;
+                });
+                scheduler.Pump();
+                Assert.Equal(1, runs);
+
+                Assert.False(set.Add(second));
+                scheduler.Pump();
+                Assert.Equal(1, runs);
+            }
+            finally
+            {
+                scheduler.Shutdown();
+            }
+        }
+
         static string Change(bool added, int item)
         {
             return (added ? "Added:" : "Removed:") + item;
         }
 
-        static IEnumerable<string> Names(ReactiveSet<int>.Change[] changes)
+        static IEnumerable<string> Names<T>(ReactiveSet<T>.Change[] changes)
         {
             return changes.Select(change => change.Kind + ":" + change.Item);
+        }
+
+        sealed class Entity
+        {
+            public Entity(int id, string name)
+            {
+                Id = id;
+                Name = name;
+            }
+
+            public int Id { get; }
+            public string Name { get; }
+
+            public override bool Equals(object obj)
+            {
+                return obj is Entity other && other.Id == Id;
+            }
+
+            public override int GetHashCode()
+            {
+                return 0;
+            }
         }
 
         static void AssertSameMembers(HashSet<int> expected, ReactiveSet<int> actual)
