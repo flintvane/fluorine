@@ -35,10 +35,42 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
 
     private bool _changeAllowed;
 
-    protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+    // Every write of Collection<T> goes through these hooks. Checking here, before
+    // the base call, rejects an outside write before anything has changed.
+    void CheckChangeAllowed()
     {
-        if (!_changeAllowed) throw new InvalidOperationException("Cannot change an observable collection that view a reactive set");
-        base.OnCollectionChanged(e);
+        if (!_changeAllowed)
+            throw new InvalidOperationException("Cannot change an observable collection that views a reactive set");
+    }
+
+    protected override void InsertItem(int index, T item)
+    {
+        CheckChangeAllowed();
+        base.InsertItem(index, item);
+    }
+
+    protected override void RemoveItem(int index)
+    {
+        CheckChangeAllowed();
+        base.RemoveItem(index);
+    }
+
+    protected override void SetItem(int index, T item)
+    {
+        CheckChangeAllowed();
+        base.SetItem(index, item);
+    }
+
+    protected override void MoveItem(int oldIndex, int newIndex)
+    {
+        CheckChangeAllowed();
+        base.MoveItem(oldIndex, newIndex);
+    }
+
+    protected override void ClearItems()
+    {
+        CheckChangeAllowed();
+        base.ClearItems();
     }
 
     private void TeardownReaction() => _reactor.Clear();
@@ -49,6 +81,8 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
         _reactor.Add(() =>
         {
             var current = set.Value;
+            // Handlers of CollectionChanged run inside this reaction; their reads must not subscribe it.
+            using var pause = Reaction.Pause();
             _changeAllowed = true;
             try
             {
@@ -58,18 +92,15 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
                     {
                         case ReactiveSet<T>.ChangeKind.Added:
                             SetIndex(change.Item, Count);
-                            using (Reaction.Pause())
-                                Add(change.Item);
+                            Add(change.Item);
                             break;
                         case ReactiveSet<T>.ChangeKind.Removed:
-                            using (Reaction.Pause())
-                                RemoveItem(change.Item);
+                            RemoveBySwap(change.Item);
                             break;
                         case ReactiveSet<T>.ChangeKind.Replaced:
                             var at = TakeIndex(change.Previous);
                             SetIndex(change.Item, at);
-                            using (Reaction.Pause())
-                                this[at] = change.Item;
+                            this[at] = change.Item;
                             break;
                     }
                 }
@@ -78,13 +109,14 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
             {
                 _changeAllowed = false;
             }
+
             applied = current;
         });
     }
 
     // The set has no order, so a removal moves the last item into the hole
     // instead of shifting everything after it.
-    void RemoveItem(T item)
+    void RemoveBySwap(T item)
     {
         var at = TakeIndex(item);
         var last = Count - 1;
