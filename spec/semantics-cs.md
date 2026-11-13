@@ -162,6 +162,8 @@ The continuation resumes on the captured synchronisation context, usually the UI
 | Starting a reaction while another one runs on the same thread | `Reaction.Run()`, through a nested pump | 3.16 |
 | A null or empty thread name | `ThreadScheduler.CreateNew`, `DispatcherScheduler.CreateNew` | 4.2, 5.2 |
 | Attaching WinForms where there is no WinForms context | `WinFormsScheduler.AttachToCurrent()` | 6.1 |
+| Writing a collection, or starting a batch on it, from inside its own batch | writes and `Batch` on `ReactiveSet`, `ReactiveDictionary` | 12.21 |
+| Using a batch editor after its batch has ended | any member of the editor | 12.21 |
 
 
 ## 11. AutoNotify (WPF)
@@ -202,3 +204,12 @@ Construction and enumeration of these collections are not yet specified.
 12.13 `Diff(previous)` returns the net changes from `previous` to this version, as an array of `Change`. A null `previous` counts as empty. `Change.Kind` is a `ChangeKind`. For a set, a change is `Added` or `Removed` with its `Item`. For a dictionary, it is `Added`, `Removed` or `Updated` with `Key`, `Value` and `PreviousValue`. `Value` is the new value (`Added`, `Updated`) or the value that left (`Removed`). `PreviousValue` is the replaced value for `Updated` and `default(TValue)` otherwise. `Diff` changes neither version.
 12.14 `SameAs(other)` is a quick identity test: when it is true, both versions have the same contents. An empty version is `SameAs` null and any other empty version. When it is false, the contents may still be equal; `Diff` tells.
 12.15 A `Version` keeps no older version alive.
+
+**Batches**
+12.16 Both collections offer `Batch(edit)`, where `edit` is an action that receives an editor. The editor offers the writes of its collection (12.4, 12.5) and the reads of a `Version` (12.12). Reads on the editor record nothing and see the writes made earlier in the same batch.
+12.17 A batch is one write to the collection. When `edit` returns, its net changes are published as one new `Version` (12.7): a reader sees the picture from before the batch or the one after all its writes, never one in between. Each reaction whose recorded reads (12.8-12.10) are affected by the net changes is triggered once.
+12.18 A batch whose net changes are empty, such as adding an element and then removing it, publishes nothing and triggers nothing (12.6).
+12.19 When `edit` throws, nothing is published and the exception reaches the caller of `Batch` unchanged.
+12.20 While a batch runs, other writes to the same collection, from any thread, wait until it ends. Reads of the collection from other threads are not delayed; they see the picture from before the batch.
+12.21 Inside `edit`, the collection itself must not be written, and `Batch` must not be called on it again; that throws `ReactiveException` (section 10). Using an editor after its `edit` has returned throws `ReactiveException`.
+12.22 A batch is atomic for one collection only. It does not make writes to other registers atomic with it (main 11.13).
