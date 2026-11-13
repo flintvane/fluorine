@@ -4,9 +4,9 @@ using System.Collections.Specialized;
 
 namespace Fluorine;
 
-// Keeps an ObservableCollection in step with the set. The reaction lives on the
-// given reactor, so the collection is only touched on that reactor's scheduler
-// (for WPF binding: a reactor on the DispatcherScheduler of the UI thread).
+// Keeps an ObservableCollection in step with the set. The reactor is created on
+// the thread that creates the collection (for WPF: the UI thread, through the
+// converter), so the collection is only touched on that thread's scheduler.
 // Each run diffs the new version against the last one applied, so the
 // collection receives only the net changes.
 class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection<T>
@@ -44,13 +44,16 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
                 switch (change.Kind)
                 {
                     case ReactiveSet<T>.ChangeKind.Added:
-                        this.Add(change.Item);
+                        SetIndex(change.Item, Count);
+                        Add(change.Item);
                         break;
                     case ReactiveSet<T>.ChangeKind.Removed:
-                        this.RemoveAt(IndexOf(this, change.Item, set.Comparer));
+                        RemoveItem(change.Item);
                         break;
                     case ReactiveSet<T>.ChangeKind.Replaced:
-                        this[IndexOfInstance(this, change.Previous)] = change.Item;
+                        var at = TakeIndex(change.Previous);
+                        SetIndex(change.Item, at);
+                        this[at] = change.Item;
                         break;
                 }
             }
@@ -59,19 +62,46 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
         });
     }
 
-    static int IndexOf<T>(IList<T> list, T item, IEqualityComparer<T> comparer)
+    // The set has no order, so a removal moves the last item into the hole
+    // instead of shifting everything after it.
+    void RemoveItem(T item)
     {
-        for (var i = 0; i < list.Count; i++)
-            if (comparer.Equals(list[i], item))
-                return i;
-        return -1;
+        var at = TakeIndex(item);
+        var last = Count - 1;
+        if (at != last)
+        {
+            var moved = this[last];
+            SetIndex(moved, at);
+            this[at] = moved;
+        }
+
+        RemoveAt(last);
     }
 
-    static int IndexOfInstance<T>(IList<T> list, T item)
+    // Position of each item, keyed with the set's comparer. A dictionary takes
+    // no null key, and the set may hold null, so null keeps its own slot.
+    Dictionary<T, int> _index;
+    int _nullIndex = -1;
+
+    void SetIndex(T item, int at)
     {
-        for (var i = 0; i < list.Count; i++)
-            if (ReferenceEquals(list[i], item))
-                return i;
-        return -1;
+        if (item == null)
+            _nullIndex = at;
+        else
+            (_index ??= new Dictionary<T, int>(set.Comparer))[item] = at;
+    }
+
+    int TakeIndex(T item)
+    {
+        if (item == null)
+        {
+            var at = _nullIndex;
+            _nullIndex = -1;
+            return at;
+        }
+
+        var found = _index[item];
+        _index.Remove(item);
+        return found;
     }
 }
