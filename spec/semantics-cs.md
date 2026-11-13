@@ -201,7 +201,7 @@ Enumeration of these collections is not yet specified.
 
 **Versions**
 12.12 A `Version` offers `Count` and `Diff(previous)`, plus `Contains` for a set, or `ContainsKey`, `TryGetValue` and an indexer for a dictionary. The indexer of a `Version` throws `KeyNotFoundException` for an absent key.
-12.13 `Diff(previous)` returns the net changes from `previous` to this version, as an array of `Change`. A null `previous` counts as empty. `Change.Kind` is a `ChangeKind`. For a set, a change is `Added` or `Removed` with its `Item`. For a dictionary, it is `Added`, `Removed` or `Updated` with `Key`, `Value` and `PreviousValue`. `Value` is the new value (`Added`, `Updated`) or the value that left (`Removed`). `PreviousValue` is the replaced value for `Updated` and `default(TValue)` otherwise. `Diff` changes neither version.
+12.13 `Diff(previous)` returns the net changes from `previous` to this version, as an array of `Change`. A null `previous` counts as empty. `Change.Kind` is a `ChangeKind`. For a set, a change is `Added` or `Removed` with its `Item`, or `Replaced` when both versions hold the element as different instances of a reference type; `Item` is then the instance in this version and `Previous` the one in `previous`. `Previous` is `default(T)` for `Added` and `Removed`. For a dictionary, it is `Added`, `Removed` or `Updated` with `Key`, `Value` and `PreviousValue`. `Value` is the new value (`Added`, `Updated`) or the value that left (`Removed`). `PreviousValue` is the replaced value for `Updated` and `default(TValue)` otherwise. `Diff` changes neither version.
 12.15 A `Version` keeps no older version alive.
 
 **Batches**
