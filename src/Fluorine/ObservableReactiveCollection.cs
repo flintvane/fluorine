@@ -13,29 +13,29 @@ class ObservableReactiveCollection<T>(ReactiveSet<T> set) : ObservableCollection
 {
     private readonly Reactor _reactor = new();
 
-    private int listeners;
+    private int _listeners;
 
     public override event NotifyCollectionChangedEventHandler CollectionChanged
     {
         add
         {
             base.CollectionChanged += value;
-            if (++listeners == 1)
+            if (++_listeners == 1)
                 SetupReaction();
         }
         remove
         {
             base.CollectionChanged -= value;
-            if (--listeners == 0)
+            if (--_listeners == 0)
                 TeardownReaction();
         }
     }
 
     private void TeardownReaction() => _reactor.Clear();
+    ReactiveSet<T>.Version applied;
 
     private void SetupReaction()
     {
-        ReactiveSet<T>.Version applied = null;
         _reactor.Add(() =>
         {
             var current = set.Value;
