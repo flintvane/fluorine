@@ -7,15 +7,13 @@ namespace Fluorine
 {
     public class Reactor : IDisposable
     {
-        static readonly Dictionary<MethodInfo, Action<object>> ReactiveCalls =
-            new Dictionary<MethodInfo, Action<object>>();
+        static readonly Dictionary<MethodInfo, Action<object>> ReactiveCalls = new();
 
         readonly Scheduler _scheduler;
         readonly HashSet<Reaction> _reactions = [];
         int _disposed;
 
-        public Reactor()
-            : this(Scheduler.Current)
+        public Reactor() : this(Scheduler.Current)
         {
         }
 
@@ -42,10 +40,7 @@ namespace Fluorine
             _scheduler.Queue(reaction);
         }
 
-        public Reaction Add(Action lambda)
-        {
-            return Add(null, lambda);
-        }
+        public Reaction Add(Action lambda) => Add(null, lambda);
 
         public Reaction Add(string name, Action lambda)
         {
@@ -61,6 +56,7 @@ namespace Fluorine
                     return null;
                 _reactions.Add(reaction);
             }
+
             reaction.RequestRun();
             return reaction;
         }
@@ -144,6 +140,7 @@ namespace Fluorine
                         return candidate;
                 }
             }
+
             return null;
         }
 
@@ -210,6 +207,16 @@ namespace Fluorine
         {
             lock (this)
                 _reactions.Remove(reaction);
+        }
+
+        public void Clear()
+        {
+            lock (this)
+            {
+                foreach (var a in _reactions)
+                    a.Dispose();
+                _reactions.Clear();
+            }
         }
     }
 }

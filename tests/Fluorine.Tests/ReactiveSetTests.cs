@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
@@ -88,7 +90,7 @@ namespace Fluorine.Tests
             second.Add(1);
             second.Add(3);
             Assert.Empty(first.Value.Diff(second.Value));
-            Assert.False(first.Value==second.Value);
+            Assert.False(first.Value == second.Value);
         }
 
         [Fact]
@@ -403,15 +405,9 @@ namespace Fluorine.Tests
             }
         }
 
-        static string Change(bool added, int item)
-        {
-            return (added ? "Added:" : "Removed:") + item;
-        }
+        static string Change(bool added, int item) => (added ? "Added:" : "Removed:") + item;
 
-        static IEnumerable<string> Names<T>(ReactiveSet<T>.Change[] changes)
-        {
-            return changes.Select(change => change.Kind + ":" + change.Item);
-        }
+        static IEnumerable<string> Names<T>(ReactiveSet<T>.Change[] changes) => changes.Select(change => change.Kind + ":" + change.Item);
 
         sealed class Entity
         {
@@ -454,6 +450,27 @@ namespace Fluorine.Tests
             {
                 return 0;
             }
+        }
+
+        [Fact]
+        void ObservableSet()
+        {
+            object result = null;
+            var set = new ReactiveSet<Entity>();
+            ObservableCollectionConverter converter = new ObservableCollectionConverter();
+            var scheduler = DispatcherScheduler.CreateNew("observable-set");
+            scheduler.Queue(() => result = converter.Convert(set, typeof(ObservableCollection<Entity>), null, null));
+            while (result == null) Thread.Yield(); Assert.True(result is ObservableCollection<Entity>);
+            var collection = (ObservableCollection<Entity>)result;
+            collection.CollectionChanged += Dummy; 
+            // Do changes arrive
+            set.Add(new Entity(1, "Ploppy"));
+            while (collection.Count == 0) Thread.Yield();
+            scheduler.Shutdown();
+        }
+
+        private void Dummy(object sender, NotifyCollectionChangedEventArgs e)
+        {
         }
     }
 }
