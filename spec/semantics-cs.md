@@ -200,9 +200,8 @@ Enumeration of these collections is not yet specified.
 12.11 Reads on a `Version` record nothing.
 
 **Versions**
-12.12 A `Version` offers `Count`, `SameAs(other)` and `Diff(previous)`, plus `Contains` for a set, or `ContainsKey`, `TryGetValue` and an indexer for a dictionary. The indexer of a `Version` throws `KeyNotFoundException` for an absent key.
+12.12 A `Version` offers `Count` and `Diff(previous)`, plus `Contains` for a set, or `ContainsKey`, `TryGetValue` and an indexer for a dictionary. The indexer of a `Version` throws `KeyNotFoundException` for an absent key.
 12.13 `Diff(previous)` returns the net changes from `previous` to this version, as an array of `Change`. A null `previous` counts as empty. `Change.Kind` is a `ChangeKind`. For a set, a change is `Added` or `Removed` with its `Item`. For a dictionary, it is `Added`, `Removed` or `Updated` with `Key`, `Value` and `PreviousValue`. `Value` is the new value (`Added`, `Updated`) or the value that left (`Removed`). `PreviousValue` is the replaced value for `Updated` and `default(TValue)` otherwise. `Diff` changes neither version.
-12.14 `SameAs(other)` is a quick identity test: when it is true, both versions have the same contents. An empty version is `SameAs` null and any other empty version. When it is false, the contents may still be equal; `Diff` tells.
 12.15 A `Version` keeps no older version alive.
 
 **Batches**
