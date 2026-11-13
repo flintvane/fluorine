@@ -298,7 +298,13 @@ namespace Fluorine
                 return changes.Count == 0 ? [] : [.. changes];
             }
             
-            public IEnumerator<T> GetEnumerator() => _root.GetEnumerator();
+            public IEnumerator<T> GetEnumerator() => _root == null ? Empty() : _root.GetEnumerator();
+
+            private IEnumerator<T> Empty()
+            {
+                yield break;
+            }
+            
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             internal Version Added(T item)

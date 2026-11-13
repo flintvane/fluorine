@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using Fluorine;
 
@@ -63,7 +64,7 @@ namespace PersonDemo
             _forms.BindText(_status, () => _person.AgeStatus);
             _forms.Add(() =>
             {
-                var current = _person.TagValues;
+                var current = _person.Tags.ToList();
                 Reaction.Pause(() =>
                 {
                     _tags.Items.Clear();
