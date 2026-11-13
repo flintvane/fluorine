@@ -385,34 +385,31 @@ namespace Fluorine
                 if (older!=null) oldItems.AddRange(older);
                 var newItems = new List<T>();
                 if (newer!=null) newItems.AddRange(newer);
-                var matched = new bool[newItems.Count];
-                for (var i = 0; i < oldItems.Count; i++)
-                {
-                    var found = -1;
-                    for (var j = 0; j < newItems.Count; j++)
-                    {
-                        if (matched[j] || !comparer.Equals(oldItems[i], newItems[j]))
-                            continue;
-                        found = j;
-                        break;
-                    }
-
-                    if (found < 0)
-                    {
-                        changes.Add(new Change(ChangeKind.Removed, oldItems[i]));
-                        continue;
-                    }
-
-                    matched[found] = true;
-                    if (!SameInstance(oldItems[i], newItems[found]))
-                        changes.Add(new Change(ChangeKind.Replace, newItems[found], oldItems[i]));
-                }
-
+                
+                var newIndex = new Dictionary<T, int>(newItems.Count, comparer);
+                var nullIndex = -1;
                 for (var j = 0; j < newItems.Count; j++)
                 {
+                    if (newItems[j] == null) nullIndex = j;
+                    else newIndex[newItems[j]] = j;
+                }
+                var matched = new bool[newItems.Count];
+                foreach (var old in oldItems)
+                {
+                    int j;
+                    var found = old == null ? (j = nullIndex) >= 0 : newIndex.TryGetValue(old, out j);
+                    if (!found)
+                    {
+                        changes.Add(new Change(ChangeKind.Removed, old));
+                        continue;
+                    }
+                    matched[j] = true;
+                    if (!SameInstance(old, newItems[j]))
+                        changes.Add(new Change(ChangeKind.Replace, newItems[j], old));
+                }
+                for (var j = 0; j < newItems.Count; j++)
                     if (!matched[j])
                         changes.Add(new Change(ChangeKind.Added, newItems[j]));
-                }
             }
         }
 
