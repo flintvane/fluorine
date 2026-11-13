@@ -4,7 +4,7 @@
 
 `demos/PersonEditor` opens the same `Person` in a WinForms window and a WPF window. Typing in either window updates the other. The model has no reference to either UI framework.
 
-The demo targets .NET Framework 4.8, with WPF and WinForms, and uses C# 7.3. It references the Fluorine library only; it does not use the source generator. The properties are written by hand and marked `[AutoNotify]`.
+The demo targets .NET Framework 4.8, with WPF and WinForms, and uses C# 13. `[Reactive]` partial properties are written by the Fluorine source generator. `Person.Tags` is a `ReactiveSet<string>`: the WPF window shows it through `ObservableCollectionConverter`, and the WinForms window fills a `ListBox` from `TagValues`.
 
 ## Building and running
 
@@ -17,53 +17,42 @@ dotnet run --project demos/PersonEditor/PersonEditor.csproj
 
 The project is also in `Fluorine.sln` as `PersonEditor`. `StartupObject` is `PersonDemo.Program`. The output type is `WinExe`.
 
-WPF and WinForms require a Windows desktop. On other platforms the project does not build.
+WPF and WinForms require a Windows desktop. On other platforms the project does not build as a runnable application.
 
 ## The model
 
-`Person` derives from `AutoNotify`. `FirstName`, `LastName` and `Age` each wrap a register. `AgeStatus` is a computed value: the constructor calls `Computed` on a `Register<string>` that this object owns, and a read-only `[AutoNotify]` property exposes it.
+`Person` derives from `AutoNotify`. `FirstName`, `LastName`, `Age` and `AgeStatus` are `[Reactive]` partial properties: the generator writes a register for each one. `AgeStatus` is a computed value: the constructor calls `Computed` on that register with `DescribeAge`.
 
 ```csharp
-public sealed class Person : AutoNotify
+public partial class Person : AutoNotify
 {
-    public const string ValidAge = "Age is a positive integer.";
-    public const string InvalidAge = "Age must be a positive integer.";
+    public Person() => Computed(ageStatus, DescribeAge);
 
-    readonly Register<string> _firstName = new Register<string>("Ada");
-    readonly Register<string> _lastName = new Register<string>("Lovelace");
-    readonly Register<int> _age = new Register<int>(36);
-    readonly Register<string> _ageStatus = new Register<string>(ValidAge);
+    [Reactive]
+    public partial string FirstName { get; set; }
 
-    public Person()
-    {
-        Computed(_ageStatus, () => DescribeAge(_age.Value));
-    }
+    [Reactive]
+    public partial string LastName { get; set; }
 
-    [AutoNotify]
-    public string FirstName
-    {
-        get { return _firstName.Value; }
-        set { _firstName.Value = value ?? ""; }
-    }
+    [Reactive]
+    public partial int Age { get; set; }
 
-    // LastName and Age follow the same pattern.
+    [Reactive]
+    public partial string AgeStatus { get; set; }
 
-    [AutoNotify]
-    public string AgeStatus
-    {
-        get { return _ageStatus.Value; }
-    }
+    public ReactiveSet<string> Tags { get; } = new ReactiveSet<string>();
+    public ReactiveSet<string>.Version TagValues => Tags.Value;
 
-    public static string DescribeAge(int age)
-    {
-        return age >= 1 ? ValidAge : InvalidAge;
-    }
+    private string DescribeAge()
+        => Age >= 1 ? null : "Age must be a positive integer.";
 }
 ```
 
-The first run of `Computed` is queued, so it happens after the constructor returns ([Computed values](computed.md)). The register is given `ValidAge` up front so the screens do not flash an empty status.
+`Tags` is a get-only property so a WPF binding can reach the set. `TagValues` is the picture a reaction enumerates or diffs ([Reactive sets](reactive-sets.md)).
 
-The check lives in the model. `Age` is an `int`, so the model sees a number, not the text the user is typing. Zero and negative numbers are rejected. Text that is not an integer yet (`""`, `"1-"`) never reaches `Age`: the WPF binding keeps the old value, and the WinForms converter does not call the setter. `AgeStatus` therefore stays on the last integer until a new one is stored.
+The first run of `Computed` is queued, so it happens after the constructor returns ([Computed values](computed.md)).
+
+The check lives in the model. `Age` is an `int`, so the model sees a number, not the text the user is typing. Zero and negative numbers are rejected. Text that is not an integer yet (`""`, `"1-"`) never reaches `Age`: the WPF binding keeps the old value, and the WinForms converter does not call the setter. `AgeStatus` therefore stays on the last integer until a new one is stored, and is empty when the age is valid.
 
 ## Two schedulers
 
@@ -89,57 +78,60 @@ static void Main()
 }
 ```
 
-`CreateNew` returns after its initial action, so `person` is assigned before the WinForms window is created. The WinForms control is created on this thread. Closing the WinForms window returns from `Application.Run` and then shuts the WPF scheduler down. Closing only the WPF window leaves the WinForms window running; the `Person` stays alive with it.
+`CreateNew` returns after its initial action, so `person` is assigned before the WinForms window is created. The WinForms form is created on this thread. Closing the WinForms window returns from `Application.Run` and then shuts the WPF scheduler down. Closing only the WPF window leaves the WinForms window running; the `Person` stays alive with it.
 
 ## The WPF window
 
-`PersonWindow` sets `DataContext` to the `Person`. That attaches the bindings in `PersonWindow.xaml`, which subscribe to `PropertyChanged` and so arm the `AutoNotify` property reactions.
+`PersonWindow` sets `DataContext` to the `Person`. That attaches the bindings in `PersonWindow.xaml`, which subscribe to `PropertyChanged` and so arm the `AutoNotify` property reactions. `Tags` goes through `ObservableCollectionConverter`, which builds an `ObservableCollection<string>` on the dispatcher thread and keeps it in step with the set ([Showing a reactive set in WPF](observable-collections.md)).
 
 ```xml
+<Window.Resources>
+    <fluorine:ObservableCollectionConverter x:Key="ToObservableCollection"/>
+</Window.Resources>
 <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"/>
 <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"/>
 <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
 <TextBlock Text="{Binding AgeStatus, Mode=OneWay}" Foreground="DarkRed"/>
+<ListBox ItemsSource="{Binding Tags, Converter={StaticResource ToObservableCollection}}"/>
 ```
 
 `UpdateSourceTrigger=PropertyChanged` writes the register on each keystroke, so the WinForms window follows along. Age is an `int`: WPF's own converter rejects text that is not an integer and leaves `Age` unchanged. `ValidatesOnExceptions` draws the box as invalid in that case. `AgeStatus` is one way. The model computes it; this window only displays it.
 
-## The WinForms control
+Add and Remove buttons call `Tags.Add` and `Tags.Remove`. The same changes appear in the WinForms list.
 
-`PersonEditor` is a `UserControl`. Drop it on a form, and `OnLoad` binds the boxes. `PersonForm` only gives it a window and a message loop.
+## The WinForms window
+
+`PersonForm` is the WinForms window. It attaches `WinFormsScheduler` in the constructor and binds the boxes in `OnLoad`, once the message loop has started.
 
 ```csharp
 protected override void OnLoad(EventArgs e)
 {
     base.OnLoad(e);
-    if (_forms != null)
-        return;
-
-    WinFormsScheduler.AttachToCurrent();
-    _forms = new FormsReactor();
     _forms.BindText(_firstName, () => _person.FirstName, value => _person.FirstName = value);
     _forms.BindText(_lastName, () => _person.LastName, value => _person.LastName = value);
     _forms.BindText(_age, () => _person.Age, value => _person.Age = value, TextConverters.Int32);
     _forms.BindText(_status, () => _person.AgeStatus);
-}
-
-protected override void Dispose(bool disposing)
-{
-    if (disposing && _forms != null)
+    _forms.Add(() =>
     {
-        _forms.Dispose();
-        _forms = null;
-    }
-    base.Dispose(disposing);
+        var current = _person.TagValues;
+        Reaction.Pause(() =>
+        {
+            _tags.Items.Clear();
+            foreach (var tag in current)
+                _tags.Items.Add(tag);
+        });
+    });
 }
 ```
 
-`AttachToCurrent` returns the scheduler already installed on this thread when one is there. Each `BindText` adds a reaction that reads a `Person` property and so subscribes to that register. A write in either window queues the other window's reaction on that window's own scheduler.
+Each `BindText` adds a reaction that reads a `Person` property and so subscribes to that register. The tags reaction reads `TagValues`, then fills the `ListBox` inside `Reaction.Pause` so the list assignments do not join the subscriptions. A write in either window queues the other window's reaction on that window's own scheduler. Add and Remove buttons call `Tags.Add` and `Tags.Remove` on the same set.
 
 Age uses `TextConverters.Int32`. `"07"` becomes `7` and the box is rewritten as `"7"`. `"1-"` does not parse, so `Age` is left alone and the typed text stays until a later model change replaces it. `AgeStatus` is one way: the computed reaction on the `Person` is the only writer.
 
+Dispose the `FormsReactor` before the child controls. The base `Dispose` disposes the boxes, and a reaction must not assign into a disposed box.
+
 ---
 
-*The demo uses AutoNotify (cs 11), Computed (cs 8), DispatcherScheduler.CreateNew (cs 5.2), WinFormsScheduler (cs 6) and FormsReactor. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
+*The demo uses AutoNotify (cs 11), Computed (cs 8), the `[Reactive]` generator, DispatcherScheduler.CreateNew (cs 5.2), WinFormsScheduler (cs 6), FormsReactor and `ObservableCollectionConverter`. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Binding a model to WinForms](winforms-binding.md) · [Topics](../index.md) · [Comparison with other frameworks →](comparison.md)

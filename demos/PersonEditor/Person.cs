@@ -43,6 +43,11 @@ namespace PersonDemo
         [Reactive]
         public partial string AgeStatus { get; set; }
 
+        // Tags is a reactive set. WPF binds it through ObservableCollectionConverter.
+        // WinForms reads TagValues (or Tags.Value) in a reaction and fills a ListBox.
+        public ReactiveSet<string> Tags { get; } = new ReactiveSet<string>();
+        public ReactiveSet<string>.Version TagValues => Tags.Value;
+
         private string DescribeAge() 
             => Age >= 1 ? null : "Age must be a positive integer.";
     }

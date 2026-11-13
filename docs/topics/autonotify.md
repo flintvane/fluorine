@@ -1,4 +1,4 @@
-[← The Reactive attribute and the source generator](reactive-attribute.md) · [Topics](../index.md) · [Binding a model to WinForms →](winforms-binding.md)
+[← The Reactive attribute and the source generator](reactive-attribute.md) · [Topics](../index.md) · [Showing a reactive set in WPF →](observable-collections.md)
 
 # 1. AutoNotify: notifying WPF
 
@@ -77,4 +77,4 @@ The same object can be bound from WinForms without `PropertyChanged`: a `FormsRe
 
 *Spec references: cs 11, 9.4, 2.2. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← The Reactive attribute and the source generator](reactive-attribute.md) · [Topics](../index.md) · [Binding a model to WinForms →](winforms-binding.md)
+[← The Reactive attribute and the source generator](reactive-attribute.md) · [Topics](../index.md) · [Showing a reactive set in WPF →](observable-collections.md)

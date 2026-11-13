@@ -38,6 +38,7 @@ The documentation is in four sections. Read the Guide in order; each topic build
 ## WPF
 
 1. [AutoNotify: notifying WPF](docs/topics/autonotify.md): Derive a model from `AutoNotify`, mark properties, and raise `PropertyChanged` when their getters change.
+2. [Showing a reactive set in WPF](docs/topics/observable-collections.md): `ObservableCollectionConverter` keeps a WPF `ObservableCollection` in step with a `ReactiveSet`.
 
 ## WinForms
 

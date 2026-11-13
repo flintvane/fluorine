@@ -1,8 +1,9 @@
 <Window x:Class="PersonDemo.PersonWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fluorine="clr-namespace:Fluorine;assembly=Fluorine"
         Title="Person — WPF"
-        Width="400" Height="320"
+        Width="400" Height="500"
         WindowStartupLocation="Manual"
         Left="500" Top="80"
         FontFamily="Segoe UI" FontSize="14">
@@ -13,7 +14,12 @@
         own converter rejects text that is not an integer and leaves Age
         unchanged. ValidatesOnExceptions draws the box as invalid in that case.
         AgeStatus is one way. The model computes it; this window only displays it.
+        Tags is a ReactiveSet: ObservableCollectionConverter keeps a WPF
+        ObservableCollection in step with it on this dispatcher thread.
     -->
+    <Window.Resources>
+        <fluorine:ObservableCollectionConverter x:Key="ToObservableCollection"/>
+    </Window.Resources>
     <StackPanel Margin="16">
         <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
                    Text="This window and the WinForms window edit one Person. The DataContext is that object."/>
@@ -27,5 +33,15 @@
         <TextBox Margin="0,2,0,8"
                  Text="{Binding Age, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
         <TextBlock Text="{Binding AgeStatus, Mode=OneWay}" Foreground="DarkRed"/>
+        <TextBlock Text="Tags" Margin="0,12,0,0"/>
+        <ListBox x:Name="TagList" Height="96" Margin="0,2,0,8"
+                 ItemsSource="{Binding Tags, Converter={StaticResource ToObservableCollection}}"/>
+        <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Remove" Click="RemoveTag_Click"
+                    Margin="8,0,0,0" Padding="8,2" MinWidth="72"/>
+            <Button DockPanel.Dock="Right" Content="Add" Click="AddTag_Click"
+                    Margin="8,0,0,0" Padding="8,2" MinWidth="72"/>
+            <TextBox x:Name="TagText"/>
+        </DockPanel>
     </StackPanel>
 </Window>

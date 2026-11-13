@@ -57,6 +57,7 @@ nav:
       - "The Reactive attribute and the source generator": topics/reactive-attribute.md
   - WPF:
       - "AutoNotify: notifying WPF": topics/autonotify.md
+      - "Showing a reactive set in WPF": topics/observable-collections.md
   - WinForms:
       - "Binding a model to WinForms": topics/winforms-binding.md
       - "PersonEditor: one model in two windows": topics/person-editor.md

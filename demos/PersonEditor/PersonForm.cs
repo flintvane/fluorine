@@ -35,6 +35,10 @@ namespace PersonDemo
         readonly TextBox _lastName = new TextBox();
         readonly TextBox _age = new TextBox();
         readonly Label _status = new Label();
+        readonly ListBox _tags = new ListBox();
+        readonly TextBox _tagText = new TextBox();
+        readonly Button _addTag = new Button();
+        readonly Button _removeTag = new Button();
         FormsReactor _forms;
 
         public PersonForm(Person person)
@@ -44,7 +48,7 @@ namespace PersonDemo
             Text = "Person — WinForms";
             _forms= new FormsReactor();
             Font = new Font("Segoe UI", 10);
-            ClientSize = new Size(400, 280);
+            ClientSize = new Size(400, 460);
             StartPosition = FormStartPosition.Manual;
             Location = new Point(80, 80);
             BuildLayout();
@@ -57,6 +61,36 @@ namespace PersonDemo
             _forms.BindText(_lastName, () => _person.LastName, value => _person.LastName = value);
             _forms.BindText(_age, () => _person.Age, value => _person.Age = value, TextConverters.Int32);
             _forms.BindText(_status, () => _person.AgeStatus);
+            _forms.Add(() =>
+            {
+                var current = _person.TagValues;
+                Reaction.Pause(() =>
+                {
+                    _tags.Items.Clear();
+                    foreach (var tag in current)
+                        _tags.Items.Add(tag);
+                });
+            });
+            _addTag.Click += AddTag;
+            _removeTag.Click += RemoveTag;
+        }
+
+        void AddTag(object sender, EventArgs e)
+        {
+            var text = _tagText.Text;
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+            _person.Tags.Add(text.Trim());
+            _tagText.Clear();
+        }
+
+        void RemoveTag(object sender, EventArgs e)
+        {
+            var selected = _tags.SelectedItem as string;
+            if (selected != null)
+                _person.Tags.Remove(selected);
+            else if (!string.IsNullOrWhiteSpace(_tagText.Text))
+                _person.Tags.Remove(_tagText.Text.Trim());
         }
 
         protected override void Dispose(bool disposing)
@@ -86,7 +120,7 @@ namespace PersonDemo
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
-                RowCount = 5,
+                RowCount = 7,
                 Padding = new Padding(12)
             };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
@@ -98,6 +132,24 @@ namespace PersonDemo
             AddRow(table, 3, "Age", _age);
             table.Controls.Add(_status, 0, 4);
             table.SetColumnSpan(_status, 2);
+            _tags.Height = 96;
+            AddRow(table, 5, "Tags", _tags);
+            _addTag.Text = "Add";
+            _addTag.AutoSize = true;
+            _removeTag.Text = "Remove";
+            _removeTag.AutoSize = true;
+            var tagEditor = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                WrapContents = false,
+                Margin = new Padding(0, 3, 0, 3)
+            };
+            _tagText.Width = 160;
+            tagEditor.Controls.Add(_tagText);
+            tagEditor.Controls.Add(_addTag);
+            tagEditor.Controls.Add(_removeTag);
+            table.Controls.Add(tagEditor, 1, 6);
             Controls.Add(table);
         }
 

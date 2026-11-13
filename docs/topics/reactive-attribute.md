@@ -58,7 +58,7 @@ Any reactor can scan any object. The object does not have to derive from `AutoNo
 
 ## Properties: the source generator
 
-Partial properties need a recent C# language version. The generator tests use `<LangVersion>13</LangVersion>`. The library itself and the PersonEditor demo target C# 7.3 and write registers by hand; both styles work with `AutoNotify`.
+Partial properties need a recent C# language version. The generator tests and the PersonEditor demo use `<LangVersion>13</LangVersion>`. Writing registers by hand also works with `AutoNotify`.
 
 Add the generator as an analyzer next to the Fluorine project reference:
 

@@ -1,4 +1,4 @@
-[← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
+[← Showing a reactive set in WPF](observable-collections.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
 
 # 1. Binding a model to WinForms
 
@@ -91,4 +91,4 @@ For the lower-level pattern of wrapping a control that holds its own data, see [
 
 *FormsReactor builds on reactors, pausing and `WinFormsScheduler` (cs 2, 2.24, 6). (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
+[← Showing a reactive set in WPF](observable-collections.md) · [Topics](../index.md) · [PersonEditor →](person-editor.md)
