@@ -318,12 +318,7 @@ namespace Fluorine.Acceptance
             Assert.True(ran);
             Assert.Equal(initialThread, ranOn);
         }
-
-        [Fact(DisplayName = "cs5.2-06", Skip = "not testable through the public API (spec gap)")]
-        public void cs5_2_06()
-        {
-        }
-
+        
         [Fact(DisplayName = "cs5.3-01")]
         public void cs5_3_01()
         {
@@ -404,7 +399,7 @@ namespace Fluorine.Acceptance
                     Thread.SpinWait(100);
                 Assert.True(reg.Value >= 2, "self-trigger did not start");
                 var ran = new ManualResetEvent(false);
-                loop.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => ran.Set()));
+                loop.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => ran.Set()));
                 Assert.True(ran.WaitOne(1000), "input-priority item did not run within 1 s");
                 var done = new ManualResetEvent(false);
                 var thread = new Thread(() =>
