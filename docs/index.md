@@ -36,7 +36,7 @@ Format, within each section: `N. [Title](topics/slug.md): description`
 ## WPF
 
 1. [AutoNotify: notifying WPF](topics/autonotify.md): Derive a model from `AutoNotify`, mark properties, and raise `PropertyChanged` when their getters change.
-2. [Showing a reactive set in WPF](topics/observable-collections.md): `ObservableCollectionConverter` keeps a WPF `ObservableCollection` in step with a `ReactiveSet`.
+2. [Showing a reactive set in WPF](topics/observable-collections.md): `ObservableCollectionConverter` keeps a WPF `ObservableCollection` in step with a reactive set or dictionary.
 
 ## WinForms
 

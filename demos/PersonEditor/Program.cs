@@ -4,7 +4,8 @@ using Fluorine;
 
 namespace PersonDemo
 {
-    // Opens the same Person in two frontends.
+    // Opens the same Person in two frontends, and a third WPF window that
+    // demonstrates ObservableCollectionConverter on two dictionaries.
     //
     // A thread has one scheduler. WPF and WinForms therefore cannot share a
     // thread here: PropertyChanged from AutoNotify is raised on the scheduler
@@ -27,8 +28,8 @@ namespace PersonDemo
             var wpf = DispatcherScheduler.CreateNew("person-wpf", () =>
             {
                 person = new Person();
-                var window = new PersonWindow(person);
-                window.Show();
+                new PersonWindow(person).Show();
+                new DictionaryViewsWindow().Show();
             });
 
             Application.EnableVisualStyles();

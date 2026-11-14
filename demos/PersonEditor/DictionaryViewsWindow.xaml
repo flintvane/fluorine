@@ -1,0 +1,78 @@
+<Window x:Class="PersonDemo.DictionaryViewsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fluorine="clr-namespace:Fluorine;assembly=Fluorine"
+        Title="Dictionary views — WPF"
+        Width="720" Height="640"
+        WindowStartupLocation="Manual"
+        Left="920" Top="80"
+        FontFamily="Segoe UI" FontSize="14">
+    <!--
+        DataContext holds a ReactiveDictionary and a ReactiveSortedDictionary.
+        Each is bound three times through ObservableCollectionConverter:
+        Keys, Values, and Pairs, selected by ConverterParameter.
+        The converter builds each view on this dispatcher thread.
+    -->
+    <Window.Resources>
+        <fluorine:ObservableCollectionConverter x:Key="ToObservableCollection"/>
+    </Window.Resources>
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,12"
+                   Text="This window shows a ReactiveDictionary and a ReactiveSortedDictionary, each as keys, values, and key-value pairs. Set and Remove write the same entry in both, so the lists show unsorted order next to key order."/>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <TextBlock Text="Key"/>
+            <TextBox x:Name="KeyText" Margin="0,2,0,8"/>
+            <TextBlock Text="Value"/>
+            <TextBox x:Name="ValueText" Margin="0,2,0,8"/>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Remove" Click="Remove_Click"
+                        Margin="8,0,0,0" Padding="8,2" MinWidth="72"/>
+                <Button DockPanel.Dock="Right" Content="Set" Click="Set_Click"
+                        Margin="8,0,0,0" Padding="8,2" MinWidth="72"/>
+                <TextBlock VerticalAlignment="Center"
+                           Text="Set adds or replaces the entry in both dictionaries. Remove deletes it from both."/>
+            </DockPanel>
+        </StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Column="0" Grid.Row="0" FontWeight="SemiBold"
+                       Text="ReactiveDictionary — Keys"/>
+            <ListBox Grid.Column="0" Grid.Row="1" Margin="0,2,8,8"
+                     ItemsSource="{Binding Unsorted, Converter={StaticResource ToObservableCollection}, ConverterParameter=Keys}"/>
+            <TextBlock Grid.Column="1" Grid.Row="0" FontWeight="SemiBold"
+                       Text="ReactiveSortedDictionary — Keys"/>
+            <ListBox Grid.Column="1" Grid.Row="1" Margin="8,2,0,8"
+                     ItemsSource="{Binding Sorted, Converter={StaticResource ToObservableCollection}, ConverterParameter=Keys}"/>
+
+            <TextBlock Grid.Column="0" Grid.Row="2" FontWeight="SemiBold"
+                       Text="ReactiveDictionary — Values"/>
+            <ListBox Grid.Column="0" Grid.Row="3" Margin="0,2,8,8"
+                     ItemsSource="{Binding Unsorted, Converter={StaticResource ToObservableCollection}, ConverterParameter=Values}"/>
+            <TextBlock Grid.Column="1" Grid.Row="2" FontWeight="SemiBold"
+                       Text="ReactiveSortedDictionary — Values"/>
+            <ListBox Grid.Column="1" Grid.Row="3" Margin="8,2,0,8"
+                     ItemsSource="{Binding Sorted, Converter={StaticResource ToObservableCollection}, ConverterParameter=Values}"/>
+
+            <TextBlock Grid.Column="0" Grid.Row="4" FontWeight="SemiBold"
+                       Text="ReactiveDictionary — Pairs"/>
+            <ListBox Grid.Column="0" Grid.Row="5" Margin="0,2,8,0"
+                     ItemsSource="{Binding Unsorted, Converter={StaticResource ToObservableCollection}, ConverterParameter=Pairs}"/>
+            <TextBlock Grid.Column="1" Grid.Row="4" FontWeight="SemiBold"
+                       Text="ReactiveSortedDictionary — Pairs"/>
+            <ListBox Grid.Column="1" Grid.Row="5" Margin="8,2,0,0"
+                     ItemsSource="{Binding Sorted, Converter={StaticResource ToObservableCollection}, ConverterParameter=Pairs}"/>
+        </Grid>
+    </DockPanel>
+</Window>

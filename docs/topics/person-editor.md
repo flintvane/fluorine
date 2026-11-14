@@ -2,9 +2,9 @@
 
 # 2. PersonEditor: one model in two windows
 
-`demos/PersonEditor` opens the same `Person` in a WinForms window and a WPF window. Typing in either window updates the other. The model has no reference to either UI framework.
+`demos/PersonEditor` opens the same `Person` in a WinForms window and a WPF window. Typing in either window updates the other. The model has no reference to either UI framework. A second WPF window demonstrates `ObservableCollectionConverter` on a `ReactiveDictionary` and a `ReactiveSortedDictionary`.
 
-The demo targets .NET Framework 4.8, with WPF and WinForms, and uses C# 13. `[Reactive]` partial properties are written by the Fluorine source generator. `Person.Tags` is a `ReactiveSet<string>`: the WPF window shows it through `ObservableCollectionConverter`, and the WinForms window fills a `ListBox` by enumerating the set.
+The demo targets .NET Framework 4.8, with WPF and WinForms, and uses C# 13. `[Reactive]` partial properties are written by the Fluorine source generator. `Person.Tags` is a `ReactiveSortedSet<string>`: the WPF window shows it through `ObservableCollectionConverter`, and the WinForms window fills a `ListBox` by enumerating the set.
 
 ## Building and running
 
@@ -40,7 +40,7 @@ public partial class Person : AutoNotify
     [Reactive]
     public partial string AgeStatus { get; set; }
 
-    public ReactiveSet<string> Tags { get; } = [];
+    public ReactiveSortedSet<string> Tags { get; } = [];
 
     private string DescribeAge()
         => Age >= 1 ? null : "Age must be a positive integer.";
@@ -65,8 +65,8 @@ static void Main()
     var wpf = DispatcherScheduler.CreateNew("person-wpf", () =>
     {
         person = new Person();
-        var window = new PersonWindow(person);
-        window.Show();
+        new PersonWindow(person).Show();
+        new DictionaryViewsWindow().Show();
     });
 
     Application.EnableVisualStyles();
@@ -97,6 +97,12 @@ static void Main()
 `UpdateSourceTrigger=PropertyChanged` writes the register on each keystroke, so the WinForms window follows along. Age is an `int`: WPF's own converter rejects text that is not an integer and leaves `Age` unchanged. `ValidatesOnExceptions` draws the box as invalid in that case. `AgeStatus` is one way. The model computes it; this window only displays it.
 
 Add and Remove buttons call `Tags.Add` and `Tags.Remove`. The same changes appear in the WinForms list.
+
+## The dictionary views window
+
+`DictionaryViewsWindow` is a WPF-only demonstration of the dictionary views. Its data context holds a `ReactiveDictionary<string, int>` and a `ReactiveSortedDictionary<string, int>`. Each is bound three times through `ObservableCollectionConverter`, with `ConverterParameter` set to `Keys`, `Values`, or `Pairs` ([Showing a reactive set in WPF](observable-collections.md)).
+
+The window seeds both dictionaries with the same three entries, in the same order. The unsorted lists start in insertion order; the sorted lists start in key order. Set adds or replaces a key in both dictionaries; Remove deletes it from both. The six lists follow those writes live.
 
 ## The WinForms window
 

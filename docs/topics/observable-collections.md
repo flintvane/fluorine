@@ -2,7 +2,7 @@
 
 # 2. Showing a reactive set in WPF
 
-A WPF `ItemsControl` or `ListBox` binds to an `ObservableCollection`. `ObservableCollectionConverter` is an `IValueConverter` that turns a `ReactiveSet<T>` into an `ObservableCollection<T>` and keeps that collection in step with the set.
+A WPF `ItemsControl` or `ListBox` binds to an `ObservableCollection`. `ObservableCollectionConverter` is an `IValueConverter` that turns a reactive set or dictionary into an `ObservableCollection` and keeps that collection in step with the source.
 
 Put the converter in the window resources and bind the set through it:
 
@@ -41,6 +41,24 @@ The reaction starts when the first `CollectionChanged` handler attaches, typical
 The collection is written only by that reaction. An outside write, such as `Add` or `Clear` on the collection itself, throws `InvalidOperationException`.
 
 [PersonEditor](person-editor.md) binds `Person.Tags` this way, and the WinForms window edits the same set.
+
+The converter also accepts a `ReactiveSortedSet<T>`. That view stays in comparer order.
+
+## Dictionary views
+
+The same converter turns a `ReactiveDictionary<TKey, TValue>` or a `ReactiveSortedDictionary<TKey, TValue>` into an `ObservableCollection`. `ConverterParameter` selects what each entry contributes, as a `DictionaryViewMode` or as its name: `Keys`, `Values`, or `Pairs`. With no parameter the view shows pairs.
+
+```xml
+<ListBox ItemsSource="{Binding Scores, Converter={StaticResource ToObservableCollection}, ConverterParameter=Keys}"/>
+<ListBox ItemsSource="{Binding Scores, Converter={StaticResource ToObservableCollection}, ConverterParameter=Values}"/>
+<ListBox ItemsSource="{Binding Scores, Converter={StaticResource ToObservableCollection}, ConverterParameter=Pairs}"/>
+```
+
+The bound property is the dictionary itself. Add, replace and remove on the dictionary, from any thread; the view follows those changes on the dispatcher thread.
+
+A `ReactiveDictionary` has no order: the view keeps the position of each key and fills a hole from the end. A `ReactiveSortedDictionary` view stays in key order. A value change updates the item in a `Values` or `Pairs` view, and leaves a `Keys` view as it is.
+
+[PersonEditor](person-editor.md) opens a WPF window that shows both dictionaries in all three modes.
 
 ---
 
