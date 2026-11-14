@@ -17,5 +17,6 @@
 
 ## Maintenance
 
-- IDs are stable. A changed rule updates its row. A removed rule marks the row `retired`. A new rule gets the next free `-xx` number.
+- IDs are stable and never reused. A changed rule updates its row. A row whose rule is removed, or that cannot be tested, is deleted and its ID goes on the 'Dropped IDs (do not reuse)' line at the end of TESTS.md. A new rule gets the next free `-xx` number.
+- Only behaviour a test framework can sensibly check gets a row: no rows for API shape, naming or syntax, or suitability for a use case, and no empty, skipped or placeholder tests (Werner 2026-11-14).
 - When the spec changes, check the diff of semantics*.md against the IDs of each changed section.
