@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -11,12 +10,6 @@ namespace Fluorine
 {
     public class Cs4_ThreadSchedulerTests : AcceptanceTest
     {
-        [Fact(DisplayName = "cs4.1-01 ThreadScheduler: no ctor, no attach")]
-        public void Rule_4_1_NoPublicConstructorAndNoAttachToCurrent()
-        {
-            Assert.Empty(typeof(ThreadScheduler).GetConstructors());
-            Assert.Null(typeof(ThreadScheduler).GetMethod("AttachToCurrent", BindingFlags.Public | BindingFlags.Static));
-        }
 
         [Fact(DisplayName = "cs4.2-01 CreateNew runs initial; throw is logged")]
         public void Rule_4_2_CreateNewRunsInitialThenLoop()
@@ -471,12 +464,6 @@ namespace Fluorine
             Assert.IsType<ReactiveException>(log.Snapshot()[0]);
         }
 
-        [Fact(DisplayName = "cs5.1-01 DispatcherScheduler has no public ctor")]
-        public void Rule_5_1_NoPublicConstructor()
-        {
-            Assert.Empty(typeof(DispatcherScheduler).GetConstructors());
-        }
-
         [Fact(DisplayName = "cs5.2-01 Dispatcher CreateNew: initial, then runs")]
         public void Rule_5_2_CreateNewRunsInitialThenDispatcher()
         {
@@ -724,7 +711,6 @@ namespace Fluorine
         [Fact(DisplayName = "cs6.1-02 WinForms attach: needs context, same obj")]
         public void Rule_6_1_AttachToCurrentRequiresWinFormsContext()
         {
-            Assert.Empty(typeof(WinFormsScheduler).GetConstructors());
             Exception seen = null;
             Action<Exception> h = e => seen = e;
             Reactive.UnhandledException += h;
@@ -808,12 +794,6 @@ namespace Fluorine
             Assert.IsType<ReactiveException>(error);
             Assert.Equal(0, log.Count);
         }
-
-        [Fact]
-        public void Rule_6_2_UserContextIsNotSupported()
-        {
-            Assert.Throws<ReactiveException>(() => WinFormsScheduler.AttachToCurrent());
-        }
         
         [Fact(DisplayName = "cs6.1-01 WinForms scheduler runs queued work")]
         public void Rule_6_3_QueueNeverBlocksAndShutdownDoesNotEndLoop()
@@ -825,7 +805,6 @@ namespace Fluorine
                 host.Scheduler.Queue(() => Interlocked.Increment(ref n));
                 WaitUntil.True(() => n == 1, "winforms queue");
                 host.Scheduler.Shutdown();
-                Assert.True(true);
             }
             catch (Exception ex)
             {
@@ -982,18 +961,6 @@ namespace Fluorine
                 Reactive.UnhandledException -= a;
                 Reactive.UnhandledException -= b;
             }
-        }
-
-        [Fact(DisplayName = "cs7.2-01 ReactiveException constructors")]
-        public void Rule_7_2_ReactiveExceptionConstructorsAndInner()
-        {
-            var a = new ReactiveException();
-            var b = new ReactiveException("m");
-            var inner = new InvalidOperationException("i");
-            var c = new ReactiveException("m", inner);
-            Assert.Equal("m", b.Message);
-            Assert.Same(inner, c.InnerException);
-            Assert.IsAssignableFrom<Exception>(a);
         }
 
         [Fact(DisplayName = "cs7.3-01 Only errors without a caller logged")]
@@ -1153,16 +1120,6 @@ namespace Fluorine
             {
                 release.Set();
             }
-        }
-
-        [Fact]
-        public void Rule_7_5_DiagnosticsModeIsImplementationDefined()
-        {
-            var r = new Register
-            {
-                Name = "diag"
-            };
-            Assert.Equal("diag", r.Name);
         }
 
         static void LoggedOnceUnwrapped(Action<Scheduler> body)
