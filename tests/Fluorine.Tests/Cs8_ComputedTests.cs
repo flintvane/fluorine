@@ -10,16 +10,14 @@ namespace Fluorine
         [Fact(DisplayName = "cs8.1-04 Computed writes result, follows input")]
         public void Rule_8_1_ComputedAddsReactionThatWritesTheRegister()
         {
-            using (var host = new ThreadHost())
-            {
-                var source = new Register<int>(2);
-                var dest = new Register<int>(0);
-                var reaction = host.NewReactor().Computed(dest, () => source.Value * 3);
-                Assert.NotNull(reaction);
-                WaitUntil.True(() => dest.Value == 6, "first");
-                source.Value = 4;
-                WaitUntil.True(() => dest.Value == 12, "recompute");
-            }
+            using var host = new ThreadHost();
+            var source = new Register<int>(2);
+            var dest = new Register<int>(0);
+            var reaction = host.NewReactor().Computed(dest, () => source.Value * 3);
+            Assert.NotNull(reaction);
+            WaitUntil.True(() => dest.Value == 6, "first");
+            source.Value = 4;
+            WaitUntil.True(() => dest.Value == 12, "recompute");
         }
 
         [Fact(DisplayName = "cs8.1-06 Computed is an ordinary reaction")]
@@ -67,26 +65,24 @@ namespace Fluorine
         [Fact(DisplayName = "cs8.2-01 Equal result doesn't trigger downstream")]
         public void Rule_8_2_EqualResultDoesNotTriggerDownstream()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var source = new Register<int>(2);
+            var dest = new Register<int>(0);
+            var n = 0;
+            var reactor = host.NewReactor();
+            reactor.Computed(dest, () => source.Value / 2);
+            reactor.Add(() =>
             {
-                var source = new Register<int>(2);
-                var dest = new Register<int>(0);
-                var n = 0;
-                var reactor = host.NewReactor();
-                reactor.Computed(dest, () => source.Value / 2);
-                reactor.Add(() =>
-                {
-                    var _ = dest.Value;
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1 && dest.Value == 1, "first");
-                source.Value = 3;
-                Thread.Sleep(50);
-                Assert.Equal(1, n);
-                Assert.Equal(1, dest.Value);
-                source.Value = 4;
-                WaitUntil.True(() => dest.Value == 2 && n == 2, "changed");
-            }
+                var _ = dest.Value;
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1 && dest.Value == 1, "first");
+            source.Value = 3;
+            Thread.Sleep(50);
+            Assert.Equal(1, n);
+            Assert.Equal(1, dest.Value);
+            source.Value = 4;
+            WaitUntil.True(() => dest.Value == 2 && n == 2, "changed");
         }
 
         [Fact(DisplayName = "cs8.2-02 Computed register stays user-writable")]
@@ -136,16 +132,14 @@ namespace Fluorine
         [Fact]
         public void Rule_8_3_UntilFirstRunRegisterKeepsItsValue()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            host.OnScheduler(() =>
             {
-                host.OnScheduler(() =>
-                {
-                    var reactor = new Reactor(host.Scheduler);
-                    var dest = new Register<int>(5);
-                    reactor.Computed(dest, () => 9);
-                    Assert.Equal(5, dest.Value);
-                });
-            }
+                var reactor = new Reactor(host.Scheduler);
+                var dest = new Register<int>(5);
+                reactor.Computed(dest, () => 9);
+                Assert.Equal(5, dest.Value);
+            });
         }
 
         [Fact(DisplayName = "cs8.3-01 Computed first run queued, not inline")]
@@ -171,125 +165,115 @@ namespace Fluorine
         [Fact(DisplayName = "cs8.4-01 Null function writes default(T)")]
         public void Rule_8_4_NullFunctionWritesDefaultAndFunctionIsFixed()
         {
-            using (var host = new ThreadHost())
-            {
-                var dest = new Register<int>(5);
-                var reactor = host.NewReactor();
-                var first = reactor.Computed(dest, (Func<int>)null);
-                Assert.NotNull(first);
-                WaitUntil.True(() => dest.Value == 0, "default");
-                first.Dispose();
-                var source = new Register<int>(3);
-                reactor.Computed(dest, () => source.Value);
-                WaitUntil.True(() => dest.Value == 3, "second computation");
-                source.Value = 8;
-                WaitUntil.True(() => dest.Value == 8, "follows new function");
-            }
+            using var host = new ThreadHost();
+            var dest = new Register<int>(5);
+            var reactor = host.NewReactor();
+            var first = reactor.Computed(dest, (Func<int>)null);
+            Assert.NotNull(first);
+            WaitUntil.True(() => dest.Value == 0, "default");
+            first.Dispose();
+            var source = new Register<int>(3);
+            reactor.Computed(dest, () => source.Value);
+            WaitUntil.True(() => dest.Value == 3, "second computation");
+            source.Value = 8;
+            WaitUntil.True(() => dest.Value == 8, "follows new function");
         }
 
         [Fact]
         public void Rule_8_5_ExceptionLeavesRegisterUnchanged()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var dest = new Register<int>(4);
+            Exception seen = null;
+            Action<Exception> h = e => seen = e;
+            Reactive.UnhandledException += h;
+            try
             {
-                var dest = new Register<int>(4);
-                Exception seen = null;
-                Action<Exception> h = e => seen = e;
-                Reactive.UnhandledException += h;
-                try
+                host.NewReactor().Computed(dest, () =>
                 {
-                    host.NewReactor().Computed(dest, () =>
-                    {
-                        throw new InvalidOperationException("compute");
-                    });
-                    WaitUntil.True(() => seen != null, "logged");
-                    Assert.IsType<InvalidOperationException>(seen);
-                    Assert.Equal(4, dest.Value);
-                }
-                finally
-                {
-                    Reactive.UnhandledException -= h;
-                }
+                    throw new InvalidOperationException("compute");
+                });
+                WaitUntil.True(() => seen != null, "logged");
+                Assert.IsType<InvalidOperationException>(seen);
+                Assert.Equal(4, dest.Value);
+            }
+            finally
+            {
+                Reactive.UnhandledException -= h;
             }
         }
 
         [Fact(DisplayName = "cs8.5-01 Throwing function: logged, dest kept")]
         public void Rule_8_5_01_ThrowingFunctionLoggedRegisterUnchanged()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var dest = new Register<int>(4);
+            var a = new Register<int>(0);
+            var thrown = new InvalidOperationException("computed");
+            var reactor = new Reactor(s);
+            reactor.Computed(dest, () =>
             {
-                var s = Harness.Create();
-                var dest = new Register<int>(4);
-                var a = new Register<int>(0);
-                var thrown = new InvalidOperationException("computed");
-                var reactor = new Reactor(s);
-                reactor.Computed(dest, () =>
-                {
-                    var value = a.Value;
-                    if (value == 1)
-                        throw thrown;
-                    return 4;
-                });
-                Harness.Barrier(s);
-                int runs = 0;
-                reactor.Add(() =>
-                {
-                    var unused = dest.Value;
-                    Interlocked.Increment(ref runs);
-                });
-                Harness.Barrier(s);
-                int afterSubscribe = Volatile.Read(ref runs);
-                a.Value = 1;
-                Harness.Barrier2(s);
-                Assert.Equal(1, log.Count);
-                Assert.Same(thrown, log.Snapshot()[0]);
-                Assert.Equal(4, dest.Value);
-                Assert.Equal(afterSubscribe, Volatile.Read(ref runs));
-            }
+                var value = a.Value;
+                if (value == 1)
+                    throw thrown;
+                return 4;
+            });
+            Harness.Barrier(s);
+            int runs = 0;
+            reactor.Add(() =>
+            {
+                var unused = dest.Value;
+                Interlocked.Increment(ref runs);
+            });
+            Harness.Barrier(s);
+            int afterSubscribe = Volatile.Read(ref runs);
+            a.Value = 1;
+            Harness.Barrier2(s);
+            Assert.Equal(1, log.Count);
+            Assert.Same(thrown, log.Snapshot()[0]);
+            Assert.Equal(4, dest.Value);
+            Assert.Equal(afterSubscribe, Volatile.Read(ref runs));
         }
 
         [Fact(DisplayName = "cs8.5-02 Throwing function stays subscribed")]
         public void Rule_8_5_02_ThrowingFunctionStaysSubscribed()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var dest = new Register<int>(4);
+            var a = new Register<int>(0);
+            var thrown = new InvalidOperationException("computed");
+            new Reactor(s).Computed(dest, () =>
             {
-                var s = Harness.Create();
-                var dest = new Register<int>(4);
-                var a = new Register<int>(0);
-                var thrown = new InvalidOperationException("computed");
-                new Reactor(s).Computed(dest, () =>
-                {
-                    var value = a.Value;
-                    if (value == 1)
-                        throw thrown;
-                    return value == 0 ? 4 : value + 10;
-                });
-                Harness.Barrier(s);
-                a.Value = 1;
-                Harness.Barrier2(s);
-                a.Value = 2;
-                Harness.Barrier2(s);
-                Assert.Equal(12, dest.Value);
-            }
+                var value = a.Value;
+                if (value == 1)
+                    throw thrown;
+                return value == 0 ? 4 : value + 10;
+            });
+            Harness.Barrier(s);
+            a.Value = 1;
+            Harness.Barrier2(s);
+            a.Value = 2;
+            Harness.Barrier2(s);
+            Assert.Equal(12, dest.Value);
         }
 
         [Fact(DisplayName = "cs8.6-01 disposeOld disposes replaced value once")]
         public void Rule_8_6_DisposeOldAfterStoreAndTrigger()
         {
-            using (var host = new ThreadHost())
-            {
-                var first = new Tracked();
-                var dest = new Register<Tracked>(first);
-                var second = new Tracked();
-                var go = new Register<int>(0);
-                host.NewReactor().Computed(dest, () => go.Value == 0 ? first : second, true);
-                WaitUntil.True(() => dest.Value == first, "initial");
-                Assert.Equal(0, first.Disposed);
-                go.Value = 1;
-                WaitUntil.True(() => dest.Value == second && first.Disposed == 1, "replaced");
-                Assert.Same(second, dest.Value);
-                Assert.Equal(0, second.Disposed);
-            }
+            using var host = new ThreadHost();
+            var first = new Tracked();
+            var dest = new Register<Tracked>(first);
+            var second = new Tracked();
+            var go = new Register<int>(0);
+            host.NewReactor().Computed(dest, () => go.Value == 0 ? first : second, true);
+            WaitUntil.True(() => dest.Value == first, "initial");
+            Assert.Equal(0, first.Disposed);
+            go.Value = 1;
+            WaitUntil.True(() => dest.Value == second && first.Disposed == 1, "replaced");
+            Assert.Same(second, dest.Value);
+            Assert.Equal(0, second.Disposed);
         }
 
         [Fact(DisplayName = "cs8.6-02 Old value disposed after store+trigger")]
@@ -366,82 +350,76 @@ namespace Fluorine
         [Fact(DisplayName = "cs8.6-04 Throwing Dispose of old value is logged")]
         public void Rule_8_6_04_ThrowingDisposeOfOldValueIsUserCode()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var which = new Register<int>(0);
+            var thrown = new InvalidOperationException("dispose-x");
+            var first = new ThrowingBox(thrown);
+            var second = new ThrowingBox(null);
+            var dest = new Register<ThrowingBox>();
+            new Reactor(s).Computed(dest, () =>
             {
-                var s = Harness.Create();
-                var which = new Register<int>(0);
-                var thrown = new InvalidOperationException("dispose-x");
-                var first = new ThrowingBox(thrown);
-                var second = new ThrowingBox(null);
-                var dest = new Register<ThrowingBox>();
-                new Reactor(s).Computed(dest, () =>
-                {
-                    var unused = which.Value;
-                    return unused == 0 ? first : second;
-                }, true);
-                Harness.Barrier(s);
-                which.Value = 1;
-                Harness.Barrier2(s);
-                var items = log.Snapshot();
-                Assert.Single(items);
-                Assert.Same(thrown, items[0]);
-                Assert.IsNotType<ReactiveException>(items[0]);
-            }
+                var unused = which.Value;
+                return unused == 0 ? first : second;
+            }, true);
+            Harness.Barrier(s);
+            which.Value = 1;
+            Harness.Barrier2(s);
+            var items = log.Snapshot();
+            Assert.Single(items);
+            Assert.Same(thrown, items[0]);
+            Assert.IsNotType<ReactiveException>(items[0]);
         }
 
         [Fact]
         public void Rule_8_7_DisposedReactorReturnsNullAndKeepsLastValue()
         {
-            using (var host = new ThreadHost())
-            {
-                var source = new Register<int>(1);
-                var dest = new Register<int>(0);
-                var reactor = host.NewReactor();
-                reactor.Computed(dest, () => source.Value);
-                WaitUntil.True(() => dest.Value == 1, "first");
-                reactor.Dispose();
-                Assert.Null(reactor.Computed(dest, () => 99));
-                source.Value = 2;
-                Thread.Sleep(50);
-                Assert.Equal(1, dest.Value);
-            }
+            using var host = new ThreadHost();
+            var source = new Register<int>(1);
+            var dest = new Register<int>(0);
+            var reactor = host.NewReactor();
+            reactor.Computed(dest, () => source.Value);
+            WaitUntil.True(() => dest.Value == 1, "first");
+            reactor.Dispose();
+            Assert.Null(reactor.Computed(dest, () => 99));
+            source.Value = 2;
+            Thread.Sleep(50);
+            Assert.Equal(1, dest.Value);
         }
 
         [Fact(DisplayName = "cs8.7-01 Computed on disposed reactor is null")]
         public void Rule_8_7_01_ComputedOnDisposedReactorReturnsNull()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var disposed = new Reactor(s);
+            disposed.Dispose();
+            var dest = new Register<int>(3);
+            bool ran = false;
+            var result = disposed.Computed(dest, () =>
             {
-                var s = Harness.Create();
-                var disposed = new Reactor(s);
-                disposed.Dispose();
-                var dest = new Register<int>(3);
-                bool ran = false;
-                var result = disposed.Computed(dest, () =>
-                {
-                    ran = true;
-                    return 9;
-                });
-                Harness.Barrier(s);
-                Assert.Null(result);
-                Assert.False(ran);
-                Assert.Equal(3, dest.Value);
+                ran = true;
+                return 9;
+            });
+            Harness.Barrier(s);
+            Assert.Null(result);
+            Assert.False(ran);
+            Assert.Equal(3, dest.Value);
 
-                var s2 = Harness.Create();
-                var onShutdown = new Reactor(s2);
-                s2.Shutdown();
-                var dest2 = new Register<int>(3);
-                bool ran2 = false;
-                var result2 = onShutdown.Computed(dest2, () =>
-                {
-                    ran2 = true;
-                    return 9;
-                });
-                Assert.Null(result2);
-                Assert.False(ran2);
-                Assert.Equal(3, dest2.Value);
-                Assert.Equal(0, log.Count);
-            }
+            var s2 = Harness.Create();
+            var onShutdown = new Reactor(s2);
+            s2.Shutdown();
+            var dest2 = new Register<int>(3);
+            bool ran2 = false;
+            var result2 = onShutdown.Computed(dest2, () =>
+            {
+                ran2 = true;
+                return 9;
+            });
+            Assert.Null(result2);
+            Assert.False(ran2);
+            Assert.Equal(3, dest2.Value);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs8.7-02 Stopped computation keeps last value")]

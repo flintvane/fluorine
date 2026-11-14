@@ -33,20 +33,18 @@ namespace Fluorine
         [Fact]
         public void Rule_3_2_QueueReactionNeverInlineNeverThrowsAfterShutdownSilent()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var n = 0;
+            Reaction reaction = null;
+            host.OnScheduler(() =>
             {
-                var n = 0;
-                Reaction reaction = null;
-                host.OnScheduler(() =>
-                {
-                    var reactor = new Reactor(host.Scheduler);
-                    reaction = reactor.Add(() => Interlocked.Increment(ref n));
-                    Assert.Equal(0, n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                host.Scheduler.Shutdown();
-                host.Scheduler.Queue(reaction);
-            }
+                var reactor = new Reactor(host.Scheduler);
+                reaction = reactor.Add(() => Interlocked.Increment(ref n));
+                Assert.Equal(0, n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            host.Scheduler.Shutdown();
+            host.Scheduler.Queue(reaction);
         }
 
         [Fact(DisplayName = "cs3.2-01 Queue(Reaction) never inline or throws")]
@@ -100,19 +98,17 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.2-02 Queue(Reaction) after shutdown: silent")]
         public void Rule_3_2_02_QueueReactionAfterShutdownSilent()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                int runs = 0;
-                var reaction = new Reactor(s).Add(() => runs++);
-                Harness.Barrier(s);
-                s.Shutdown();
-                log.Clear();
-                var ex = Record.Exception(() => s.Queue(reaction));
-                Assert.Null(ex);
-                Assert.Equal(0, log.Count);
-                Assert.Equal(1, runs);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            int runs = 0;
+            var reaction = new Reactor(s).Add(() => runs++);
+            Harness.Barrier(s);
+            s.Shutdown();
+            log.Clear();
+            var ex = Record.Exception(() => s.Queue(reaction));
+            Assert.Null(ex);
+            Assert.Equal(0, log.Count);
+            Assert.Equal(1, runs);
         }
 
         [Fact(DisplayName = "cs3.3-02 Actions and runs share one FIFO")]
@@ -171,20 +167,18 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.3-04 Action exception logged, loop survives")]
         public void Rule_3_3_04_ActionExceptionLoggedUnwrappedLoopSurvives()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                var x = new InvalidOperationException("action-x");
-                s.Queue(() => { throw x; });
-                bool b = false;
-                s.Queue(() => b = true);
-                Harness.Barrier(s);
-                Assert.True(b);
-                var items = log.Snapshot();
-                Assert.Single(items);
-                Assert.Same(x, items[0]);
-                Assert.IsNotType<ReactiveException>(items[0]);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            var x = new InvalidOperationException("action-x");
+            s.Queue(() => { throw x; });
+            bool b = false;
+            s.Queue(() => b = true);
+            Harness.Barrier(s);
+            Assert.True(b);
+            var items = log.Snapshot();
+            Assert.Single(items);
+            Assert.Same(x, items[0]);
+            Assert.IsNotType<ReactiveException>(items[0]);
         }
 
         [Fact(DisplayName = "cs3.3-05 Queue(Action) never runs inline")]
@@ -204,14 +198,12 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.3-06 Queue(null action) is a silent no-op")]
         public void Rule_3_3_06_QueueNullAction()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                var ex = Record.Exception(() => s.Queue((Action)null));
-                Harness.Barrier(s);
-                Assert.Null(ex);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            var ex = Record.Exception(() => s.Queue((Action)null));
+            Harness.Barrier(s);
+            Assert.Null(ex);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs3.3-07 Actions queued before shutdown run")]
@@ -237,29 +229,27 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.3-08 Action queued during drain never runs")]
         public void Rule_3_3_08_ActionQueuedAfterShutdownBeganIgnored()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var hold = Harness.Gate(s);
+            bool a1 = false;
+            int a2 = 0;
+            try
             {
-                var s = Harness.Create();
-                var hold = Harness.Gate(s);
-                bool a1 = false;
-                int a2 = 0;
-                try
+                s.Queue(() =>
                 {
-                    s.Queue(() =>
-                    {
-                        a1 = true;
-                        s.Queue(() => a2++);
-                    });
-                    FinishShutdown(s, hold);
-                }
-                finally
-                {
-                    hold.Release();
-                }
-                Assert.True(a1);
-                Assert.Equal(0, a2);
-                Assert.Equal(0, log.Count);
+                    a1 = true;
+                    s.Queue(() => a2++);
+                });
+                FinishShutdown(s, hold);
             }
+            finally
+            {
+                hold.Release();
+            }
+            Assert.True(a1);
+            Assert.Equal(0, a2);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs3.4-01 Run/Schedule are protected, not public")]
@@ -339,29 +329,27 @@ namespace Fluorine
         [Fact]
         public void Rule_3_5_RunRecordsReadsThenDisconnectsUnread()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var a = new Register<int>(0);
+            var b = new Register<int>(0);
+            var n = 0;
+            host.NewReactor().Add(() =>
             {
-                var a = new Register<int>(0);
-                var b = new Register<int>(0);
-                var n = 0;
-                host.NewReactor().Add(() =>
+                var first = a.Value;
+                if (first == 0)
                 {
-                    var first = a.Value;
-                    if (first == 0)
-                    {
-                        var _ = b.Value;
-                    }
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                b.Value = 1;
-                WaitUntil.True(() => n == 2, "b");
-                a.Value = 1;
-                WaitUntil.True(() => n == 3, "a");
-                b.Value = 2;
-                Thread.Sleep(100);
-                Assert.Equal(3, n);
-            }
+                    var _ = b.Value;
+                }
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            b.Value = 1;
+            WaitUntil.True(() => n == 2, "b");
+            a.Value = 1;
+            WaitUntil.True(() => n == 3, "a");
+            b.Value = 2;
+            Thread.Sleep(100);
+            Assert.Equal(3, n);
         }
 
         [Fact(DisplayName = "cs3.5-01 Dependencies rediscovered each run")]
@@ -583,11 +571,38 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.8-06 Shutdown inside reaction throws")]
         public void Rule_3_8_06_ShutdownInsideReactionThrowsNotLogged()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            bool caught = false;
+            new Reactor(s).Add(() =>
             {
-                var s = Harness.Create();
-                bool caught = false;
-                new Reactor(s).Add(() =>
+                try
+                {
+                    s.Shutdown();
+                }
+                catch (ReactiveException)
+                {
+                    caught = true;
+                }
+            });
+            Harness.Barrier(s);
+            Assert.True(caught);
+            Assert.Equal(0, log.Count);
+            bool later = false;
+            s.Queue(() => later = true);
+            Harness.Barrier(s);
+            Assert.True(later);
+        }
+
+        [Fact(DisplayName = "cs3.8-07 Shutdown inside paused reaction throws")]
+        public void Rule_3_8_07_ShutdownInsidePausedReactionThrows()
+        {
+            using var log = new Log();
+            var s = Harness.Create();
+            bool caught = false;
+            new Reactor(s).Add(() =>
+            {
+                using (Reaction.Pause())
                 {
                     try
                     {
@@ -597,75 +612,42 @@ namespace Fluorine
                     {
                         caught = true;
                     }
-                });
-                Harness.Barrier(s);
-                Assert.True(caught);
-                Assert.Equal(0, log.Count);
-                bool later = false;
-                s.Queue(() => later = true);
-                Harness.Barrier(s);
-                Assert.True(later);
-            }
-        }
-
-        [Fact(DisplayName = "cs3.8-07 Shutdown inside paused reaction throws")]
-        public void Rule_3_8_07_ShutdownInsidePausedReactionThrows()
-        {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                bool caught = false;
-                new Reactor(s).Add(() =>
-                {
-                    using (Reaction.Pause())
-                    {
-                        try
-                        {
-                            s.Shutdown();
-                        }
-                        catch (ReactiveException)
-                        {
-                            caught = true;
-                        }
-                    }
-                });
-                Harness.Barrier(s);
-                Assert.True(caught);
-                Assert.Equal(0, log.Count);
-                bool later = false;
-                s.Queue(() => later = true);
-                Harness.Barrier(s);
-                Assert.True(later);
-            }
+                }
+            });
+            Harness.Barrier(s);
+            Assert.True(caught);
+            Assert.Equal(0, log.Count);
+            bool later = false;
+            s.Queue(() => later = true);
+            Harness.Barrier(s);
+            Assert.True(later);
         }
 
         [Fact(DisplayName = "cs3.8-08 Shutdown of other sched in run throws")]
         public void Rule_3_8_08_ShutdownInsideReactionOfOtherScheduler()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s1 = Harness.Create();
+            var s2 = Harness.Create();
+            bool caught = false;
+            new Reactor(s2).Add(() =>
             {
-                var s1 = Harness.Create();
-                var s2 = Harness.Create();
-                bool caught = false;
-                new Reactor(s2).Add(() =>
+                try
                 {
-                    try
-                    {
-                        s1.Shutdown();
-                    }
-                    catch (ReactiveException)
-                    {
-                        caught = true;
-                    }
-                });
-                Harness.Barrier(s2);
-                Assert.True(caught);
-                Assert.Equal(0, log.Count);
-                bool later = false;
-                s1.Queue(() => later = true);
-                Harness.Barrier(s1);
-                Assert.True(later);
-            }
+                    s1.Shutdown();
+                }
+                catch (ReactiveException)
+                {
+                    caught = true;
+                }
+            });
+            Harness.Barrier(s2);
+            Assert.True(caught);
+            Assert.Equal(0, log.Count);
+            bool later = false;
+            s1.Queue(() => later = true);
+            Harness.Barrier(s1);
+            Assert.True(later);
         }
 
         [Fact(DisplayName = "cs3.8-10 Second Shutdown waits for the first")]
@@ -703,36 +685,34 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.8-11 Shutdown after finish returns at once")]
         public void Rule_3_8_11_ShutdownAfterFinishedReturns()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            s.Shutdown();
+            log.Clear();
+            Exception error = null;
+            var done = new ManualResetEvent(false);
+            var thread = new Thread(() =>
             {
-                var s = Harness.Create();
-                s.Shutdown();
-                log.Clear();
-                Exception error = null;
-                var done = new ManualResetEvent(false);
-                var thread = new Thread(() =>
+                try
                 {
-                    try
-                    {
-                        s.Shutdown();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    finally
-                    {
-                        done.Set();
-                    }
-                })
+                    s.Shutdown();
+                }
+                catch (Exception ex)
                 {
-                    IsBackground = true
-                };
-                thread.Start();
-                Assert.True(done.WaitOne(1000), "second Shutdown did not return promptly");
-                Assert.Null(error);
-                Assert.Equal(0, log.Count);
-            }
+                    error = ex;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            })
+            {
+                IsBackground = true
+            };
+            thread.Start();
+            Assert.True(done.WaitOne(1000), "second Shutdown did not return promptly");
+            Assert.Null(error);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs3.8-12 Reaction added during drain never runs")]
@@ -759,23 +739,19 @@ namespace Fluorine
         [Fact]
         public void Rule_3_9_SchedulersAreAnnouncedToReactive()
         {
-            using (var host = new ThreadHost())
-            {
-                var all = Scheduler.SnapshotAll();
-                Assert.Contains(host.Scheduler, all);
-            }
+            using var host = new ThreadHost();
+            var all = Scheduler.SnapshotAll();
+            Assert.Contains(host.Scheduler, all);
         }
 
         [Fact]
         public void Rule_3_10_OneSchedulerServesManyReactors()
         {
-            using (var host = new ThreadHost())
-            {
-                var n = 0;
-                host.NewReactor().Add(() => Interlocked.Increment(ref n));
-                host.NewReactor().Add(() => Interlocked.Increment(ref n));
-                WaitUntil.True(() => n == 2, "both");
-            }
+            using var host = new ThreadHost();
+            var n = 0;
+            host.NewReactor().Add(() => Interlocked.Increment(ref n));
+            host.NewReactor().Add(() => Interlocked.Increment(ref n));
+            WaitUntil.True(() => n == 2, "both");
         }
 
         [Fact(DisplayName = "cs3.10-01 One scheduler hosts many reactors")]
@@ -921,29 +897,27 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.11-03 Reactive.Shutdown in reaction throws")]
         public void Rule_3_11_03_ReactiveShutdownInsideReactionThrows()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            bool caught = false;
+            new Reactor(s).Add(() =>
             {
-                var s = Harness.Create();
-                bool caught = false;
-                new Reactor(s).Add(() =>
+                try
                 {
-                    try
-                    {
-                        Reactive.Shutdown();
-                    }
-                    catch (ReactiveException)
-                    {
-                        caught = true;
-                    }
-                });
-                Harness.Barrier(s);
-                Assert.True(caught);
-                Assert.Equal(0, log.Count);
-                bool later = false;
-                s.Queue(() => later = true);
-                Harness.Barrier(s);
-                Assert.True(later);
-            }
+                    Reactive.Shutdown();
+                }
+                catch (ReactiveException)
+                {
+                    caught = true;
+                }
+            });
+            Harness.Barrier(s);
+            Assert.True(caught);
+            Assert.Equal(0, log.Count);
+            bool later = false;
+            s.Queue(() => later = true);
+            Harness.Barrier(s);
+            Assert.True(later);
         }
 
         [Fact(DisplayName = "cs3.11-04 Finished scheduler skipped by shutdown")]
@@ -979,14 +953,12 @@ namespace Fluorine
         [Fact]
         public void Rule_3_12_SchedulersDoNotInterfere()
         {
-            using (var a = new ThreadHost())
-            using (var b = new ThreadHost())
-            {
-                var n = 0;
-                a.NewReactor().Add(() => Interlocked.Increment(ref n));
-                b.NewReactor().Add(() => Interlocked.Increment(ref n));
-                WaitUntil.True(() => n == 2, "both loops");
-            }
+            using var a = new ThreadHost();
+            using var b = new ThreadHost();
+            var n = 0;
+            a.NewReactor().Add(() => Interlocked.Increment(ref n));
+            b.NewReactor().Add(() => Interlocked.Increment(ref n));
+            WaitUntil.True(() => n == 2, "both loops");
         }
 
         [Fact(DisplayName = "cs3.12-01 Blocked scheduler doesn't block others")]
@@ -1062,35 +1034,33 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.13-01 ForThread finds S; other attach throws")]
         public void Rule_3_13_ForThreadAndAttachOtherTypeThrows()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            Thread owner = null;
+            host.OnScheduler(() => owner = Thread.CurrentThread);
+            Assert.Same(host.Scheduler, Scheduler.ForThread(owner));
+            Exception seen = null;
+            Action<Exception> h = e => seen = e;
+            Reactive.UnhandledException += h;
+            try
             {
-                Thread owner = null;
-                host.OnScheduler(() => owner = Thread.CurrentThread);
-                Assert.Same(host.Scheduler, Scheduler.ForThread(owner));
-                Exception seen = null;
-                Action<Exception> h = e => seen = e;
-                Reactive.UnhandledException += h;
-                try
+                var threw = false;
+                host.OnScheduler(() =>
                 {
-                    var threw = false;
-                    host.OnScheduler(() =>
+                    try
                     {
-                        try
-                        {
-                            DispatcherScheduler.AttachToCurrent();
-                        }
-                        catch (ReactiveException)
-                        {
-                            threw = true;
-                        }
-                    });
-                    Assert.True(threw);
-                    Assert.Null(seen); // usage error: thrown, not logged (cs7.2)
-                }
-                finally
-                {
-                    Reactive.UnhandledException -= h;
-                }
+                        DispatcherScheduler.AttachToCurrent();
+                    }
+                    catch (ReactiveException)
+                    {
+                        threw = true;
+                    }
+                });
+                Assert.True(threw);
+                Assert.Null(seen); // usage error: thrown, not logged (cs7.2)
+            }
+            finally
+            {
+                Reactive.UnhandledException -= h;
             }
         }
 
@@ -1130,14 +1100,12 @@ namespace Fluorine
         [Fact]
         public void Rule_3_14_SchedulerOfAThreadStaysTheSame()
         {
-            using (var host = new ThreadHost())
-            {
-                Scheduler first = null;
-                Scheduler second = null;
-                host.OnScheduler(() => first = Scheduler.Current);
-                host.OnScheduler(() => second = Scheduler.Current);
-                Assert.Same(first, second);
-            }
+            using var host = new ThreadHost();
+            Scheduler first = null;
+            Scheduler second = null;
+            host.OnScheduler(() => first = Scheduler.Current);
+            host.OnScheduler(() => second = Scheduler.Current);
+            Assert.Same(first, second);
         }
 
         [Fact]

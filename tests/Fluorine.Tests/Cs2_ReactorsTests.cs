@@ -10,17 +10,15 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.1-02 Queue on disposed reactor never runs")]
         public void Rule_2_1_ReactorQueueUsesSchedulerAndDisposedDrops()
         {
-            using (var host = new ThreadHost())
-            {
-                var reactor = host.NewReactor();
-                var n = 0;
-                reactor.Queue(() => Interlocked.Increment(ref n));
-                WaitUntil.True(() => n == 1, "queued");
-                reactor.Dispose();
-                reactor.Queue(() => Interlocked.Increment(ref n));
-                Thread.Sleep(40);
-                Assert.Equal(1, n);
-            }
+            using var host = new ThreadHost();
+            var reactor = host.NewReactor();
+            var n = 0;
+            reactor.Queue(() => Interlocked.Increment(ref n));
+            WaitUntil.True(() => n == 1, "queued");
+            reactor.Dispose();
+            reactor.Queue(() => Interlocked.Increment(ref n));
+            Thread.Sleep(40);
+            Assert.Equal(1, n);
         }
 
         [Fact(DisplayName = "cs2.1-01 Reactor.Queue runs on scheduler thread")]
@@ -73,37 +71,35 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.2-02 Reactor() without scheduler throws")]
         public void Rule_2_2_02_ReactorWithoutSchedulerThrowsNotLogged()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            Exception thrown = null;
+            int seen = 0;
+            var done = new ManualResetEvent(false);
+            var thread = new Thread(() =>
             {
-                Exception thrown = null;
-                int seen = 0;
-                var done = new ManualResetEvent(false);
-                var thread = new Thread(() =>
+                try
                 {
-                    try
-                    {
-                        var reactor = new Reactor();
-                        GC.KeepAlive(reactor);
-                    }
-                    catch (Exception ex)
-                    {
-                        thrown = ex;
-                        seen = log.Count;
-                    }
-                    finally
-                    {
-                        done.Set();
-                    }
-                })
+                    var reactor = new Reactor();
+                    GC.KeepAlive(reactor);
+                }
+                catch (Exception ex)
                 {
-                    IsBackground = true
-                };
-                thread.Start();
-                Harness.Wait(done, "reactor ctor");
-                Assert.IsType<ReactiveException>(thrown);
-                Assert.Equal(0, seen);
-                Assert.Equal(0, log.Count);
-            }
+                    thrown = ex;
+                    seen = log.Count;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            })
+            {
+                IsBackground = true
+            };
+            thread.Start();
+            Harness.Wait(done, "reactor ctor");
+            Assert.IsType<ReactiveException>(thrown);
+            Assert.Equal(0, seen);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs2.2-03 Scheduler captured at Reactor creation")]
@@ -125,11 +121,9 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.3-02 Reactor(null) throws, not logged")]
         public void Rule_2_3_02_ReactorNullThrowsNotLogged()
         {
-            using (var log = new Log())
-            {
-                Assert.Throws<ReactiveException>(() => new Reactor(null));
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            Assert.Throws<ReactiveException>(() => new Reactor(null));
+            Assert.Equal(0, log.Count);
         }
 
         [Fact]
@@ -144,19 +138,17 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.4-01 Reactor on shut-down sched is disposed")]
         public void Rule_2_4_01_ReactorOnShutDownSchedulerActsDisposed()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                s.Shutdown();
-                Reactor reactor = null;
-                var ex = Record.Exception(() => reactor = new Reactor(s));
-                Assert.Null(ex);
-                bool ran = false;
-                Assert.Null(reactor.Add(() => ran = true));
-                reactor.Queue(() => ran = true);
-                Assert.False(ran);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            s.Shutdown();
+            Reactor reactor = null;
+            var ex = Record.Exception(() => reactor = new Reactor(s));
+            Assert.Null(ex);
+            bool ran = false;
+            Assert.Null(reactor.Add(() => ran = true));
+            reactor.Queue(() => ran = true);
+            Assert.False(ran);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs2.4-02 Reactor made during shutdown: disposed")]
@@ -196,13 +188,11 @@ namespace Fluorine
         [Fact]
         public void Rule_2_5_NameIsSettableNoNameConstructor()
         {
-            using (var host = new ThreadHost())
-            {
-                var reactor = host.NewReactor();
-                reactor.Name = "r";
-                Assert.Equal("r", reactor.Name);
-                Assert.Null(typeof(Reactor).GetConstructor([typeof(string)]));
-            }
+            using var host = new ThreadHost();
+            var reactor = host.NewReactor();
+            reactor.Name = "r";
+            Assert.Equal("r", reactor.Name);
+            Assert.Null(typeof(Reactor).GetConstructor([typeof(string)]));
         }
 
         [Fact(DisplayName = "cs2.6-01 Reaction has no public constructor")]
@@ -214,112 +204,98 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.7-01 Add returns reaction, queues first run")]
         public void Rule_2_7_AddQueuesFirstRunAndReturnsReaction()
         {
-            using (var host = new ThreadHost())
-            {
-                var n = 0;
-                var r = host.NewReactor().Add("n", () => Interlocked.Increment(ref n));
-                Assert.NotNull(r);
-                Assert.Equal("n", r.Name);
-                WaitUntil.True(() => n == 1, "first run");
-            }
+            using var host = new ThreadHost();
+            var n = 0;
+            var r = host.NewReactor().Add("n", () => Interlocked.Increment(ref n));
+            Assert.NotNull(r);
+            Assert.Equal("n", r.Name);
+            WaitUntil.True(() => n == 1, "first run");
         }
         
         [Fact(DisplayName = "cs2.8-01 Add never runs inline, even on S")]
         public void Rule_2_8_ReactionNeverRunsInline()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var ran = false;
+            host.OnScheduler(() =>
             {
-                var ran = false;
-                host.OnScheduler(() =>
-                {
-                    var r = new Reactor(host.Scheduler);
-                    r.Add(() => ran = true);
-                    Assert.False(ran);
-                });
-                WaitUntil.True(() => ran, "later");
-            }
+                var r = new Reactor(host.Scheduler);
+                r.Add(() => ran = true);
+                Assert.False(ran);
+            });
+            WaitUntil.True(() => ran, "later");
         }
 
         [Fact]
         public void Rule_2_9_AddOnDisposedReturnsNull()
         {
-            using (var host = new ThreadHost())
-            {
-                var reactor = host.NewReactor();
-                reactor.Dispose();
-                Assert.Null(reactor.Add(() => { }));
-            }
+            using var host = new ThreadHost();
+            var reactor = host.NewReactor();
+            reactor.Dispose();
+            Assert.Null(reactor.Add(() => { }));
         }
 
         [Fact(DisplayName = "cs2.9-01 Add on disposed reactor returns null")]
         public void Rule_2_9_01_AddOnDisposedReturnsNullSilently()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                var reactor = new Reactor(s);
-                reactor.Dispose();
-                bool ran = false;
-                var reaction = reactor.Add(() => ran = true);
-                Harness.Barrier(s);
-                Assert.Null(reaction);
-                Assert.False(ran);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            var reactor = new Reactor(s);
+            reactor.Dispose();
+            bool ran = false;
+            var reaction = reactor.Add(() => ran = true);
+            Harness.Barrier(s);
+            Assert.Null(reaction);
+            Assert.False(ran);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact]
         public void Rule_2_10_ReactionAlwaysHasAReactor()
         {
-            using (var host = new ThreadHost())
-            {
-                var r = host.NewReactor().Add(() => { });
-                Assert.NotNull(r);
-            }
+            using var host = new ThreadHost();
+            var r = host.NewReactor().Add(() => { });
+            Assert.NotNull(r);
         }
 
         [Fact]
         public void Rule_2_11_DisposingReactorDisposesReactions()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var reg = new Register<int>(0);
+            var n = 0;
+            var reactor = host.NewReactor();
+            reactor.Add(() =>
             {
-                var reg = new Register<int>(0);
-                var n = 0;
-                var reactor = host.NewReactor();
-                reactor.Add(() =>
-                {
-                    var _ = reg.Value;
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                reactor.Dispose();
-                reg.Value = 1;
-                Thread.Sleep(50);
-                Assert.Equal(1, n);
-            }
+                var _ = reg.Value;
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            reactor.Dispose();
+            reg.Value = 1;
+            Thread.Sleep(50);
+            Assert.Equal(1, n);
         }
 
         [Fact]
         public void Rule_2_12_DisposingReactionRemovesItFromReactor()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var reg = new Register<int>(0);
+            var n = 0;
+            var reactor = host.NewReactor();
+            var reaction = reactor.Add(() =>
             {
-                var reg = new Register<int>(0);
-                var n = 0;
-                var reactor = host.NewReactor();
-                var reaction = reactor.Add(() =>
-                {
-                    var _ = reg.Value;
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                reaction.Dispose();
-                WaitUntil.True(() => true, "dispose queued");
-                Thread.Sleep(50);
-                reg.Value = 2;
-                Thread.Sleep(50);
-                Assert.Equal(1, n);
-            }
+                var _ = reg.Value;
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            reaction.Dispose();
+            WaitUntil.True(() => true, "dispose queued");
+            Thread.Sleep(50);
+            reg.Value = 2;
+            Thread.Sleep(50);
+            Assert.Equal(1, n);
         }
 
         [Fact(DisplayName = "cs2.12-01 Reaction dispose leaves others running")]
@@ -350,28 +326,24 @@ namespace Fluorine
         [Fact]
         public void Rule_2_13_NullLambdaIsEmptyAndFixedAtCreation()
         {
-            using (var host = new ThreadHost())
-            {
-                var r = host.NewReactor().Add(null);
-                Assert.NotNull(r);
-                WaitUntil.True(() => r.ExecutionCount >= 1, "null lambda ran");
-            }
+            using var host = new ThreadHost();
+            var r = host.NewReactor().Add(null);
+            Assert.NotNull(r);
+            WaitUntil.True(() => r.ExecutionCount >= 1, "null lambda ran");
         }
 
         [Fact(DisplayName = "cs2.13-01 Null lambda acts as empty block")]
         public void Rule_2_13_01_NullLambdaIsEmptyBlock()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                var reaction = new Reactor(s).Add(null);
-                Harness.Barrier(s);
-                Assert.NotNull(reaction);
-                var ex = Record.Exception(() => reaction.Trigger());
-                Harness.Barrier(s);
-                Assert.Null(ex);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            var reaction = new Reactor(s).Add(null);
+            Harness.Barrier(s);
+            Assert.NotNull(reaction);
+            var ex = Record.Exception(() => reaction.Trigger());
+            Harness.Barrier(s);
+            Assert.Null(ex);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs2.13-02 Reaction lambda cannot be changed")]
@@ -401,16 +373,14 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.15-01 Trigger queues one more run")]
         public void Rule_2_15_TriggerQueuesAndNeverThrowsOnDisposed()
         {
-            using (var host = new ThreadHost())
-            {
-                var n = 0;
-                var r = host.NewReactor().Add(() => Interlocked.Increment(ref n));
-                WaitUntil.True(() => n == 1, "first");
-                r.Trigger();
-                WaitUntil.True(() => n == 2, "trigger");
-                r.Dispose();
-                r.Trigger();
-            }
+            using var host = new ThreadHost();
+            var n = 0;
+            var r = host.NewReactor().Add(() => Interlocked.Increment(ref n));
+            WaitUntil.True(() => n == 1, "first");
+            r.Trigger();
+            WaitUntil.True(() => n == 2, "trigger");
+            r.Dispose();
+            r.Trigger();
         }
 
         [Fact(DisplayName = "cs2.15-02 Trigger never runs inline")]
@@ -433,53 +403,47 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.15-03 Trigger on disposed reaction: silent")]
         public void Rule_2_15_03_TriggerOnDisposedReaction()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                int runs = 0;
-                var reaction = new Reactor(s).Add(() => runs++);
-                Harness.Barrier(s);
-                reaction.Dispose();
-                Harness.Barrier(s);
-                int before = runs;
-                var ex = Record.Exception(() => reaction.Trigger());
-                Harness.Barrier(s);
-                Assert.Null(ex);
-                Assert.Equal(before, runs);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            int runs = 0;
+            var reaction = new Reactor(s).Add(() => runs++);
+            Harness.Barrier(s);
+            reaction.Dispose();
+            Harness.Barrier(s);
+            int before = runs;
+            var ex = Record.Exception(() => reaction.Trigger());
+            Harness.Barrier(s);
+            Assert.Null(ex);
+            Assert.Equal(before, runs);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact]
         public void Rule_2_16_NameIsTheNameGivenToAdd()
         {
-            using (var host = new ThreadHost())
-            {
-                var r = host.NewReactor().Add("named", () => { });
-                Assert.Equal("named", r.Name);
-            }
+            using var host = new ThreadHost();
+            var r = host.NewReactor().Add("named", () => { });
+            Assert.Equal("named", r.Name);
         }
         
         [Fact(DisplayName = "cs2.17-02 Dispose twice from test thread detaches")]
         public void Rule_2_17_DisposeNullsLambdaAndDetaches()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var reg = new Register<int>(1);
+            var n = 0;
+            var r = host.NewReactor().Add(() =>
             {
-                var reg = new Register<int>(1);
-                var n = 0;
-                var r = host.NewReactor().Add(() =>
-                {
-                    var _ = reg.Value;
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                r.Dispose();
-                r.Dispose();
-                Thread.Sleep(50);
-                reg.Value = 2;
-                Thread.Sleep(50);
-                Assert.Equal(1, n);
-            }
+                var _ = reg.Value;
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            r.Dispose();
+            r.Dispose();
+            Thread.Sleep(50);
+            reg.Value = 2;
+            Thread.Sleep(50);
+            Assert.Equal(1, n);
         }
 
         [Fact(DisplayName = "cs2.17-01 Dispose detaches from all registers")]
@@ -591,16 +555,14 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.18-01 Reaction.Current is the running reaction")]
         public void Rule_2_18_CurrentIsRunningReaction()
         {
-            using (var host = new ThreadHost())
-            {
-                Reaction seen = null;
-                Reaction created = null;
-                var reactor = host.NewReactor();
-                created = reactor.Add(() => seen = Reaction.Current);
-                WaitUntil.True(() => seen != null, "ran");
-                Assert.Same(created, seen);
-                Assert.Null(Reaction.Current);
-            }
+            using var host = new ThreadHost();
+            Reaction seen = null;
+            Reaction created = null;
+            var reactor = host.NewReactor();
+            created = reactor.Add(() => seen = Reaction.Current);
+            WaitUntil.True(() => seen != null, "ran");
+            Assert.Same(created, seen);
+            Assert.Null(Reaction.Current);
         }
 
         [Fact(DisplayName = "cs2.18-02 Reaction.Current null outside a run")]
@@ -638,65 +600,61 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.19-01 PauseRecording stops recording reads")]
         public void Rule_2_19_PauseRecordingIncrementsPauseCount()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var reg = new Register<int>(0);
+            var n = 0;
+            host.NewReactor().Add(() =>
             {
-                var reg = new Register<int>(0);
-                var n = 0;
-                host.NewReactor().Add(() =>
-                {
-                    Interlocked.Increment(ref n);
-                    Reaction.PauseRecording();
-                    var _ = reg.Value;
-                    Reaction.ContinueRecording();
-                });
-                WaitUntil.True(() => n == 1, "first");
-                reg.Value = 1;
-                Thread.Sleep(40);
-                Assert.Equal(1, n);
-            }
+                Interlocked.Increment(ref n);
+                Reaction.PauseRecording();
+                var _ = reg.Value;
+                Reaction.ContinueRecording();
+            });
+            WaitUntil.True(() => n == 1, "first");
+            reg.Value = 1;
+            Thread.Sleep(40);
+            Assert.Equal(1, n);
         }
 
         [Fact(DisplayName = "cs2.20-02 Extra ContinueRecording throws, recovers")]
         public void Rule_2_20_ContinueRecordingAtZeroThrows()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            Exception logged = null;
+            Action<Exception> handler = e => logged = e;
+            Reactive.UnhandledException += handler;
+            try
             {
-                Exception logged = null;
-                Action<Exception> handler = e => logged = e;
-                Reactive.UnhandledException += handler;
-                try
+                var reg = new Register<int>(0);
+                var n = 0;
+                var caught = false;
+                var recordingAfter = false;
+                host.NewReactor().Add(() =>
                 {
-                    var reg = new Register<int>(0);
-                    var n = 0;
-                    var caught = false;
-                    var recordingAfter = false;
-                    host.NewReactor().Add(() =>
+                    Interlocked.Increment(ref n);
+                    try
                     {
-                        Interlocked.Increment(ref n);
-                        try
-                        {
-                            Reaction.ContinueRecording();
-                        }
-                        catch (ReactiveException)
-                        {
-                            caught = true;
-                        }
-                        recordingAfter = Reaction.IsRecording;
-                        var unused = reg.Value;
-                    });
-                    host.OnScheduler(() => { });
-                    Assert.Equal(1, n);
-                    Assert.True(caught);
-                    Assert.True(recordingAfter);
-                    Assert.Null(logged);
-                    reg.Value = 1;
-                    host.OnScheduler(() => { });
-                    Assert.Equal(2, n);
-                }
-                finally
-                {
-                    Reactive.UnhandledException -= handler;
-                }
+                        Reaction.ContinueRecording();
+                    }
+                    catch (ReactiveException)
+                    {
+                        caught = true;
+                    }
+                    recordingAfter = Reaction.IsRecording;
+                    var unused = reg.Value;
+                });
+                host.OnScheduler(() => { });
+                Assert.Equal(1, n);
+                Assert.True(caught);
+                Assert.True(recordingAfter);
+                Assert.Null(logged);
+                reg.Value = 1;
+                host.OnScheduler(() => { });
+                Assert.Equal(2, n);
+            }
+            finally
+            {
+                Reactive.UnhandledException -= handler;
             }
         }
 
@@ -731,73 +689,67 @@ namespace Fluorine
         [Fact(DisplayName = "cs2.21-01 Pause/Continue outside reaction: no-op")]
         public void Rule_2_21_01_PauseContinueOutsideReactionNoEffect()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var ex = Record.Exception(() =>
             {
-                var s = Harness.Create();
-                var ex = Record.Exception(() =>
+                Reaction.PauseRecording();
+                Reaction.ContinueRecording();
+                Reaction.ContinueRecording();
+            });
+            Assert.Null(ex);
+            Assert.False(Reaction.IsRecording);
+            Exception actionError = null;
+            bool recording = true;
+            s.Queue(() =>
+            {
+                try
                 {
                     Reaction.PauseRecording();
                     Reaction.ContinueRecording();
                     Reaction.ContinueRecording();
-                });
-                Assert.Null(ex);
-                Assert.False(Reaction.IsRecording);
-                Exception actionError = null;
-                bool recording = true;
-                s.Queue(() =>
+                    recording = Reaction.IsRecording;
+                }
+                catch (Exception ex2)
                 {
-                    try
-                    {
-                        Reaction.PauseRecording();
-                        Reaction.ContinueRecording();
-                        Reaction.ContinueRecording();
-                        recording = Reaction.IsRecording;
-                    }
-                    catch (Exception ex2)
-                    {
-                        actionError = ex2;
-                    }
-                });
-                Harness.Barrier(s);
-                Assert.Null(actionError);
-                Assert.False(recording);
-                Assert.Equal(0, log.Count);
-            }
+                    actionError = ex2;
+                }
+            });
+            Harness.Barrier(s);
+            Assert.Null(actionError);
+            Assert.False(recording);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs2.22-01 IsRecording true only in unpaused run")]
         public void Rule_2_22_RecordingTrueOnlyWhenUnpausedReaction()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var rec = false;
+            var paused = true;
+            host.NewReactor().Add(() =>
             {
-                var rec = false;
-                var paused = true;
-                host.NewReactor().Add(() =>
-                {
-                    rec = Reaction.IsRecording;
-                    Reaction.Pause(() => paused = Reaction.IsRecording);
-                });
-                WaitUntil.True(() => rec, "recorded");
-                Assert.False(paused);
-                Assert.False(Reaction.IsRecording);
-            }
+                rec = Reaction.IsRecording;
+                Reaction.Pause(() => paused = Reaction.IsRecording);
+            });
+            WaitUntil.True(() => rec, "recorded");
+            Assert.False(paused);
+            Assert.False(Reaction.IsRecording);
         }
 
         [Fact]
         public void Rule_2_23_PauseCountEndsWithTheRunningReaction()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var n = 0;
+            host.NewReactor().Add(() =>
             {
-                var n = 0;
-                host.NewReactor().Add(() =>
-                {
-                    Reaction.PauseRecording();
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "ran");
-                Assert.False(Reaction.IsRecording);
-                Assert.Null(Reaction.Current);
-            }
+                Reaction.PauseRecording();
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "ran");
+            Assert.False(Reaction.IsRecording);
+            Assert.Null(Reaction.Current);
         }
 
         [Fact(DisplayName = "cs2.23-01 Unbalanced pause resets at next run")]
@@ -830,25 +782,23 @@ namespace Fluorine
         [Fact]
         public void Rule_2_24_PauseWrappersAreReentrant()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var inner = true;
+            var ran = 0;
+            host.NewReactor().Add(() =>
             {
-                var inner = true;
-                var ran = 0;
-                host.NewReactor().Add(() =>
+                using (Reaction.Pause())
+                using (Reaction.Pause())
                 {
-                    using (Reaction.Pause())
-                    using (Reaction.Pause())
-                    {
-                        inner = Reaction.IsRecording;
-                    }
-                    Assert.True(Reaction.IsRecording);
-                    var v = Reaction.Pause(() => 7);
-                    Assert.Equal(7, v);
-                    Interlocked.Increment(ref ran);
-                });
-                WaitUntil.True(() => ran == 1, "ran");
-                Assert.False(inner);
-            }
+                    inner = Reaction.IsRecording;
+                }
+                Assert.True(Reaction.IsRecording);
+                var v = Reaction.Pause(() => 7);
+                Assert.Equal(7, v);
+                Interlocked.Increment(ref ran);
+            });
+            WaitUntil.True(() => ran == 1, "ran");
+            Assert.False(inner);
         }
 
         [Fact(DisplayName = "cs2.24-01 using Pause() stops recording")]

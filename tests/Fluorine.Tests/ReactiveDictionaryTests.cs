@@ -603,12 +603,10 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.1-02 Reads/writes from many threads")]
         public void Rule_12_1_02_ReadsAndWritesFromAnyThread()
         {
-            using (var log = new Log())
-            {
-                RunAnyThreadStress(true);
-                RunAnyThreadStress(false);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            RunAnyThreadStress(true);
+            RunAnyThreadStress(false);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs12.1-03 Foreign-thread write triggers reaction")]
@@ -709,33 +707,31 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.2-05 Throwing value Equals reaches writer")]
         public void Rule_12_2_05_ThrowingValueEqualityReachesWriter()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                var dc = new ReactiveDictionary<K, AccBoom>();
-                var x = new InvalidOperationException("eq");
-                var b1 = new AccBoom(x);
-                var b2 = new AccBoom(x);
-                dc[k1] = b1;
-                int nValue = 0, nCount = 0, nContains = 0, nTry = 0;
-                new Reactor(s).Add(() => { var unused = dc.Value; nValue++; });
-                new Reactor(s).Add(() => { var unused = dc.Count; nCount++; });
-                new Reactor(s).Add(() => { var unused = dc.ContainsKey(k1); nContains++; });
-                new Reactor(s).Add(() => { AccBoom v; dc.TryGetValue(k1, out v); nTry++; });
-                Harness.Barrier(s);
-                AssertThrowsUnwrapped(x, () => dc.SetValue(k1, b2));
-                AccBoom old;
-                AssertThrowsUnwrapped(x, () => dc.SetValue(k1, b2, out old));
-                AssertThrowsUnwrapped(x, () => dc[k1] = b2);
-                Harness.Barrier(s);
-                Assert.Same(b1, dc[k1]);
-                Assert.Equal(1, dc.Count);
-                Assert.Equal(1, nValue);
-                Assert.Equal(1, nCount);
-                Assert.Equal(1, nContains);
-                Assert.Equal(1, nTry);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            var dc = new ReactiveDictionary<K, AccBoom>();
+            var x = new InvalidOperationException("eq");
+            var b1 = new AccBoom(x);
+            var b2 = new AccBoom(x);
+            dc[k1] = b1;
+            int nValue = 0, nCount = 0, nContains = 0, nTry = 0;
+            new Reactor(s).Add(() => { var unused = dc.Value; nValue++; });
+            new Reactor(s).Add(() => { var unused = dc.Count; nCount++; });
+            new Reactor(s).Add(() => { var unused = dc.ContainsKey(k1); nContains++; });
+            new Reactor(s).Add(() => { AccBoom v; dc.TryGetValue(k1, out v); nTry++; });
+            Harness.Barrier(s);
+            AssertThrowsUnwrapped(x, () => dc.SetValue(k1, b2));
+            AccBoom old;
+            AssertThrowsUnwrapped(x, () => dc.SetValue(k1, b2, out old));
+            AssertThrowsUnwrapped(x, () => dc[k1] = b2);
+            Harness.Barrier(s);
+            Assert.Same(b1, dc[k1]);
+            Assert.Equal(1, dc.Count);
+            Assert.Equal(1, nValue);
+            Assert.Equal(1, nCount);
+            Assert.Equal(1, nContains);
+            Assert.Equal(1, nTry);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs12.3-02 Dictionary accepts null values")]
@@ -753,23 +749,21 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.3-03 Null key throws ArgumentNullException")]
         public void Rule_12_3_03_NullKeyThrowsArgumentNullException()
         {
-            using (var log = new Log())
-            {
-                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
-                AssertArgNull(() => dc.Add(null, "x"));
-                AssertArgNull(() => dc.SetValue(null, "x"));
-                AssertArgNull(() => dc.SetValue(null, "x", out _));
-                AssertArgNull(() => dc[null] = "x");
-                AssertArgNull(() => { var unused = dc[null]; });
-                AssertArgNull(() => dc.Remove(null));
-                AssertArgNull(() => dc.ContainsKey(null));
-                AssertArgNull(() => dc.TryGetValue(null, out _));
-                var version = dc.Value;
-                AssertArgNull(() => version.ContainsKey(null));
-                AssertArgNull(() => version.TryGetValue(null, out _));
-                AssertArgNull(() => { var unused = version[null]; });
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
+            AssertArgNull(() => dc.Add(null, "x"));
+            AssertArgNull(() => dc.SetValue(null, "x"));
+            AssertArgNull(() => dc.SetValue(null, "x", out _));
+            AssertArgNull(() => dc[null] = "x");
+            AssertArgNull(() => { var unused = dc[null]; });
+            AssertArgNull(() => dc.Remove(null));
+            AssertArgNull(() => dc.ContainsKey(null));
+            AssertArgNull(() => dc.TryGetValue(null, out _));
+            var version = dc.Value;
+            AssertArgNull(() => version.ContainsKey(null));
+            AssertArgNull(() => version.TryGetValue(null, out _));
+            AssertArgNull(() => { var unused = version[null]; });
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs12.5-04 SetValue(out old) records no read")]
@@ -798,65 +792,63 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.6-01 No-op write publishes/triggers nothing")]
         public void Rule_12_6_01_NoOpWritePublishesAndTriggersNothing()
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                var sc = new ReactiveSet<K> { k1 };
-                int sv = 0, scount = 0, scontains = 0;
-                new Reactor(s).Add(() => { var unused = sc.Values; sv++; });
-                new Reactor(s).Add(() => { var unused = sc.Count; scount++; });
-                new Reactor(s).Add(() => { var unused = sc.Contains(k1); scontains++; });
-                Harness.Barrier(s);
-                var sv0 = sc.Values;
-                Assert.False(sc.Add(k1p));
-                Assert.False(sc.Remove(k2));
-                Harness.Barrier(s);
-                Assert.Equal(1, sv);
-                Assert.Equal(1, scount);
-                Assert.Equal(1, scontains);
-                Assert.Equal(0, sc.Values.Diff(sv0).Length);
+            using var log = new Log();
+            var s = Harness.Create();
+            var sc = new ReactiveSet<K> { k1 };
+            int sv = 0, scount = 0, scontains = 0;
+            new Reactor(s).Add(() => { var unused = sc.Values; sv++; });
+            new Reactor(s).Add(() => { var unused = sc.Count; scount++; });
+            new Reactor(s).Add(() => { var unused = sc.Contains(k1); scontains++; });
+            Harness.Barrier(s);
+            var sv0 = sc.Values;
+            Assert.False(sc.Add(k1p));
+            Assert.False(sc.Remove(k2));
+            Harness.Barrier(s);
+            Assert.Equal(1, sv);
+            Assert.Equal(1, scount);
+            Assert.Equal(1, scontains);
+            Assert.Equal(0, sc.Values.Diff(sv0).Length);
 
-                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
-                int dv = 0, dcount = 0, dcontains = 0, dtry = 0, dindex = 0;
-                new Reactor(s).Add(() => { var unused = dc.Value; dv++; });
-                new Reactor(s).Add(() => { var unused = dc.Count; dcount++; });
-                new Reactor(s).Add(() => { var unused = dc.ContainsKey(k1); dcontains++; });
-                new Reactor(s).Add(() => { string unused; dc.TryGetValue(k1, out unused); dtry++; });
-                new Reactor(s).Add(() => { var unused = dc[k1]; dindex++; });
-                Harness.Barrier(s);
-                var dv0 = dc.Value;
-                Assert.False(dc.Add(k1p, "z"));
-                Assert.False(dc.SetValue(k1, "a"));
-                string old;
-                Assert.False(dc.SetValue(k1, "a", out old));
-                dc[k1] = "a";
-                Assert.False(dc.Remove(k2));
-                Harness.Barrier(s);
-                Assert.Equal(1, dv);
-                Assert.Equal(1, dcount);
-                Assert.Equal(1, dcontains);
-                Assert.Equal(1, dtry);
-                Assert.Equal(1, dindex);
-                Assert.Equal(0, dc.Value.Diff(dv0).Length);
-                Assert.Equal("a", dc[k1]);
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
+            int dv = 0, dcount = 0, dcontains = 0, dtry = 0, dindex = 0;
+            new Reactor(s).Add(() => { var unused = dc.Value; dv++; });
+            new Reactor(s).Add(() => { var unused = dc.Count; dcount++; });
+            new Reactor(s).Add(() => { var unused = dc.ContainsKey(k1); dcontains++; });
+            new Reactor(s).Add(() => { string unused; dc.TryGetValue(k1, out unused); dtry++; });
+            new Reactor(s).Add(() => { var unused = dc[k1]; dindex++; });
+            Harness.Barrier(s);
+            var dv0 = dc.Value;
+            Assert.False(dc.Add(k1p, "z"));
+            Assert.False(dc.SetValue(k1, "a"));
+            string old;
+            Assert.False(dc.SetValue(k1, "a", out old));
+            dc[k1] = "a";
+            Assert.False(dc.Remove(k2));
+            Harness.Barrier(s);
+            Assert.Equal(1, dv);
+            Assert.Equal(1, dcount);
+            Assert.Equal(1, dcontains);
+            Assert.Equal(1, dtry);
+            Assert.Equal(1, dindex);
+            Assert.Equal(0, dc.Value.Diff(dv0).Length);
+            Assert.Equal("a", dc[k1]);
 
-                var emptySet = new ReactiveSet<K>();
-                int emptySetN = 0;
-                new Reactor(s).Add(() => { var unused = emptySet.Values; emptySetN++; });
-                Harness.Barrier(s);
-                emptySet.Clear();
-                Harness.Barrier(s);
-                Assert.Equal(1, emptySetN);
+            var emptySet = new ReactiveSet<K>();
+            int emptySetN = 0;
+            new Reactor(s).Add(() => { var unused = emptySet.Values; emptySetN++; });
+            Harness.Barrier(s);
+            emptySet.Clear();
+            Harness.Barrier(s);
+            Assert.Equal(1, emptySetN);
 
-                var emptyDict = new ReactiveDictionary<K, string>();
-                int emptyDictN = 0;
-                new Reactor(s).Add(() => { var unused = emptyDict.Value; emptyDictN++; });
-                Harness.Barrier(s);
-                emptyDict.Clear();
-                Harness.Barrier(s);
-                Assert.Equal(1, emptyDictN);
-                Assert.Equal(0, log.Count);
-            }
+            var emptyDict = new ReactiveDictionary<K, string>();
+            int emptyDictN = 0;
+            new Reactor(s).Add(() => { var unused = emptyDict.Value; emptyDictN++; });
+            Harness.Barrier(s);
+            emptyDict.Clear();
+            Harness.Barrier(s);
+            Assert.Equal(1, emptyDictN);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs12.6-02 Value replace keeps stored key instance")]
@@ -1048,31 +1040,29 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.9-02 Indexer reader reruns, throws if gone")]
         public void Rule_12_9_02_IndexerGetterRecordsValueOfKey()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
+            int n = 0;
+            var seen = new List<string>();
+            new Reactor(s).Add(() =>
             {
-                var s = Harness.Create();
-                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
-                int n = 0;
-                var seen = new List<string>();
-                new Reactor(s).Add(() =>
-                {
-                    n++;
-                    seen.Add(dc[k1]);
-                });
-                Harness.Barrier(s);
-                dc.SetValue(k1, "b");
-                Harness.Barrier(s);
-                log.Clear();
-                dc.Remove(k1);
-                Harness.Barrier(s);
-                Assert.Equal(1, log.Count);
-                Assert.IsType<KeyNotFoundException>(log.Snapshot()[0]);
-                Assert.IsNotType<ReactiveException>(log.Snapshot()[0]);
-                dc.Add(k1, "c");
-                Harness.Barrier(s);
-                Assert.Equal(4, n);
-                Assert.Equal(["a", "b", "c"], seen.ToArray());
-            }
+                n++;
+                seen.Add(dc[k1]);
+            });
+            Harness.Barrier(s);
+            dc.SetValue(k1, "b");
+            Harness.Barrier(s);
+            log.Clear();
+            dc.Remove(k1);
+            Harness.Barrier(s);
+            Assert.Equal(1, log.Count);
+            Assert.IsType<KeyNotFoundException>(log.Snapshot()[0]);
+            Assert.IsNotType<ReactiveException>(log.Snapshot()[0]);
+            dc.Add(k1, "c");
+            Harness.Barrier(s);
+            Assert.Equal(4, n);
+            Assert.Equal(["a", "b", "c"], seen.ToArray());
         }
 
         [Fact(DisplayName = "cs12.9-03 Other keys don't trigger value reader")]
@@ -1150,92 +1140,88 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.11-01 Reads on a Version record nothing")]
         public void Rule_12_11_01_VersionReadsRecordNothing()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var sc = new ReactiveSet<K> { k1 };
+            var sv = sc.Values;
+            var sw = sc.Values;
+            int sn = 0;
+            new Reactor(s).Add(() =>
             {
-                var s = Harness.Create();
-                var sc = new ReactiveSet<K> { k1 };
-                var sv = sc.Values;
-                var sw = sc.Values;
-                int sn = 0;
-                new Reactor(s).Add(() =>
-                {
-                    var unusedCount = sv.Count;
-                    var unusedDiff = sv.Diff(sw);
-                    var unusedNull = sv.Diff(null);
-                    var unusedContains = sv.Contains(k1);
-                    sn++;
-                });
-                Harness.Barrier(s);
-                sc.Add(k2);
-                Harness.Barrier(s);
-                sc.Remove(k1);
-                Harness.Barrier(s);
-                sc.Clear();
-                Harness.Barrier(s);
-                Assert.Equal(1, sn);
+                var unusedCount = sv.Count;
+                var unusedDiff = sv.Diff(sw);
+                var unusedNull = sv.Diff(null);
+                var unusedContains = sv.Contains(k1);
+                sn++;
+            });
+            Harness.Barrier(s);
+            sc.Add(k2);
+            Harness.Barrier(s);
+            sc.Remove(k1);
+            Harness.Barrier(s);
+            sc.Clear();
+            Harness.Barrier(s);
+            Assert.Equal(1, sn);
 
-                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
-                var dv = dc.Value;
-                var dw = dc.Value;
-                int dn = 0;
-                new Reactor(s).Add(() =>
-                {
-                    var unusedCount = dv.Count;
-                    var unusedDiff = dv.Diff(dw);
-                    var unusedNull = dv.Diff(null);
-                    var unusedContains = dv.ContainsKey(k1);
-                    string unused;
-                    dv.TryGetValue(k1, out unused);
-                    var unusedIndex = dv[k1];
-                    dn++;
-                });
-                Harness.Barrier(s);
-                dc.Add(k2, "x");
-                Harness.Barrier(s);
-                dc[k1] = "b";
-                Harness.Barrier(s);
-                dc.Remove(k1);
-                Harness.Barrier(s);
-                dc.Clear();
-                Harness.Barrier(s);
-                Assert.Equal(1, dn);
-                Assert.Equal(0, log.Count);
-            }
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
+            var dv = dc.Value;
+            var dw = dc.Value;
+            int dn = 0;
+            new Reactor(s).Add(() =>
+            {
+                var unusedCount = dv.Count;
+                var unusedDiff = dv.Diff(dw);
+                var unusedNull = dv.Diff(null);
+                var unusedContains = dv.ContainsKey(k1);
+                string unused;
+                dv.TryGetValue(k1, out unused);
+                var unusedIndex = dv[k1];
+                dn++;
+            });
+            Harness.Barrier(s);
+            dc.Add(k2, "x");
+            Harness.Barrier(s);
+            dc[k1] = "b";
+            Harness.Barrier(s);
+            dc.Remove(k1);
+            Harness.Barrier(s);
+            dc.Clear();
+            Harness.Barrier(s);
+            Assert.Equal(1, dn);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs12.12-02 Version indexer throws for absent key")]
         public void Rule_12_12_02_VersionIndexerThrowsForAbsentKey()
         {
-            using (var log = new Log())
-            {
-                var dc = new ReactiveDictionary<K, string> { { k2, "b" } };
-                var v = dc.Value;
-                var thrown = Record.Exception(() => { var unused = v[k1]; });
-                Assert.IsType<KeyNotFoundException>(thrown);
-                Assert.IsNotType<ReactiveException>(thrown);
+            using var log = new Log();
+            var dc = new ReactiveDictionary<K, string> { { k2, "b" } };
+            var v = dc.Value;
+            var thrown = Record.Exception(() => { var unused = v[k1]; });
+            Assert.IsType<KeyNotFoundException>(thrown);
+            Assert.IsNotType<ReactiveException>(thrown);
 
-                var s = Harness.Create();
-                int n = 0;
-                int caught = 0;
-                new Reactor(s).Add(() =>
+            var s = Harness.Create();
+            int n = 0;
+            int caught = 0;
+            new Reactor(s).Add(() =>
+            {
+                n++;
+                try
                 {
-                    n++;
-                    try
-                    {
-                        var unused = v[k1];
-                    }
-                    catch (KeyNotFoundException)
-                    {
-                        caught++;
-                    }
-                });
-                Harness.Barrier(s);
-                Assert.Equal(1, caught);
-                dc.Add(k1, "a");
-                Harness.Barrier(s);
-                Assert.Equal(1, n);
-                Assert.Equal(0, log.Count);
-            }
+                    var unused = v[k1];
+                }
+                catch (KeyNotFoundException)
+                {
+                    caught++;
+                }
+            });
+            Harness.Barrier(s);
+            Assert.Equal(1, caught);
+            dc.Add(k1, "a");
+            Harness.Barrier(s);
+            Assert.Equal(1, n);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs12.13-02 Dictionary Diff kinds and fields")]

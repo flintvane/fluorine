@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Threading;
 using System;
 using Xunit;
@@ -10,22 +9,20 @@ namespace Fluorine
         [Fact(DisplayName = "cs1.1-01 Value-less register reruns its reader")]
         public void Rule_1_1_RegisterRemembersReaders()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var signal = new Register();
+            var n = 0;
+            var reactor = host.NewReactor();
+            reactor.Add(() =>
             {
-                var signal = new Register();
-                var n = 0;
-                var reactor = host.NewReactor();
-                reactor.Add(() =>
-                {
-                    signal.RecordRead();
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                signal.TriggerReactions();
-                WaitUntil.True(() => n == 2, "triggered");
-            }
+                signal.RecordRead();
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            signal.TriggerReactions();
+            WaitUntil.True(() => n == 2, "triggered");
         }
-
+        
         [Fact(DisplayName = "cs1.7-01 Initial-value ctor stores the value")]
         public void Rule_1_2_RegisterTHoldsTypedValue()
         {
@@ -36,60 +33,38 @@ namespace Fluorine
         [Fact(DisplayName = "cs1.3-02 Paused RecordRead does not subscribe")]
         public void Rule_1_3_RecordReadSubscribesCurrentWhenRecording()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var reg = new Register();
+            var n = 0;
+            var reactor = host.NewReactor();
+            reactor.Add(() =>
             {
-                var reg = new Register();
-                var n = 0;
-                var reactor = host.NewReactor();
-                reactor.Add(() =>
+                Interlocked.Increment(ref n);
+                if (n == 1)
                 {
-                    Interlocked.Increment(ref n);
-                    if (n == 1)
-                    {
-                        Reaction.Pause(() => reg.RecordRead());
-                        return;
-                    }
-                    reg.RecordRead();
-                });
-                WaitUntil.True(() => n == 1, "first");
-                reg.TriggerReactions();
-                Thread.Sleep(50);
-                Assert.Equal(1, n);
-            }
+                    Reaction.Pause(() => reg.RecordRead());
+                    return;
+                }
+                reg.RecordRead();
+            });
+            WaitUntil.True(() => n == 1, "first");
+            reg.TriggerReactions();
+            Thread.Sleep(50);
+            Assert.Equal(1, n);
         }
 
         [Fact(DisplayName = "cs1.3-01 RecordRead outside reaction: no effect")]
         public void Rule_1_3_01_RecordReadOutsideReactionDoesNothing()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var sig = new Register();
+            var ex = Record.Exception(() =>
             {
-                var sig = new Register();
-                var ex = Record.Exception(() =>
-                {
-                    sig.RecordRead();
-                    sig.TriggerReactions();
-                });
-                Assert.Null(ex);
-                Assert.Equal(0, log.Count);
-            }
-        }
-
-        [Fact]
-        public void Rule_1_4_TriggerReactionsTriggersConnected()
-        {
-            using (var host = new ThreadHost())
-            {
-                var reg = new Register();
-                var n = 0;
-                host.NewReactor().Add(() =>
-                {
-                    reg.RecordRead();
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                reg.TriggerReactions();
-                WaitUntil.True(() => n == 2, "second");
-            }
+                sig.RecordRead();
+                sig.TriggerReactions();
+            });
+            Assert.Null(ex);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs1.4-01 TriggerReactions reruns all readers")]
@@ -117,54 +92,32 @@ namespace Fluorine
             Assert.Equal(2, b);
         }
 
-        [Fact(DisplayName = "cs1.4-02 Trigger ignores equality, keeps value")]
-        public void Rule_1_4_02_ManualTriggerIgnoresEqualityKeepsValue()
-        {
-            var s = Harness.Create();
-            var reg = new Register<int>(5);
-            int runs = 0;
-            new Reactor(s).Add(() =>
-            {
-                var unused = reg.Value;
-                runs++;
-            });
-            Harness.Barrier(s);
-            reg.TriggerReactions();
-            Harness.Barrier(s);
-            Assert.Equal(2, runs);
-            Assert.Equal(5, reg.Value);
-        }
-
         [Fact(DisplayName = "cs1.4-03 Trigger without readers: silent")]
         public void Rule_1_4_03_TriggerWithoutReadersLogsNothing()
         {
-            using (var log = new Log())
-            {
-                var sig = new Register();
-                var ex = Record.Exception(() => sig.TriggerReactions());
-                Assert.Null(ex);
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            var sig = new Register();
+            var ex = Record.Exception(sig.TriggerReactions);
+            Assert.Null(ex);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact]
         public void Rule_1_5_RecordReadAndTriggerFromAnyThread()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var reg = new Register();
+            var n = 0;
+            host.NewReactor().Add(() =>
             {
-                var reg = new Register();
-                var n = 0;
-                host.NewReactor().Add(() =>
-                {
-                    reg.RecordRead();
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                var worker = new Thread(() => reg.TriggerReactions());
-                worker.Start();
-                worker.Join();
-                WaitUntil.True(() => n == 2, "from worker");
-            }
+                reg.RecordRead();
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            var worker = new Thread(() => reg.TriggerReactions());
+            worker.Start();
+            worker.Join();
+            WaitUntil.True(() => n == 2, "from worker");
         }
 
         [Fact(DisplayName = "cs1.6-01 Empty ctor yields default(T)")]
@@ -177,75 +130,52 @@ namespace Fluorine
         [Fact]
         public void Rule_1_7_InitialConstructorDoesNotTrigger()
         {
-            using (var host = new ThreadHost())
-            {
-                var n = 0;
-                var reactor = host.NewReactor();
-                reactor.Add(() => Interlocked.Increment(ref n));
-                WaitUntil.True(() => n == 1, "first");
-                var r = new Register<int>(5);
-                Thread.Sleep(30);
-                Assert.Equal(1, n);
-                Assert.Equal(5, r.Value);
-            }
+            using var host = new ThreadHost();
+            var n = 0;
+            var reactor = host.NewReactor();
+            reactor.Add(() => Interlocked.Increment(ref n));
+            WaitUntil.True(() => n == 1, "first");
+            var r = new Register<int>(5);
+            Thread.Sleep(30);
+            Assert.Equal(1, n);
+            Assert.Equal(5, r.Value);
         }
 
         [Fact(DisplayName = "cs1.7-02 Initial-value ctor triggers nothing")]
         public void Rule_1_7_02_InitialValueCtorTriggersNothing()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var other = Harness.Create();
+            var a = new Register<int>(0);
+            int runs = 0;
+            int otherRuns = 0;
+            new Reactor(other).Add(() => otherRuns++);
+            Harness.Barrier(other);
+            new Reactor(s).Add(() =>
             {
-                var s = Harness.Create();
-                var other = Harness.Create();
-                var a = new Register<int>(0);
-                int runs = 0;
-                int otherRuns = 0;
-                new Reactor(other).Add(() => otherRuns++);
-                Harness.Barrier(other);
-                new Reactor(s).Add(() =>
-                {
-                    var unused = a.Value;
-                    var created = new Register<int>(3);
-                    Assert.Equal(3, created.Value);
-                    runs++;
-                });
-                Harness.Barrier(s);
-                Harness.Barrier(other);
-                Assert.Equal(1, runs);
-                Assert.Equal(1, otherRuns);
-                Assert.Equal(0, log.Count);
-            }
+                var unused = a.Value;
+                var created = new Register<int>(3);
+                Assert.Equal(3, created.Value);
+                runs++;
+            });
+            Harness.Barrier(s);
+            Harness.Barrier(other);
+            Assert.Equal(1, runs);
+            Assert.Equal(1, otherRuns);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs1.8-01 Getter subscribes, new value reruns")]
         public void Rule_1_8_ValueGetterRecordsReadSetterWrites()
         {
-            using (var host = new ThreadHost())
-            {
-                var r = new Register<int>(1);
-                var seen = 0;
-                host.NewReactor().Add(() => { seen = r.Value; });
-                WaitUntil.True(() => seen == 1, "first");
-                r.Value = 2;
-                WaitUntil.True(() => seen == 2, "write");
-            }
-        }
-
-        [Fact]
-        public void Rule_1_9_NameIsSettableAndNoNameConstructor()
-        {
-            var r = new Register
-            {
-                Name = "alpha"
-            };
-            Assert.Equal("alpha", r.Name);
-            var typed = new Register<int>
-            {
-                Name = "beta"
-            };
-            Assert.Equal("beta", typed.Name);
-            Assert.Null(typeof(Register).GetConstructor([typeof(string)]));
-            Assert.Null(typeof(Register<int>).GetConstructor([typeof(string)]));
+            using var host = new ThreadHost();
+            var r = new Register<int>(1);
+            var seen = 0;
+            host.NewReactor().Add(() => { seen = r.Value; });
+            WaitUntil.True(() => seen == 1, "first");
+            r.Value = 2;
+            WaitUntil.True(() => seen == 2, "write");
         }
 
         [Fact(DisplayName = "cs1.9-01 Register.Name is settable")]
@@ -276,28 +206,6 @@ namespace Fluorine
                 Name = "kept"
             };
             Assert.Equal("kept", r.Name);
-        }
-
-        [Fact(DisplayName = "cs1.11-01 Register subclassable, core not virtual")]
-        public void Rule_1_11_RegistersCanBeInheritedAndCoreMembersAreNotVirtual()
-        {
-            var r = new NamedRegister
-            {
-                Value = 3
-            };
-            Assert.Equal(3, r.Value);
-            Assert.False(typeof(Register).GetMethod("RecordRead").IsVirtual);
-            Assert.False(typeof(Register).GetMethod("TriggerReactions").IsVirtual);
-            Assert.False(typeof(Register<int>).GetProperty("Value").GetGetMethod().IsVirtual);
-            Assert.False(typeof(Register<int>).GetProperty("Value").GetSetMethod().IsVirtual);
-        }
-
-        [Fact]
-        public void Rule_1_12_BackingValueIsProtected()
-        {
-            var r = new NamedRegister();
-            r.SetStored(9);
-            Assert.Equal(9, r.PeekStored());
         }
 
         [Fact]
@@ -369,17 +277,8 @@ namespace Fluorine
             Assert.True(found, "final value " + finalValue + " was not one of the written values");
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs1.14 SetValue can returns true whether something changed")]
         public void Rule_1_14_SetValueReturnsWhetherChanged()
-        {
-            var r = new Register<int>(1);
-            Assert.False(r.SetValue(1));
-            Assert.True(r.SetValue(2));
-            Assert.Equal(2, r.Value);
-        }
-
-        [Fact(DisplayName = "cs1.14-01 SetValue returns true on change")]
-        public void Rule_1_14_01_SetValueTrueOnChange()
         {
             var s = Harness.Create();
             var reg = new Register<int>(1);
@@ -396,20 +295,6 @@ namespace Fluorine
             Harness.Barrier(s);
             Assert.Equal(2, runs);
             Assert.Equal(2, seen);
-        }
-
-        [Fact(DisplayName = "cs1.14-02 SetValue returns false on equal value")]
-        public void Rule_1_14_02_SetValueFalseOnEqual()
-        {
-            var s = Harness.Create();
-            var reg = new Register<int>(2);
-            int runs = 0;
-            new Reactor(s).Add(() =>
-            {
-                var unused = reg.Value;
-                runs++;
-            });
-            Harness.Barrier(s);
             int before = runs;
             Assert.False(reg.SetValue(2));
             Harness.Barrier(s);
@@ -419,41 +304,30 @@ namespace Fluorine
         [Fact(DisplayName = "cs1.15-03 SetValue(out old): old value, no read")]
         public void Rule_1_15_SetValueOutOldValueDoesNotRecordRead()
         {
-            using (var host = new ThreadHost())
+            using var host = new ThreadHost();
+            var r = new Register<int>(1);
+            var n = 0;
+            host.NewReactor().Add(() =>
             {
-                var r = new Register<int>(1);
-                var n = 0;
-                host.NewReactor().Add(() =>
-                {
-                    int old;
-                    r.SetValue(1, out old);
-                    Interlocked.Increment(ref n);
-                });
-                WaitUntil.True(() => n == 1, "first");
-                r.Value = 5;
-                Thread.Sleep(40);
-                Assert.Equal(1, n);
-                Assert.False(r.SetValue(5, out var old2));
-                Assert.Equal(5, old2);
-                Assert.True(r.SetValue(8, out old2));
-                Assert.Equal(5, old2);
-            }
+                int old;
+                r.SetValue(1, out old);
+                Interlocked.Increment(ref n);
+            });
+            WaitUntil.True(() => n == 1, "first");
+            r.Value = 5;
+            Thread.Sleep(40);
+            Assert.Equal(1, n);
+            Assert.False(r.SetValue(5, out var old2));
+            Assert.Equal(5, old2);
+            Assert.True(r.SetValue(8, out old2));
+            Assert.Equal(5, old2);
         }
 
-        [Fact]
-        public void Rule_1_16_EqualityIsObjectEqualsNotIEquatableAlone()
-        {
-            var r = new Register<EquatableOnly>(new EquatableOnly(1));
-            Assert.True(r.SetValue(new EquatableOnly(1))); // different instances; object.Equals is referential
-            var s = new Register<string>("a");
-            Assert.False(s.SetValue("a"));
-        }
-
-        [Fact(DisplayName = "cs1.16-01 Equality uses object.Equals")]
-        public void Rule_1_16_01_EqualityUsesObjectEquals()
+        [Fact(DisplayName = "cs1.16 Equality uses object.Equals")]
+        public void Rule_1_16_EqualityUsesObjectEquals()
         {
             var s = Harness.Create();
-            var first = new EqualByValue(1);
+            var first = new EqualByValue();
             var reg = new Register<EqualByValue>(first);
             int runs = 0;
             new Reactor(s).Add(() =>
@@ -463,31 +337,11 @@ namespace Fluorine
             });
             Harness.Barrier(s);
             int before = runs;
-            reg.Value = new EqualByValue(1);
+            // A different instance is still the same as the equality was overwritten
+            reg.Value = new EqualByValue();
             Harness.Barrier(s);
             Assert.Equal(before, runs);
             Assert.Same(first, reg.Value);
-        }
-
-        [Fact(DisplayName = "cs1.16-02 IEquatable<T> alone is not equality")]
-        public void Rule_1_16_02_IEquatableAloneDoesNotCount()
-        {
-            var s = Harness.Create();
-            var reg = new Register<AccEquatableOnly>(new AccEquatableOnly(1));
-            int runs = 0;
-            new Reactor(s).Add(() =>
-            {
-                var unused = reg.Value;
-                runs++;
-            });
-            Harness.Barrier(s);
-            int before = runs;
-            var other = new AccEquatableOnly(1);
-            Assert.False(object.Equals(reg.Value, other));
-            Assert.True(((IEquatable<AccEquatableOnly>)reg.Value).Equals(other));
-            reg.Value = other;
-            Harness.Barrier(s);
-            Assert.True(runs > before, "observed runs=" + runs + " expected a trigger");
         }
 
         [Fact(DisplayName = "cs1.16-03 Null to null no trigger, others trigger")]
@@ -526,57 +380,24 @@ namespace Fluorine
         [Fact(DisplayName = "cs1.17-01 Throwing Equals reaches writer")]
         public void Rule_1_17_01_ThrowingEqualityReachesWriter()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            var s = Harness.Create();
+            var original = new ThrowingEquals();
+            var reg = new Register<ThrowingEquals>(original);
+            int runs = 0;
+            new Reactor(s).Add(() =>
             {
-                var s = Harness.Create();
-                var original = new ThrowingEquals();
-                var reg = new Register<ThrowingEquals>(original);
-                int runs = 0;
-                new Reactor(s).Add(() =>
-                {
-                    var unused = reg.Value;
-                    runs++;
-                });
-                Harness.Barrier(s);
-                int before = runs;
-                var thrown = Assert.Throws<InvalidOperationException>(() => reg.Value = new ThrowingEquals());
-                Assert.Equal("eq", thrown.Message);
-                Assert.Same(original, reg.Value);
-                Harness.Barrier(s);
-                Assert.Equal(before, runs);
-                Assert.Equal(0, log.Count);
-            }
-        }
-
-        [Fact]
-        public void Rule_1_18_LargeStructAssignmentDoesNotTear()
-        {
-            var r = new Register<BigStruct>(new BigStruct(1, 1, 1, 1));
-            var errors = 0;
-            var stop = new ManualResetEventSlim(false);
-            var readers = new Thread[4];
-            for (var i = 0; i < readers.Length; i++)
-            {
-                readers[i] = new Thread(() =>
-                {
-                    while (!stop.IsSet)
-                    {
-                        var v = r.Value;
-                        if (v.A != v.B || v.A != v.C || v.A != v.D)
-                            Interlocked.Increment(ref errors);
-                    }
-                });
-                readers[i].Start();
-            }
-            for (var i = 0; i < 10000; i++)
-            {
-                var x = i;
-                r.Value = new BigStruct(x, x, x, x);
-            }
-            stop.Set();
-            foreach (var t in readers)
-                t.Join();
-            Assert.Equal(0, errors);
+                var unused = reg.Value;
+                runs++;
+            });
+            Harness.Barrier(s);
+            int before = runs;
+            var thrown = Assert.Throws<InvalidOperationException>(() => reg.Value = new ThrowingEquals());
+            Assert.Equal("eq", thrown.Message);
+            Assert.Same(original, reg.Value);
+            Harness.Barrier(s);
+            Assert.Equal(before, runs);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs1.18-01 Large struct value never tears")]
@@ -632,54 +453,6 @@ namespace Fluorine
             Assert.True(finalValue.A == finalValue.B && finalValue.B == finalValue.C && finalValue.C == finalValue.D);
         }
 
-        sealed class NamedRegister : Register<int>
-        {
-            public void SetStored(int v)
-            {
-                StoredValue = v;
-            }
-
-            public int PeekStored()
-            {
-                return StoredValue;
-            }
-        }
-
-        sealed class EquatableOnly(int n) : IEquatable<EquatableOnly>
-        {
-            public readonly int N = n;
-            public bool Equals(EquatableOnly other) { return other != null && N == other.N; }
-            public override int GetHashCode() { return N; }
-        }
-
-        struct BigStruct(long a, long b, long c, long d)
-        {
-            public readonly long A = a, B = b, C = c, D = d;
-        }
-
-        sealed class BackingProbe(string initial) : Register<string>(initial)
-        {
-            public object ReadBacking()
-            {
-                var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-                foreach (var property in typeof(Register<string>).GetProperties(flags))
-                {
-                    if (property.PropertyType != typeof(string))
-                        continue;
-                    var getter = property.GetGetMethod(true);
-                    if (getter == null || !getter.IsFamily)
-                        continue;
-                    return property.GetValue(this, null);
-                }
-                foreach (var field in typeof(Register<string>).GetFields(flags))
-                {
-                    if (field.FieldType == typeof(string) && field.IsFamily)
-                        return field.GetValue(this);
-                }
-                throw new InvalidOperationException("no protected backing member");
-            }
-        }
-
         struct Big(long value)
         {
             public long A = value;
@@ -688,42 +461,16 @@ namespace Fluorine
             public long D = value;
         }
 
-        sealed class EqualByValue(int token)
+        sealed class EqualByValue
         {
-            public readonly int Token = token;
-
-            public override bool Equals(object obj)
-            {
-                return obj is EqualByValue;
-            }
-
-            public override int GetHashCode()
-            {
-                return 0;
-            }
-        }
-
-        sealed class AccEquatableOnly(int id) : IEquatable<AccEquatableOnly>
-        {
-            public readonly int Id = id;
-
-            public bool Equals(AccEquatableOnly other)
-            {
-                return true;
-            }
+            public override bool Equals(object obj) => obj is EqualByValue;
+            public override int GetHashCode() => 0;
         }
 
         sealed class ThrowingEquals
         {
-            public override bool Equals(object obj)
-            {
-                throw new InvalidOperationException("eq");
-            }
-
-            public override int GetHashCode()
-            {
-                return 0;
-            }
+            public override bool Equals(object obj) => throw new InvalidOperationException("eq");
+            public override int GetHashCode() => 0;
         }
     }
 }

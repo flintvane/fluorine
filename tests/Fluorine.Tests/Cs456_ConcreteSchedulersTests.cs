@@ -188,37 +188,35 @@ namespace Fluorine
         [Fact(DisplayName = "cs4.2-05 Null/empty thread name throws")]
         public void Rule_4_2_05_NullOrEmptyNameThrowsNoThread()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            bool initial = false;
+            Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew(null, () => initial = true));
+            Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew("", () => initial = true));
+            Assert.False(initial);
+            Assert.Equal(0, log.Count);
+            var done = new ManualResetEvent(false);
+            Exception error = null;
+            var waiter = new Thread(() =>
             {
-                bool initial = false;
-                Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew(null, () => initial = true));
-                Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew("", () => initial = true));
-                Assert.False(initial);
-                Assert.Equal(0, log.Count);
-                var done = new ManualResetEvent(false);
-                Exception error = null;
-                var waiter = new Thread(() =>
+                try
                 {
-                    try
-                    {
-                        Reactive.Shutdown();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    finally
-                    {
-                        done.Set();
-                    }
-                })
+                    Reactive.Shutdown();
+                }
+                catch (Exception ex)
                 {
-                    IsBackground = true
-                };
-                waiter.Start();
-                Assert.True(done.WaitOne(2000), "Reactive.Shutdown did not return promptly");
-                Assert.Null(error);
-            }
+                    error = ex;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            })
+            {
+                IsBackground = true
+            };
+            waiter.Start();
+            Assert.True(done.WaitOne(2000), "Reactive.Shutdown did not return promptly");
+            Assert.Null(error);
         }
 
         static void WaitUntilBlocked(Thread thread, ManualResetEvent started)
@@ -300,33 +298,31 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.8-09 Dispatcher Shutdown on own thread works")]
         public void Rule_3_8_09_ShutdownOnOwnThreadOutsideReaction()
         {
-            using (var loop = DispatcherLoop.Start())
+            using var loop = DispatcherLoop.Start();
+            bool ran = false;
+            Exception error = null;
+            var done = new ManualResetEvent(false);
+            loop.Dispatcher.BeginInvoke(new Action(() =>
             {
-                bool ran = false;
-                Exception error = null;
-                var done = new ManualResetEvent(false);
-                loop.Dispatcher.BeginInvoke(new Action(() =>
+                try
                 {
-                    try
-                    {
-                        loop.Scheduler.Queue(() => ran = true);
-                        loop.Scheduler.Shutdown();
-                        if (!ran)
-                            error = new InvalidOperationException("queued work had not run when Shutdown returned");
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    finally
-                    {
-                        done.Set();
-                    }
-                }));
-                Harness.Wait(done, 10000, "dispatcher Shutdown");
-                Assert.Null(error);
-                Assert.True(ran);
-            }
+                    loop.Scheduler.Queue(() => ran = true);
+                    loop.Scheduler.Shutdown();
+                    if (!ran)
+                        error = new InvalidOperationException("queued work had not run when Shutdown returned");
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            }));
+            Harness.Wait(done, 10000, "dispatcher Shutdown");
+            Assert.Null(error);
+            Assert.True(ran);
         }
 
         [Fact(DisplayName = "cs3.13-03 ForThread null after shutdown")]
@@ -352,135 +348,127 @@ namespace Fluorine
         [Fact(DisplayName = "cs3.13-04 Dispatcher attach on WinForms throws")]
         public void Rule_3_13_04_SecondSchedulerTypeThrows()
         {
-            using (var log = new Log())
-            using (var forms = WinFormsLoop.Start())
+            using var log = new Log();
+            using var forms = WinFormsLoop.Start();
+            Exception error = null;
+            Scheduler forThread = null;
+            var done = new ManualResetEvent(false);
+            forms.Form.BeginInvoke(new Action(() =>
             {
-                Exception error = null;
-                Scheduler forThread = null;
-                var done = new ManualResetEvent(false);
-                forms.Form.BeginInvoke(new Action(() =>
+                try
                 {
-                    try
-                    {
-                        var dispatcher = Dispatcher.CurrentDispatcher;
-                        if (dispatcher == null)
-                            throw new InvalidOperationException("WPF dispatcher was not present");
-                        DispatcherScheduler.AttachToCurrent();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    forThread = Scheduler.ForThread(Thread.CurrentThread);
-                    done.Set();
-                }));
-                Harness.Wait(done, "second attach");
-                Assert.IsType<ReactiveException>(error);
-                Assert.Equal(0, log.Count);
-                Assert.Same(forms.Scheduler, forThread);
-            }
+                    var dispatcher = Dispatcher.CurrentDispatcher;
+                    if (dispatcher == null)
+                        throw new InvalidOperationException("WPF dispatcher was not present");
+                    DispatcherScheduler.AttachToCurrent();
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                forThread = Scheduler.ForThread(Thread.CurrentThread);
+                done.Set();
+            }));
+            Harness.Wait(done, "second attach");
+            Assert.IsType<ReactiveException>(error);
+            Assert.Equal(0, log.Count);
+            Assert.Same(forms.Scheduler, forThread);
         }
 
         [Fact(DisplayName = "cs3.13-05 WinForms attach on Dispatcher throws")]
         public void Rule_3_13_05_SecondSchedulerTypeReverseDirection()
         {
-            using (var log = new Log())
-            using (var loop = DispatcherLoop.Start())
+            using var log = new Log();
+            using var loop = DispatcherLoop.Start();
+            Exception error = null;
+            var done = new ManualResetEvent(false);
+            loop.Dispatcher.BeginInvoke(new Action(() =>
             {
-                Exception error = null;
-                var done = new ManualResetEvent(false);
-                loop.Dispatcher.BeginInvoke(new Action(() =>
+                try
                 {
-                    try
-                    {
-                        SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
-                        WinFormsScheduler.AttachToCurrent();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    done.Set();
-                }));
-                Harness.Wait(done, "winforms attach");
-                Assert.IsType<ReactiveException>(error);
-                Assert.Equal(0, log.Count);
-            }
+                    SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
+                    WinFormsScheduler.AttachToCurrent();
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                done.Set();
+            }));
+            Harness.Wait(done, "winforms attach");
+            Assert.IsType<ReactiveException>(error);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact(DisplayName = "cs3.14-01 AttachToCurrent: same object for life")]
         public void Rule_3_14_01_SameObjectForThreadLife()
         {
-            using (var loop = DispatcherLoop.Start())
+            using var loop = DispatcherLoop.Start();
+            DispatcherScheduler first = null;
+            DispatcherScheduler second = null;
+            Scheduler current = null;
+            Scheduler forThread = null;
+            loop.Dispatcher.Invoke(new Action(() =>
             {
-                DispatcherScheduler first = null;
-                DispatcherScheduler second = null;
-                Scheduler current = null;
-                Scheduler forThread = null;
-                loop.Dispatcher.Invoke(new Action(() =>
-                {
-                    first = DispatcherScheduler.AttachToCurrent();
-                    second = DispatcherScheduler.AttachToCurrent();
-                    current = Scheduler.Current;
-                    forThread = Scheduler.ForThread(Thread.CurrentThread);
-                }));
-                Assert.Same(loop.Scheduler, first);
-                Assert.Same(first, second);
-                Assert.Same(first, current);
-                Assert.Same(first, forThread);
-            }
+                first = DispatcherScheduler.AttachToCurrent();
+                second = DispatcherScheduler.AttachToCurrent();
+                current = Scheduler.Current;
+                forThread = Scheduler.ForThread(Thread.CurrentThread);
+            }));
+            Assert.Same(loop.Scheduler, first);
+            Assert.Same(first, second);
+            Assert.Same(first, current);
+            Assert.Same(first, forThread);
         }
 
         [Fact(DisplayName = "cs3.15-01 Nested pump can't start other reaction")]
         public void Rule_3_15_01_NestedPumpInReactionDetected()
         {
-            using (var log = new Log())
-            using (var loop = DispatcherLoop.Start())
+            using var log = new Log();
+            using var loop = DispatcherLoop.Start();
+            var reactor = new Reactor(loop.Scheduler);
+            bool inPump = false;
+            bool ranInside = false;
+            int r2Runs = 0;
+            Reaction r2 = null;
+            int r1Runs = 0;
+            var r1Done = new ManualResetEvent(false);
+            var r1 = reactor.Add(() =>
             {
-                var reactor = new Reactor(loop.Scheduler);
-                bool inPump = false;
-                bool ranInside = false;
-                int r2Runs = 0;
-                Reaction r2 = null;
-                int r1Runs = 0;
-                var r1Done = new ManualResetEvent(false);
-                var r1 = reactor.Add(() =>
+                r1Runs++;
+                if (r1Runs == 1)
+                    return;
+                inPump = true;
+                try
                 {
-                    r1Runs++;
-                    if (r1Runs == 1)
-                        return;
-                    inPump = true;
-                    try
-                    {
-                        r2.Trigger();
-                        var frame = new DispatcherFrame();
-                        Dispatcher.CurrentDispatcher.BeginInvoke(
-                            DispatcherPriority.Background,
-                            new Action(() => frame.Continue = false));
-                        Dispatcher.PushFrame(frame);
-                    }
-                    finally
-                    {
-                        inPump = false;
-                        r1Done.Set();
-                    }
-                });
-                r2 = reactor.Add(() =>
+                    r2.Trigger();
+                    var frame = new DispatcherFrame();
+                    Dispatcher.CurrentDispatcher.BeginInvoke(
+                        DispatcherPriority.Background,
+                        new Action(() => frame.Continue = false));
+                    Dispatcher.PushFrame(frame);
+                }
+                finally
                 {
-                    if (inPump)
-                        ranInside = true;
-                    r2Runs++;
-                });
-                Harness.Barrier(loop.Scheduler);
-                Assert.Equal(1, r1Runs);
-                Assert.Equal(1, r2Runs);
-                log.Clear();
-                r1.Trigger();
-                Harness.Wait(r1Done, "nested pump");
-                Assert.False(ranInside);
-                Assert.Equal(1, log.Count);
-                Assert.IsType<ReactiveException>(log.Snapshot()[0]);
-            }
+                    inPump = false;
+                    r1Done.Set();
+                }
+            });
+            r2 = reactor.Add(() =>
+            {
+                if (inPump)
+                    ranInside = true;
+                r2Runs++;
+            });
+            Harness.Barrier(loop.Scheduler);
+            Assert.Equal(1, r1Runs);
+            Assert.Equal(1, r2Runs);
+            log.Clear();
+            r1.Trigger();
+            Harness.Wait(r1Done, "nested pump");
+            Assert.False(ranInside);
+            Assert.Equal(1, log.Count);
+            Assert.IsType<ReactiveException>(log.Snapshot()[0]);
         }
 
         [Fact(DisplayName = "cs5.1-01 DispatcherScheduler has no public ctor")]
@@ -581,15 +569,13 @@ namespace Fluorine
         [Fact(DisplayName = "cs5.2-03 Dispatcher null/empty name throws")]
         public void Rule_5_2_03_NullOrEmptyNameThrowsNoThread()
         {
-            using (var log = new Log())
-            {
-                bool initial = false;
-                Assert.Throws<ReactiveException>(() => DispatcherScheduler.CreateNew(null, () => initial = true));
-                Assert.Throws<ReactiveException>(() => DispatcherScheduler.CreateNew("", () => initial = true));
-                Assert.False(initial);
-                Assert.Equal(0, log.Count);
-                AssertPromptShutdown();
-            }
+            using var log = new Log();
+            bool initial = false;
+            Assert.Throws<ReactiveException>(() => DispatcherScheduler.CreateNew(null, () => initial = true));
+            Assert.Throws<ReactiveException>(() => DispatcherScheduler.CreateNew("", () => initial = true));
+            Assert.False(initial);
+            Assert.Equal(0, log.Count);
+            AssertPromptShutdown();
         }
 
         [Fact(DisplayName = "cs5.2-04 Dispatcher initial is first message")]
@@ -630,18 +616,16 @@ namespace Fluorine
         [Fact(DisplayName = "cs5.3-01 Dispatcher attach runs work on thread")]
         public void Rule_5_3_01_AttachToCurrentOnDispatcherThread()
         {
-            using (var loop = DispatcherLoop.Start())
+            using var loop = DispatcherLoop.Start();
+            Thread ranOn = null;
+            var done = new ManualResetEvent(false);
+            loop.Scheduler.Queue(() =>
             {
-                Thread ranOn = null;
-                var done = new ManualResetEvent(false);
-                loop.Scheduler.Queue(() =>
-                {
-                    ranOn = Thread.CurrentThread;
-                    done.Set();
-                });
-                Harness.Wait(done, "dispatcher work");
-                Assert.Equal(loop.Thread, ranOn);
-            }
+                ranOn = Thread.CurrentThread;
+                done.Set();
+            });
+            Harness.Wait(done, "dispatcher work");
+            Assert.Equal(loop.Thread, ranOn);
         }
 
         [Fact(DisplayName = "cs5.2-05 Dispatcher runs queued work after create")]
@@ -671,71 +655,67 @@ namespace Fluorine
         [Fact(DisplayName = "cs5.4-01 Dispatcher Queue returns immediately")]
         public void Rule_5_4_01_QueueHandsToDispatcherNonBlocking()
         {
-            using (var loop = DispatcherLoop.Start())
+            using var loop = DispatcherLoop.Start();
+            var entered = new ManualResetEvent(false);
+            var release = new ManualResetEvent(false);
+            try
             {
-                var entered = new ManualResetEvent(false);
-                var release = new ManualResetEvent(false);
-                try
+                loop.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    loop.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        entered.Set();
-                        release.WaitOne();
-                    }));
-                    Harness.Wait(entered, "dispatcher busy");
-                    var ran = new ManualResetEvent(false);
-                    Thread ranOn = null;
-                    var starter = new Thread(() =>
-                    {
-                        loop.Scheduler.Queue(() =>
-                        {
-                            ranOn = Thread.CurrentThread;
-                            ran.Set();
-                        });
-                    })
-                    {
-                        IsBackground = true
-                    };
-                    starter.Start();
-                    Assert.True(starter.Join(500), "Queue blocked while the dispatcher was busy");
-                    Assert.False(ran.WaitOne(0));
-                    release.Set();
-                    Harness.Wait(ran, "work ran later");
-                    Assert.Equal(loop.Thread, ranOn);
-                }
-                finally
+                    entered.Set();
+                    release.WaitOne();
+                }));
+                Harness.Wait(entered, "dispatcher busy");
+                var ran = new ManualResetEvent(false);
+                Thread ranOn = null;
+                var starter = new Thread(() =>
                 {
-                    release.Set();
-                }
+                    loop.Scheduler.Queue(() =>
+                    {
+                        ranOn = Thread.CurrentThread;
+                        ran.Set();
+                    });
+                })
+                {
+                    IsBackground = true
+                };
+                starter.Start();
+                Assert.True(starter.Join(500), "Queue blocked while the dispatcher was busy");
+                Assert.False(ran.WaitOne(0));
+                release.Set();
+                Harness.Wait(ran, "work ran later");
+                Assert.Equal(loop.Thread, ranOn);
+            }
+            finally
+            {
+                release.Set();
             }
         }
 
         [Fact(DisplayName = "cs5.4-02 Same-priority UI items not starved")]
         public void Rule_5_4_02_UiMessagesAtOwnPriorityNotStarved()
         {
-            using (var loop = DispatcherLoop.Start())
+            using var loop = DispatcherLoop.Start();
+            var reg = new Register<int>(0);
+            new Reactor(loop.Scheduler).Add(() => reg.Value = reg.Value + 1);
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (reg.Value < 2 && clock.ElapsedMilliseconds < 2000)
+                Thread.SpinWait(100);
+            Assert.True(reg.Value >= 2, "self-trigger did not start");
+            var ran = new ManualResetEvent(false);
+            loop.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => ran.Set()));
+            Assert.True(ran.WaitOne(1000), "input-priority item did not run within 1 s");
+            var done = new ManualResetEvent(false);
+            var thread = new Thread(() =>
             {
-                var reg = new Register<int>(0);
-                new Reactor(loop.Scheduler).Add(() => reg.Value = reg.Value + 1);
-                var clock = System.Diagnostics.Stopwatch.StartNew();
-                while (reg.Value < 2 && clock.ElapsedMilliseconds < 2000)
-                    Thread.SpinWait(100);
-                Assert.True(reg.Value >= 2, "self-trigger did not start");
-                var ran = new ManualResetEvent(false);
-                loop.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => ran.Set()));
-                Assert.True(ran.WaitOne(1000), "input-priority item did not run within 1 s");
-                var done = new ManualResetEvent(false);
-                var thread = new Thread(() =>
-                {
-                    loop.Scheduler.Shutdown();
-                    done.Set();
-                })
-                {
-                    IsBackground = true
-                };
-                thread.Start();
-                Assert.True(done.WaitOne(Harness.TimeoutMs), "Shutdown did not complete");
-            }
+                loop.Scheduler.Shutdown();
+                done.Set();
+            })
+            {
+                IsBackground = true
+            };
+            thread.Start();
+            Assert.True(done.WaitOne(Harness.TimeoutMs), "Shutdown did not complete");
         }
     }
 
@@ -760,12 +740,10 @@ namespace Fluorine
 
             try
             {
-                using (var host = new WinFormsHost())
-                {
-                    WinFormsScheduler again = null;
-                    host.OnScheduler(() => again = WinFormsScheduler.AttachToCurrent());
-                    Assert.Same(host.Scheduler, again);
-                }
+                using var host = new WinFormsHost();
+                WinFormsScheduler again = null;
+                host.OnScheduler(() => again = WinFormsScheduler.AttachToCurrent());
+                Assert.Same(host.Scheduler, again);
             }
             catch (Exception ex)
             {
@@ -777,60 +755,58 @@ namespace Fluorine
         [Fact(DisplayName = "cs6.1-03 WinForms attach w/o context throws")]
         public void Rule_6_1_03_NoWinFormsContextThrowsNotLogged()
         {
-            using (var log = new Log())
+            using var log = new Log();
+            Exception error = null;
+            var done = new ManualResetEvent(false);
+            var plain = new Thread(() =>
             {
-                Exception error = null;
-                var done = new ManualResetEvent(false);
-                var plain = new Thread(() =>
+                try
                 {
-                    try
-                    {
-                        WinFormsScheduler.AttachToCurrent();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    finally
-                    {
-                        done.Set();
-                    }
-                })
+                    WinFormsScheduler.AttachToCurrent();
+                }
+                catch (Exception ex)
                 {
-                    IsBackground = true
-                };
-                plain.Start();
-                Harness.Wait(done, "plain attach");
-                Assert.IsType<ReactiveException>(error);
-                Assert.Equal(0, log.Count);
+                    error = ex;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            })
+            {
+                IsBackground = true
+            };
+            plain.Start();
+            Harness.Wait(done, "plain attach");
+            Assert.IsType<ReactiveException>(error);
+            Assert.Equal(0, log.Count);
 
-                log.Clear();
-                error = null;
-                var done2 = new ManualResetEvent(false);
-                var other = new Thread(() =>
+            log.Clear();
+            error = null;
+            var done2 = new ManualResetEvent(false);
+            var other = new Thread(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+                try
                 {
-                    SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-                    try
-                    {
-                        WinFormsScheduler.AttachToCurrent();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    finally
-                    {
-                        done2.Set();
-                    }
-                })
+                    WinFormsScheduler.AttachToCurrent();
+                }
+                catch (Exception ex)
                 {
-                    IsBackground = true
-                };
-                other.Start();
-                Harness.Wait(done2, "other context");
-                Assert.IsType<ReactiveException>(error);
-                Assert.Equal(0, log.Count);
-            }
+                    error = ex;
+                }
+                finally
+                {
+                    done2.Set();
+                }
+            })
+            {
+                IsBackground = true
+            };
+            other.Start();
+            Harness.Wait(done2, "other context");
+            Assert.IsType<ReactiveException>(error);
+            Assert.Equal(0, log.Count);
         }
 
         [Fact]
@@ -844,14 +820,12 @@ namespace Fluorine
         {
             try
             {
-                using (var host = new WinFormsHost())
-                {
-                    var n = 0;
-                    host.Scheduler.Queue(() => Interlocked.Increment(ref n));
-                    WaitUntil.True(() => n == 1, "winforms queue");
-                    host.Scheduler.Shutdown();
-                    Assert.True(true);
-                }
+                using var host = new WinFormsHost();
+                var n = 0;
+                host.Scheduler.Queue(() => Interlocked.Increment(ref n));
+                WaitUntil.True(() => n == 1, "winforms queue");
+                host.Scheduler.Shutdown();
+                Assert.True(true);
             }
             catch (Exception ex)
             {
@@ -863,54 +837,50 @@ namespace Fluorine
         [Fact(DisplayName = "cs6.3-01 WinForms Queue returns immediately")]
         public void Rule_6_3_01_QueueNonBlocking()
         {
-            using (var forms = WinFormsLoop.Start())
+            using var forms = WinFormsLoop.Start();
+            var entered = new ManualResetEvent(false);
+            var release = new ManualResetEvent(false);
+            try
             {
-                var entered = new ManualResetEvent(false);
-                var release = new ManualResetEvent(false);
-                try
+                forms.Scheduler.Queue(() =>
                 {
-                    forms.Scheduler.Queue(() =>
-                    {
-                        entered.Set();
-                        release.WaitOne();
-                    });
-                    Harness.Wait(entered, "ui busy");
-                    var finished = new ManualResetEvent(false);
-                    var thread = new Thread(() =>
-                    {
-                        forms.Scheduler.Queue(() => { });
-                        finished.Set();
-                    })
-                    {
-                        IsBackground = true
-                    };
-                    thread.Start();
-                    Assert.True(finished.WaitOne(500), "Queue blocked");
-                }
-                finally
+                    entered.Set();
+                    release.WaitOne();
+                });
+                Harness.Wait(entered, "ui busy");
+                var finished = new ManualResetEvent(false);
+                var thread = new Thread(() =>
                 {
-                    release.Set();
-                }
+                    forms.Scheduler.Queue(() => { });
+                    finished.Set();
+                })
+                {
+                    IsBackground = true
+                };
+                thread.Start();
+                Assert.True(finished.WaitOne(500), "Queue blocked");
+            }
+            finally
+            {
+                release.Set();
             }
         }
 
         [Fact(DisplayName = "cs6.3-02 Shutdown keeps WinForms loop running")]
         public void Rule_6_3_02_ShutdownDoesNotEndMessageLoop()
         {
-            using (var forms = WinFormsLoop.Start())
+            using var forms = WinFormsLoop.Start();
+            forms.Scheduler.Shutdown();
+            bool ran = false;
+            var done = new ManualResetEvent(false);
+            forms.Form.BeginInvoke(new Action(() =>
             {
-                forms.Scheduler.Shutdown();
-                bool ran = false;
-                var done = new ManualResetEvent(false);
-                forms.Form.BeginInvoke(new Action(() =>
-                {
-                    ran = true;
-                    done.Set();
-                }));
-                Harness.Wait(done, "message after shutdown");
-                Assert.True(ran);
-                Assert.True(forms.Thread.IsAlive, "Application.Run ended");
-            }
+                ran = true;
+                done.Set();
+            }));
+            Harness.Wait(done, "message after shutdown");
+            Assert.True(ran);
+            Assert.True(forms.Thread.IsAlive, "Application.Run ended");
         }
     }
 
@@ -924,12 +894,10 @@ namespace Fluorine
             Reactive.UnhandledException += h;
             try
             {
-                using (var host = new ThreadHost())
-                {
-                    host.NewReactor().Add(() => { throw new InvalidOperationException("rx"); });
-                    WaitUntil.True(() => seen != null, "logged");
-                    Assert.IsType<InvalidOperationException>(seen); // user exception, unwrapped (cs7.2)
-                }
+                using var host = new ThreadHost();
+                host.NewReactor().Add(() => { throw new InvalidOperationException("rx"); });
+                WaitUntil.True(() => seen != null, "logged");
+                Assert.IsType<InvalidOperationException>(seen); // user exception, unwrapped (cs7.2)
             }
             finally
             {
@@ -947,14 +915,12 @@ namespace Fluorine
             Console.SetError(writer);
             try
             {
-                using (var host = new ThreadHost())
-                {
-                    host.NewReactor().Add(() => { throw new InvalidOperationException("console"); });
-                    var ran = false;
-                    host.OnScheduler(() => ran = true);
-                    Assert.True(ran);
-                    Assert.False(string.IsNullOrWhiteSpace(writer.ToString()));
-                }
+                using var host = new ThreadHost();
+                host.NewReactor().Add(() => { throw new InvalidOperationException("console"); });
+                var ran = false;
+                host.OnScheduler(() => ran = true);
+                Assert.True(ran);
+                Assert.False(string.IsNullOrWhiteSpace(writer.ToString()));
             }
             finally
             {
@@ -971,24 +937,22 @@ namespace Fluorine
             Reactive.UnhandledException += handler;
             try
             {
-                using (var console = new ConsoleCapture())
-                {
-                    new Reactor(s).Add(() => { throw new InvalidOperationException("boom-x"); });
-                    Harness.Barrier(s);
-                    bool continued = false;
-                    s.Queue(() => continued = true);
-                    Harness.Barrier(s);
-                    string text = console.Text;
-                    Assert.True(
-                        text.IndexOf("boom-x", StringComparison.Ordinal) >= 0
-                        || text.IndexOf("InvalidOperationException", StringComparison.Ordinal) >= 0,
-                        "console did not mention X: " + text);
-                    Assert.True(
-                        text.IndexOf("handler-h", StringComparison.Ordinal) >= 0
-                        || text.IndexOf("ApplicationException", StringComparison.Ordinal) >= 0,
-                        "console did not mention H: " + text);
-                    Assert.True(continued);
-                }
+                using var console = new ConsoleCapture();
+                new Reactor(s).Add(() => { throw new InvalidOperationException("boom-x"); });
+                Harness.Barrier(s);
+                bool continued = false;
+                s.Queue(() => continued = true);
+                Harness.Barrier(s);
+                string text = console.Text;
+                Assert.True(
+                    text.IndexOf("boom-x", StringComparison.Ordinal) >= 0
+                    || text.IndexOf("InvalidOperationException", StringComparison.Ordinal) >= 0,
+                    "console did not mention X: " + text);
+                Assert.True(
+                    text.IndexOf("handler-h", StringComparison.Ordinal) >= 0
+                    || text.IndexOf("ApplicationException", StringComparison.Ordinal) >= 0,
+                    "console did not mention H: " + text);
+                Assert.True(continued);
             }
             finally
             {
@@ -1118,14 +1082,12 @@ namespace Fluorine
         [Fact(DisplayName = "cs7.4-01 ExecutionCount counts runs")]
         public void Rule_7_4_ExecutionCountIncreasesAndDoesNotAffectBehaviour()
         {
-            using (var host = new ThreadHost())
-            {
-                var r = host.NewReactor().Add(() => { });
-                WaitUntil.True(() => r.ExecutionCount >= 1, "count");
-                var c = r.ExecutionCount;
-                r.Trigger();
-                WaitUntil.True(() => r.ExecutionCount == c + 1, "inc");
-            }
+            using var host = new ThreadHost();
+            var r = host.NewReactor().Add(() => { });
+            WaitUntil.True(() => r.ExecutionCount >= 1, "count");
+            var c = r.ExecutionCount;
+            r.Trigger();
+            WaitUntil.True(() => r.ExecutionCount == c + 1, "inc");
         }
 
         [Fact(DisplayName = "cs7.4-02 ExecutionCount readable, no side effect")]
@@ -1205,60 +1167,52 @@ namespace Fluorine
 
         static void LoggedOnceUnwrapped(Action<Scheduler> body)
         {
-            using (var log = new Log())
-            {
-                var s = Harness.Create();
-                body(s);
-                Harness.Barrier(s);
-                var items = log.Snapshot();
-                Assert.Single(items);
-                Assert.IsType<InvalidOperationException>(items[0]);
-                s.Shutdown();
-            }
+            using var log = new Log();
+            var s = Harness.Create();
+            body(s);
+            Harness.Barrier(s);
+            var items = log.Snapshot();
+            Assert.Single(items);
+            Assert.IsType<InvalidOperationException>(items[0]);
+            s.Shutdown();
         }
 
         static void CreateNewInitialLoggedOnce()
         {
-            using (var log = new Log())
-            {
-                var x = new InvalidOperationException("initial");
-                var s = ThreadScheduler.CreateNew("cs7.3-initial", () => { throw x; });
-                Assert.Equal(1, log.Count);
-                Assert.Same(x, log.Snapshot()[0]);
-                s.Shutdown();
-            }
+            using var log = new Log();
+            var x = new InvalidOperationException("initial");
+            var s = ThreadScheduler.CreateNew("cs7.3-initial", () => { throw x; });
+            Assert.Equal(1, log.Count);
+            Assert.Same(x, log.Snapshot()[0]);
+            s.Shutdown();
         }
 
         static void UsageSilent(Action body)
         {
-            using (var log = new Log())
-            {
-                body();
-                Assert.Equal(0, log.Count);
-            }
+            using var log = new Log();
+            body();
+            Assert.Equal(0, log.Count);
         }
 
         static void SecondSchedulerType()
         {
-            using (var forms = WinFormsLoop.Start())
+            using var forms = WinFormsLoop.Start();
+            Exception error = null;
+            var done = new ManualResetEvent(false);
+            forms.Form.BeginInvoke(new Action(() =>
             {
-                Exception error = null;
-                var done = new ManualResetEvent(false);
-                forms.Form.BeginInvoke(new Action(() =>
+                try
                 {
-                    try
-                    {
-                        DispatcherScheduler.AttachToCurrent();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                    }
-                    done.Set();
-                }));
-                Harness.Wait(done, "second scheduler type");
-                Assert.IsType<ReactiveException>(error);
-            }
+                    DispatcherScheduler.AttachToCurrent();
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                done.Set();
+            }));
+            Harness.Wait(done, "second scheduler type");
+            Assert.IsType<ReactiveException>(error);
         }
 
         static void WinFormsWithoutContext()
