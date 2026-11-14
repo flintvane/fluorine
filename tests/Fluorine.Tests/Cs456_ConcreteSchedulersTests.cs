@@ -11,14 +11,14 @@ namespace Fluorine
 {
     public class Cs4_ThreadSchedulerTests : AcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs4.1-01 ThreadScheduler: no ctor, no attach")]
         public void Rule_4_1_NoPublicConstructorAndNoAttachToCurrent()
         {
             Assert.Empty(typeof(ThreadScheduler).GetConstructors());
             Assert.Null(typeof(ThreadScheduler).GetMethod("AttachToCurrent", BindingFlags.Public | BindingFlags.Static));
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs4.2-01 CreateNew runs initial; throw is logged")]
         public void Rule_4_2_CreateNewRunsInitialThenLoop()
         {
             Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew(null));
@@ -82,7 +82,7 @@ namespace Fluorine
             Assert.True(owner.Join(TimeSpan.FromSeconds(5)));
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs4.2-06 Initial action runs before anything else")]
         public void Rule_4_2_InitialActionIsFirstMessage()
         {
             var gate = new ManualResetEvent(false);
@@ -158,7 +158,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs4.2-02")]
+        [Fact(DisplayName = "cs4.2-02 Loop runs reactions after initial")]
         public void Rule_4_2_02_CreateNewLoopRunsAfterInitial()
         {
             int runs = 0;
@@ -185,7 +185,7 @@ namespace Fluorine
             Assert.Same(s, Scheduler.ForThread(initialThread));
         }
 
-        [Fact(DisplayName = "cs4.2-05")]
+        [Fact(DisplayName = "cs4.2-05 Null/empty thread name throws")]
         public void Rule_4_2_05_NullOrEmptyNameThrowsNoThread()
         {
             using (var log = new Log())
@@ -235,7 +235,7 @@ namespace Fluorine
             throw new TimeoutException("Shutdown caller did not block.");
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs4.3-02 Thread ends after Shutdown")]
         public void Rule_4_3_QueueNeverBlocksAndShutdownEndsThread()
         {
             Thread owner = null;
@@ -247,7 +247,7 @@ namespace Fluorine
             WaitUntil.True(() => !owner.IsAlive, "thread ended");
         }
 
-        [Fact(DisplayName = "cs4.3-01")]
+        [Fact(DisplayName = "cs4.3-01 ThreadScheduler.Queue never blocks")]
         public void Rule_4_3_01_QueueNeverBlocks()
         {
             var s = Harness.Create();
@@ -269,7 +269,7 @@ namespace Fluorine
 
     public class Cs5_DispatcherSchedulerTests : AcceptanceTest
     {
-        [Fact(DisplayName = "cs3.6-04")]
+        [Fact(DisplayName = "cs3.6-04 Current null after shutdown finished")]
         public void Rule_3_6_04_RemovedAfterShutdownFinished()
         {
             using (var loop = DispatcherLoop.Start())
@@ -297,7 +297,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.8-09")]
+        [Fact(DisplayName = "cs3.8-09 Dispatcher Shutdown on own thread works")]
         public void Rule_3_8_09_ShutdownOnOwnThreadOutsideReaction()
         {
             using (var loop = DispatcherLoop.Start())
@@ -329,7 +329,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.13-03")]
+        [Fact(DisplayName = "cs3.13-03 ForThread null after shutdown")]
         public void Rule_3_13_03_ForThreadNullAfterShutdown()
         {
             using (var loop = DispatcherLoop.Start())
@@ -349,7 +349,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.13-04")]
+        [Fact(DisplayName = "cs3.13-04 Dispatcher attach on WinForms throws")]
         public void Rule_3_13_04_SecondSchedulerTypeThrows()
         {
             using (var log = new Log())
@@ -381,7 +381,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.13-05")]
+        [Fact(DisplayName = "cs3.13-05 WinForms attach on Dispatcher throws")]
         public void Rule_3_13_05_SecondSchedulerTypeReverseDirection()
         {
             using (var log = new Log())
@@ -408,7 +408,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.14-01")]
+        [Fact(DisplayName = "cs3.14-01 AttachToCurrent: same object for life")]
         public void Rule_3_14_01_SameObjectForThreadLife()
         {
             using (var loop = DispatcherLoop.Start())
@@ -431,7 +431,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.15-01")]
+        [Fact(DisplayName = "cs3.15-01 Nested pump can't start other reaction")]
         public void Rule_3_15_01_NestedPumpInReactionDetected()
         {
             using (var log = new Log())
@@ -483,13 +483,13 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs5.1-01 DispatcherScheduler has no public ctor")]
         public void Rule_5_1_NoPublicConstructor()
         {
             Assert.Empty(typeof(DispatcherScheduler).GetConstructors());
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs5.2-01 Dispatcher CreateNew: initial, then runs")]
         public void Rule_5_2_CreateNewRunsInitialThenDispatcher()
         {
             try
@@ -521,7 +521,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs5.2-02 Dispatcher initial throw logged, loop on")]
         public void Rule_5_2_InitialThrowIsUnhandledAndLoopContinues()
         {
             try
@@ -578,7 +578,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs5.2-03")]
+        [Fact(DisplayName = "cs5.2-03 Dispatcher null/empty name throws")]
         public void Rule_5_2_03_NullOrEmptyNameThrowsNoThread()
         {
             using (var log = new Log())
@@ -592,13 +592,13 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs5.2-04")]
+        [Fact(DisplayName = "cs5.2-04 Dispatcher initial is first message")]
         public void Rule_5_2_04_InitialActionIsFirstMessage()
         {
             Harness.AssertInitialIsFirst(initial => DispatcherScheduler.CreateNew("cs5.2-04", initial));
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs5.3-02 Dispatcher AttachToCurrent idempotent")]
         public void Rule_5_3_AttachToCurrentReturnsExisting()
         {
             try
@@ -627,7 +627,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs5.3-01")]
+        [Fact(DisplayName = "cs5.3-01 Dispatcher attach runs work on thread")]
         public void Rule_5_3_01_AttachToCurrentOnDispatcherThread()
         {
             using (var loop = DispatcherLoop.Start())
@@ -644,7 +644,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs5.2-05 Dispatcher runs queued work after create")]
         public void Rule_5_4_QueueDoesNotBlockAndShutdownFollows38()
         {
             try
@@ -668,7 +668,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs5.4-01")]
+        [Fact(DisplayName = "cs5.4-01 Dispatcher Queue returns immediately")]
         public void Rule_5_4_01_QueueHandsToDispatcherNonBlocking()
         {
             using (var loop = DispatcherLoop.Start())
@@ -710,7 +710,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs5.4-02")]
+        [Fact(DisplayName = "cs5.4-02 Same-priority UI items not starved")]
         public void Rule_5_4_02_UiMessagesAtOwnPriorityNotStarved()
         {
             using (var loop = DispatcherLoop.Start())
@@ -741,7 +741,7 @@ namespace Fluorine
 
     public class Cs6_WinFormsSchedulerTests : AcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs6.1-02 WinForms attach: needs context, same obj")]
         public void Rule_6_1_AttachToCurrentRequiresWinFormsContext()
         {
             Assert.Empty(typeof(WinFormsScheduler).GetConstructors());
@@ -774,7 +774,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs6.1-03")]
+        [Fact(DisplayName = "cs6.1-03 WinForms attach w/o context throws")]
         public void Rule_6_1_03_NoWinFormsContextThrowsNotLogged()
         {
             using (var log = new Log())
@@ -839,7 +839,7 @@ namespace Fluorine
             Assert.Throws<ReactiveException>(() => WinFormsScheduler.AttachToCurrent());
         }
         
-        [Fact]
+        [Fact(DisplayName = "cs6.1-01 WinForms scheduler runs queued work")]
         public void Rule_6_3_QueueNeverBlocksAndShutdownDoesNotEndLoop()
         {
             try
@@ -860,7 +860,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs6.3-01")]
+        [Fact(DisplayName = "cs6.3-01 WinForms Queue returns immediately")]
         public void Rule_6_3_01_QueueNonBlocking()
         {
             using (var forms = WinFormsLoop.Start())
@@ -894,7 +894,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs6.3-02")]
+        [Fact(DisplayName = "cs6.3-02 Shutdown keeps WinForms loop running")]
         public void Rule_6_3_02_ShutdownDoesNotEndMessageLoop()
         {
             using (var forms = WinFormsLoop.Start())
@@ -916,7 +916,7 @@ namespace Fluorine
 
     public class Cs7_LoggingTests : AcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs7.2-02 Reaction exception logged unwrapped")]
         public void Rule_7_1_UnhandledExceptionEventAndConsoleFallback()
         {
             Exception seen = null;
@@ -937,7 +937,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs7.1-02 No handler: console warning, loop on")]
         public void Rule_7_1_NoHandlerWritesConsoleWarning()
         {
             var stdout = Console.Out;
@@ -963,7 +963,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs7.1-03")]
+        [Fact(DisplayName = "cs7.1-03 Throwing handler: console warns, loop on")]
         public void Rule_7_1_03_ThrowingHandlerWarnsOnConsoleLoopContinues()
         {
             var s = Harness.Create();
@@ -996,7 +996,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs7.1-04")]
+        [Fact(DisplayName = "cs7.1-04 Every handler called once per error")]
         public void Rule_7_1_04_MultipleHandlers()
         {
             var s = Harness.Create();
@@ -1020,7 +1020,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs7.2-01 ReactiveException constructors")]
         public void Rule_7_2_ReactiveExceptionConstructorsAndInner()
         {
             var a = new ReactiveException();
@@ -1032,7 +1032,7 @@ namespace Fluorine
             Assert.IsAssignableFrom<Exception>(a);
         }
 
-        [Fact(DisplayName = "cs7.3-01")]
+        [Fact(DisplayName = "cs7.3-01 Only errors without a caller logged")]
         public void Rule_7_3_01_OnlyUserErrorsWithoutCallerLogged()
         {
             LoggedOnceUnwrapped(s => new Reactor(s).Add(() => { throw new InvalidOperationException("reaction"); }));
@@ -1115,7 +1115,7 @@ namespace Fluorine
             });
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs7.4-01 ExecutionCount counts runs")]
         public void Rule_7_4_ExecutionCountIncreasesAndDoesNotAffectBehaviour()
         {
             using (var host = new ThreadHost())
@@ -1128,7 +1128,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs7.4-02")]
+        [Fact(DisplayName = "cs7.4-02 ExecutionCount readable, no side effect")]
         public void Rule_7_4_02_ExecutionCountReadableFromAnyThread()
         {
             var s = Harness.Create();

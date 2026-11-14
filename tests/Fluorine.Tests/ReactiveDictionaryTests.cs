@@ -8,7 +8,7 @@ namespace Fluorine
 {
     public class ReactiveDictionaryTests : CollectionAcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs12.5-01 Dict Add/SetValue/Remove return values")]
         public void AddSetRemoveAndLookupFollowTheKeyComparer()
         {
             var map = new ReactiveDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -35,7 +35,7 @@ namespace Fluorine
             Assert.Equal(0, map.Count);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.2-02 Dict values compare with object.Equals")]
         public void SetValueUsesObjectEqualsAndKeepsTheStoredInstance()
         {
             var map = new ReactiveDictionary<string, ByValue>();
@@ -72,7 +72,7 @@ namespace Fluorine
             Assert.Equal(1, map.Count);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.5-03 SetValue(out old) with null values")]
         public void NullValueIsAnEntryAndNullKeyIsRejected()
         {
             var map = new ReactiveDictionary<string, string>();
@@ -98,7 +98,7 @@ namespace Fluorine
             Assert.Equal(1, map.Count);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.9-05 Absent key outside reaction throws")]
         public void MissingIndexerThrowsAfterTheValueWasRead()
         {
             var map = new ReactiveDictionary<string, int>();
@@ -123,7 +123,7 @@ namespace Fluorine
             Assert.Throws<ArgumentNullException>(() => new ReactiveDictionary<string, int>([Pair<string, int>(null, 1)]));
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.5-06 Dict Clear removes every entry")]
         public void ClearDropsEveryEntry()
         {
             var map = new ReactiveDictionary<string, int>([Pair("a", 1), Pair("b", 2)]);
@@ -393,7 +393,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.9-04 Absent-key indexer records, then throws")]
         public void IndexerGetterSubscribesThenThrowsWhenTheKeyIsAbsent()
         {
             var scheduler = new ManualScheduler();
@@ -600,7 +600,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.1-02")]
+        [Fact(DisplayName = "cs12.1-02 Reads/writes from many threads")]
         public void Rule_12_1_02_ReadsAndWritesFromAnyThread()
         {
             using (var log = new Log())
@@ -611,7 +611,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.1-03")]
+        [Fact(DisplayName = "cs12.1-03 Foreign-thread write triggers reaction")]
         public void Rule_12_1_03_ForeignThreadWriteTriggersReaction()
         {
             var s = Harness.Create();
@@ -642,7 +642,7 @@ namespace Fluorine
             Assert.Equal(2, dn);
         }
 
-        [Fact(DisplayName = "cs12.1-04")]
+        [Fact(DisplayName = "cs12.1-04 Version is an immutable picture")]
         public void Rule_12_1_04_VersionIsImmutablePicture()
         {
             var sc = new ReactiveSet<K> { k1 };
@@ -665,7 +665,7 @@ namespace Fluorine
             Assert.False(dv.ContainsKey(k2));
         }
 
-        [Fact(DisplayName = "cs12.2-01")]
+        [Fact(DisplayName = "cs12.2-01 Matching uses the collection Comparer")]
         public void Rule_12_2_01_MatchingUsesCollectionComparer()
         {
             var sc = new ReactiveSet<K>();
@@ -686,7 +686,7 @@ namespace Fluorine
             Assert.True(dc.Comparer.Equals(k1, k1p));
         }
 
-        [Fact(DisplayName = "cs12.2-04")]
+        [Fact(DisplayName = "cs12.2-04 Null values compare as equal")]
         public void Rule_12_2_04_NullValuesCompareEqual()
         {
             var s = Harness.Create();
@@ -706,7 +706,7 @@ namespace Fluorine
             Assert.Equal(3, n);
         }
 
-        [Fact(DisplayName = "cs12.2-05")]
+        [Fact(DisplayName = "cs12.2-05 Throwing value Equals reaches writer")]
         public void Rule_12_2_05_ThrowingValueEqualityReachesWriter()
         {
             using (var log = new Log())
@@ -738,7 +738,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.3-02")]
+        [Fact(DisplayName = "cs12.3-02 Dictionary accepts null values")]
         public void Rule_12_3_02_DictionaryAcceptsNullValue()
         {
             var dc = new ReactiveDictionary<K, string>();
@@ -750,7 +750,7 @@ namespace Fluorine
             Assert.Equal(1, dc.Count);
         }
 
-        [Fact(DisplayName = "cs12.3-03")]
+        [Fact(DisplayName = "cs12.3-03 Null key throws ArgumentNullException")]
         public void Rule_12_3_03_NullKeyThrowsArgumentNullException()
         {
             using (var log = new Log())
@@ -772,7 +772,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.5-04")]
+        [Fact(DisplayName = "cs12.5-04 SetValue(out old) records no read")]
         public void Rule_12_5_04_OldValueReadWithoutRecording()
         {
             var s = Harness.Create();
@@ -795,7 +795,7 @@ namespace Fluorine
             Assert.Equal(1, n);
         }
 
-        [Fact(DisplayName = "cs12.6-01")]
+        [Fact(DisplayName = "cs12.6-01 No-op write publishes/triggers nothing")]
         public void Rule_12_6_01_NoOpWritePublishesAndTriggersNothing()
         {
             using (var log = new Log())
@@ -859,7 +859,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.6-02")]
+        [Fact(DisplayName = "cs12.6-02 Value replace keeps stored key instance")]
         public void Rule_12_6_02_ReplacingValueKeepsStoredKeyInstance()
         {
             var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
@@ -872,14 +872,14 @@ namespace Fluorine
             Assert.Equal("c", ch[0].Value);
         }
 
-        [Fact(DisplayName = "cs12.7-01")]
+        [Fact(DisplayName = "cs12.7-01 Clear and writes publish atomically")]
         public void Rule_12_7_01_ClearAndWritesPublishAtomically()
         {
             AssertAtomicClear(true);
             AssertAtomicClear(false);
         }
 
-        [Fact(DisplayName = "cs12.7-02")]
+        [Fact(DisplayName = "cs12.7-02 Replaced struct value never tears")]
         public void Rule_12_7_02_ReplacedValueNeverTears()
         {
             var dc = new ReactiveDictionary<K, Big>
@@ -920,7 +920,7 @@ namespace Fluorine
             Assert.Equal(0, mismatch);
         }
 
-        [Fact(DisplayName = "cs12.8-01")]
+        [Fact(DisplayName = "cs12.8-01 Contains records presence, even absent")]
         public void Rule_12_8_01_ContainsRecordsPresenceAlsoWhenAbsent()
         {
             PresenceAddRemove(c => c.Add(k1));
@@ -929,7 +929,7 @@ namespace Fluorine
             PresenceAddRemoveDict(d => d[k1] = "a");
         }
 
-        [Fact(DisplayName = "cs12.8-02")]
+        [Fact(DisplayName = "cs12.8-02 Clear triggers presence reader")]
         public void Rule_12_8_02_ClearTriggersPresenceReader()
         {
             var s = Harness.Create();
@@ -962,7 +962,7 @@ namespace Fluorine
             Assert.False(dlast);
         }
 
-        [Fact(DisplayName = "cs12.8-03")]
+        [Fact(DisplayName = "cs12.8-03 Other keys don't trigger presence read")]
         public void Rule_12_8_03_OtherKeysDoNotTriggerPresenceReader()
         {
             var s = Harness.Create();
@@ -993,7 +993,7 @@ namespace Fluorine
             Assert.Equal(1, dn);
         }
 
-        [Fact(DisplayName = "cs12.8-04")]
+        [Fact(DisplayName = "cs12.8-04 Value replace: presence reader quiet")]
         public void Rule_12_8_04_ReplacingValueDoesNotTriggerPresenceReader()
         {
             var s = Harness.Create();
@@ -1009,7 +1009,7 @@ namespace Fluorine
             Assert.Equal(1, n);
         }
 
-        [Fact(DisplayName = "cs12.9-01")]
+        [Fact(DisplayName = "cs12.9-01 TryGetValue reader sees add/set/remove")]
         public void Rule_12_9_01_TryGetValueRecordsValueOfKey()
         {
             var s = Harness.Create();
@@ -1045,7 +1045,7 @@ namespace Fluorine
             Assert.Equal("d", seen[5]);
         }
 
-        [Fact(DisplayName = "cs12.9-02")]
+        [Fact(DisplayName = "cs12.9-02 Indexer reader reruns, throws if gone")]
         public void Rule_12_9_02_IndexerGetterRecordsValueOfKey()
         {
             using (var log = new Log())
@@ -1075,7 +1075,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.9-03")]
+        [Fact(DisplayName = "cs12.9-03 Other keys don't trigger value reader")]
         public void Rule_12_9_03_OtherKeysDoNotTriggerValueReader()
         {
             var s = Harness.Create();
@@ -1093,7 +1093,7 @@ namespace Fluorine
             Assert.Equal(1, nIndex);
         }
 
-        [Fact(DisplayName = "cs12.10-01")]
+        [Fact(DisplayName = "cs12.10-01 Values/Value reader reruns every write")]
         public void Rule_12_10_01_ValueRecordsWholeCollection()
         {
             var s = Harness.Create();
@@ -1120,7 +1120,7 @@ namespace Fluorine
             AssertRose(ref dn, () => dc.Clear(), s);
         }
 
-        [Fact(DisplayName = "cs12.10-02")]
+        [Fact(DisplayName = "cs12.10-02 Count reader reruns on every write")]
         public void Rule_12_10_02_CountRecordsWholeCollection()
         {
             var s = Harness.Create();
@@ -1147,7 +1147,7 @@ namespace Fluorine
             AssertRose(ref dn, dc.Clear, s);
         }
 
-        [Fact(DisplayName = "cs12.11-01")]
+        [Fact(DisplayName = "cs12.11-01 Reads on a Version record nothing")]
         public void Rule_12_11_01_VersionReadsRecordNothing()
         {
             using (var log = new Log())
@@ -1203,7 +1203,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.12-02")]
+        [Fact(DisplayName = "cs12.12-02 Version indexer throws for absent key")]
         public void Rule_12_12_02_VersionIndexerThrowsForAbsentKey()
         {
             using (var log = new Log())
@@ -1238,7 +1238,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.13-02")]
+        [Fact(DisplayName = "cs12.13-02 Dictionary Diff kinds and fields")]
         public void Rule_12_13_02_DictionaryDiffKindsAndFields()
         {
             var dc = new ReactiveDictionary<K, string>
@@ -1289,7 +1289,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.13-03")]
+        [Fact(DisplayName = "cs12.13-03 Diff is the net change")]
         public void Rule_12_13_03_DiffIsNetChange()
         {
             var sc = new ReactiveSet<K> { k1 };
@@ -1313,7 +1313,7 @@ namespace Fluorine
             Assert.Equal(0, dv1.Diff(dv1).Length);
         }
 
-        [Fact(DisplayName = "cs12.13-04")]
+        [Fact(DisplayName = "cs12.13-04 Diff(null) treats previous as empty")]
         public void Rule_12_13_04_NullPreviousCountsAsEmpty()
         {
             var sc = new ReactiveSet<K>
@@ -1339,7 +1339,7 @@ namespace Fluorine
             Assert.Equal(0, new ReactiveDictionary<K, string>().Value.Diff(null).Length);
         }
 
-        [Fact(DisplayName = "cs12.13-05")]
+        [Fact(DisplayName = "cs12.13-05 Diff changes neither version")]
         public void Rule_12_13_05_DiffChangesNeitherVersion()
         {
             var dc = new ReactiveDictionary<K, string>
@@ -1383,7 +1383,7 @@ namespace Fluorine
             Assert.True(sv2.Contains(k3));
         }
 
-        [Fact(DisplayName = "cs12.15-01")]
+        [Fact(DisplayName = "cs12.15-01 Version keeps no older version alive")]
         public void Rule_12_15_01_VersionKeepsNoOlderVersionAlive()
         {
             var setWr = MakeSetVersion(out var setV1);
@@ -1405,7 +1405,7 @@ namespace Fluorine
             Assert.True(dictV1.ContainsKey(new K(50)));
         }
 
-        [Fact(DisplayName = "cs12.23-01")]
+        [Fact(DisplayName = "cs12.23-01 All four constructors work")]
         public void Rule_12_23_01_AllFourConstructorsWork()
         {
             var cmp = StringComparer.OrdinalIgnoreCase;
@@ -1446,7 +1446,7 @@ namespace Fluorine
             Assert.True(dictCmp.ContainsKey("ADA"));
         }
 
-        [Fact(DisplayName = "cs12.23-02")]
+        [Fact(DisplayName = "cs12.23-02 Null comparer means default comparer")]
         public void Rule_12_23_02_NullComparerMeansDefault()
         {
             var setCmp = new ReactiveSet<string>((IEqualityComparer<string>)null);
@@ -1468,7 +1468,7 @@ namespace Fluorine
             Assert.False(dictItems.ContainsKey("A"));
         }
 
-        [Fact(DisplayName = "cs12.23-03")]
+        [Fact(DisplayName = "cs12.23-03 Null initial contents throw")]
         public void Rule_12_23_03_NullInitialContentsThrow()
         {
             var cmp = StringComparer.OrdinalIgnoreCase;

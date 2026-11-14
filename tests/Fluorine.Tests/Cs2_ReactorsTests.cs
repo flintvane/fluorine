@@ -7,7 +7,7 @@ namespace Fluorine
 {
     public class Cs2_ReactorsTests : AcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs2.1-02 Queue on disposed reactor never runs")]
         public void Rule_2_1_ReactorQueueUsesSchedulerAndDisposedDrops()
         {
             using (var host = new ThreadHost())
@@ -23,7 +23,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.1-01")]
+        [Fact(DisplayName = "cs2.1-01 Reactor.Queue runs on scheduler thread")]
         public void Rule_2_1_01_QueueActionRunsOnScheduler()
         {
             var s = Harness.Create();
@@ -34,7 +34,7 @@ namespace Fluorine
             Assert.Equal(Harness.ThreadOf(s), tid);
         }
 
-        [Fact(DisplayName = "cs2.1-03")]
+        [Fact(DisplayName = "cs2.1-03 Reactor.Queue shares FIFO with runs")]
         public void Rule_2_1_03_QueueActionSharesFifoWithReactions()
         {
             var s = Harness.Create();
@@ -55,7 +55,7 @@ namespace Fluorine
             Assert.Equal(["r1", "a", "r2"], order.Snapshot());
         }
 
-        [Fact(DisplayName = "cs2.2-01")]
+        [Fact(DisplayName = "cs2.2-01 Reactor() captures Scheduler.Current")]
         public void Rule_2_2_01_ReactorCapturesSchedulerCurrent()
         {
             var s = Harness.Create();
@@ -70,7 +70,7 @@ namespace Fluorine
             Assert.Equal(owner, tid);
         }
 
-        [Fact(DisplayName = "cs2.2-02")]
+        [Fact(DisplayName = "cs2.2-02 Reactor() without scheduler throws")]
         public void Rule_2_2_02_ReactorWithoutSchedulerThrowsNotLogged()
         {
             using (var log = new Log())
@@ -106,7 +106,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.2-03")]
+        [Fact(DisplayName = "cs2.2-03 Scheduler captured at Reactor creation")]
         public void Rule_2_2_03_SchedulerCapturedAtCreation()
         {
             var s1 = Harness.Create();
@@ -122,7 +122,7 @@ namespace Fluorine
             Assert.Equal(owner, ranOn);
         }
 
-        [Fact(DisplayName = "cs2.3-02")]
+        [Fact(DisplayName = "cs2.3-02 Reactor(null) throws, not logged")]
         public void Rule_2_3_02_ReactorNullThrowsNotLogged()
         {
             using (var log = new Log())
@@ -141,7 +141,7 @@ namespace Fluorine
             Assert.Null(reactor.Add(() => { }));
         }
 
-        [Fact(DisplayName = "cs2.4-01")]
+        [Fact(DisplayName = "cs2.4-01 Reactor on shut-down sched is disposed")]
         public void Rule_2_4_01_ReactorOnShutDownSchedulerActsDisposed()
         {
             using (var log = new Log())
@@ -159,7 +159,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.4-02")]
+        [Fact(DisplayName = "cs2.4-02 Reactor made during shutdown: disposed")]
         public void Rule_2_4_02_ReactorDuringShutdownActsDisposed()
         {
             var s = Harness.Create();
@@ -205,13 +205,13 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.6-01 Reaction has no public constructor")]
         public void Rule_2_6_ReactionHasNoPublicConstructor()
         {
             Assert.Empty(typeof(Reaction).GetConstructors());
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.7-01 Add returns reaction, queues first run")]
         public void Rule_2_7_AddQueuesFirstRunAndReturnsReaction()
         {
             using (var host = new ThreadHost())
@@ -224,7 +224,7 @@ namespace Fluorine
             }
         }
         
-        [Fact]
+        [Fact(DisplayName = "cs2.8-01 Add never runs inline, even on S")]
         public void Rule_2_8_ReactionNeverRunsInline()
         {
             using (var host = new ThreadHost())
@@ -251,7 +251,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.9-01")]
+        [Fact(DisplayName = "cs2.9-01 Add on disposed reactor returns null")]
         public void Rule_2_9_01_AddOnDisposedReturnsNullSilently()
         {
             using (var log = new Log())
@@ -322,7 +322,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.12-01")]
+        [Fact(DisplayName = "cs2.12-01 Reaction dispose leaves others running")]
         public void Rule_2_12_01_ReactionDisposeRemovesFromReactor()
         {
             var s = Harness.Create();
@@ -358,7 +358,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.13-01")]
+        [Fact(DisplayName = "cs2.13-01 Null lambda acts as empty block")]
         public void Rule_2_13_01_NullLambdaIsEmptyBlock()
         {
             using (var log = new Log())
@@ -374,7 +374,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.13-02")]
+        [Fact(DisplayName = "cs2.13-02 Reaction lambda cannot be changed")]
         public void Rule_2_13_02_LambdaNotChangeable()
         {
             var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
@@ -398,7 +398,7 @@ namespace Fluorine
             Assert.Null(Reaction.Current);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.15-01 Trigger queues one more run")]
         public void Rule_2_15_TriggerQueuesAndNeverThrowsOnDisposed()
         {
             using (var host = new ThreadHost())
@@ -413,7 +413,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.15-02")]
+        [Fact(DisplayName = "cs2.15-02 Trigger never runs inline")]
         public void Rule_2_15_02_TriggerNeverInline()
         {
             var s = Harness.Create();
@@ -430,7 +430,7 @@ namespace Fluorine
             Assert.Equal(2, runs);
         }
 
-        [Fact(DisplayName = "cs2.15-03")]
+        [Fact(DisplayName = "cs2.15-03 Trigger on disposed reaction: silent")]
         public void Rule_2_15_03_TriggerOnDisposedReaction()
         {
             using (var log = new Log())
@@ -460,7 +460,7 @@ namespace Fluorine
             }
         }
         
-        [Fact]
+        [Fact(DisplayName = "cs2.17-02 Dispose twice from test thread detaches")]
         public void Rule_2_17_DisposeNullsLambdaAndDetaches()
         {
             using (var host = new ThreadHost())
@@ -482,7 +482,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.17-01")]
+        [Fact(DisplayName = "cs2.17-01 Dispose detaches from all registers")]
         public void Rule_2_17_01_DisposeDetachesFromAllRegisters()
         {
             var s = Harness.Create();
@@ -505,7 +505,7 @@ namespace Fluorine
             Assert.Equal(before, runs);
         }
 
-        [Fact(DisplayName = "cs2.17-04")]
+        [Fact(DisplayName = "cs2.17-04 Queued run after dispose skips lambda")]
         public void Rule_2_17_04_QueuedRunAfterDisposeSkipsLambda()
         {
             var s = Harness.Create();
@@ -527,7 +527,7 @@ namespace Fluorine
             Assert.Equal(1, runs);
         }
 
-        [Fact(DisplayName = "cs2.17-05")]
+        [Fact(DisplayName = "cs2.17-05 Self-dispose mid-run finishes the run")]
         public void Rule_2_17_05_SelfDisposeMidRun()
         {
             var s = Harness.Create();
@@ -550,7 +550,7 @@ namespace Fluorine
             Assert.Equal(1, n);
         }
 
-        [Fact(DisplayName = "cs2.17-06")]
+        [Fact(DisplayName = "cs2.17-06 Dispose from other thread during run")]
         public void Rule_2_17_06_DisposeDuringRunFromOtherThread()
         {
             var s = Harness.Create();
@@ -588,7 +588,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.18-01 Reaction.Current is the running reaction")]
         public void Rule_2_18_CurrentIsRunningReaction()
         {
             using (var host = new ThreadHost())
@@ -603,7 +603,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.18-02")]
+        [Fact(DisplayName = "cs2.18-02 Reaction.Current null outside a run")]
         public void Rule_2_18_02_CurrentNullOutside()
         {
             var s = Harness.Create();
@@ -620,7 +620,7 @@ namespace Fluorine
             Assert.Null(Reaction.Current);
         }
 
-        [Fact(DisplayName = "cs2.18-03")]
+        [Fact(DisplayName = "cs2.18-03 Reaction.Current set while paused")]
         public void Rule_2_18_03_CurrentWhilePaused()
         {
             var s = Harness.Create();
@@ -635,7 +635,7 @@ namespace Fluorine
             Assert.Same(reaction, seen);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.19-01 PauseRecording stops recording reads")]
         public void Rule_2_19_PauseRecordingIncrementsPauseCount()
         {
             using (var host = new ThreadHost())
@@ -656,7 +656,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.20-02 Extra ContinueRecording throws, recovers")]
         public void Rule_2_20_ContinueRecordingAtZeroThrows()
         {
             using (var host = new ThreadHost())
@@ -700,7 +700,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.20-01")]
+        [Fact(DisplayName = "cs2.20-01 ContinueRecording resumes recording")]
         public void Rule_2_20_01_ContinueRecordingResumes()
         {
             var s = Harness.Create();
@@ -728,7 +728,7 @@ namespace Fluorine
             Assert.Null(Reaction.Current);
         }
 
-        [Fact(DisplayName = "cs2.21-01")]
+        [Fact(DisplayName = "cs2.21-01 Pause/Continue outside reaction: no-op")]
         public void Rule_2_21_01_PauseContinueOutsideReactionNoEffect()
         {
             using (var log = new Log())
@@ -765,7 +765,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.22-01 IsRecording true only in unpaused run")]
         public void Rule_2_22_RecordingTrueOnlyWhenUnpausedReaction()
         {
             using (var host = new ThreadHost())
@@ -800,7 +800,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.23-01")]
+        [Fact(DisplayName = "cs2.23-01 Unbalanced pause resets at next run")]
         public void Rule_2_23_01_UnbalancedPauseEndsWithRun()
         {
             var s = Harness.Create();
@@ -851,7 +851,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.24-01")]
+        [Fact(DisplayName = "cs2.24-01 using Pause() stops recording")]
         public void Rule_2_24_01_PauseIsDisposable()
         {
             var s = Harness.Create();
@@ -874,7 +874,7 @@ namespace Fluorine
             Assert.Equal(1, runs);
         }
 
-        [Fact(DisplayName = "cs2.24-02")]
+        [Fact(DisplayName = "cs2.24-02 Pause(Action)/Pause(Func) don't record")]
         public void Rule_2_24_02_PauseActionAndFunc()
         {
             var s = Harness.Create();
@@ -899,7 +899,7 @@ namespace Fluorine
             Assert.Equal(before, runs);
         }
 
-        [Fact(DisplayName = "cs2.24-03")]
+        [Fact(DisplayName = "cs2.24-03 Pause(Action) restores on throw")]
         public void Rule_2_24_03_PauseActionRestoresOnThrow()
         {
             var s = Harness.Create();
@@ -924,7 +924,7 @@ namespace Fluorine
             Assert.Equal(2, runs);
         }
 
-        [Fact(DisplayName = "cs2.24-04")]
+        [Fact(DisplayName = "cs2.24-04 Nested pauses unwind correctly")]
         public void Rule_2_24_04_ReentrantPauses()
         {
             var s = Harness.Create();

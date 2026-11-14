@@ -10,7 +10,7 @@ namespace Fluorine
 {
     public class ReactiveSetTests : CollectionAcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs12.4-01 Set Add/Remove return values")]
         public void AddRemoveAndContainsFollowEqualsAndHashCode()
         {
             var set = new ReactiveSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -30,7 +30,7 @@ namespace Fluorine
             Assert.Equal(0, set.Count);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.3-01 Set accepts null as an element")]
         public void NullElementIsAMember()
         {
             var set = new ReactiveSet<string>();
@@ -50,7 +50,7 @@ namespace Fluorine
             Assert.Throws<ArgumentNullException>(() => new ReactiveSet<int>((IEnumerable<int>)null));
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.4-02 Set Clear empties the set")]
         public void ClearDropsEveryMember()
         {
             var set = new ReactiveSet<int>([1, 2, 3]);
@@ -464,7 +464,7 @@ namespace Fluorine
             scheduler.Shutdown();
         }
 
-        [Fact(DisplayName = "cs12.13-01")]
+        [Fact(DisplayName = "cs12.13-01 Set Diff reports net Added/Removed")]
         public void Rule_12_13_01_SetDiffReportsNetAddedAndRemoved()
         {
             var sc = new ReactiveSet<K>();
@@ -486,7 +486,7 @@ namespace Fluorine
                 Assert.Null(change.Previous);
         }
 
-        [Fact(DisplayName = "cs12.13-06")]
+        [Fact(DisplayName = "cs12.13-06 Set Diff: other equal instance=Updated")]
         public void Rule_12_13_06_SetDiffReportsReplacedForOtherInstance()
         {
             var sc = new ReactiveSet<K> { k1 };

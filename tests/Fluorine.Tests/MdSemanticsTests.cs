@@ -46,7 +46,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s1.2-01")]
+        [Fact(DisplayName = "s1.2-01 Reaction never runs parallel to itself")]
         public void Sem_1_2_01_RunsNeverParallelWithThemselves()
         {
             // The row's pause is a blocked run. A gate stands in for it so the harness does not sleep.
@@ -126,7 +126,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s1.4-01")]
+        [Fact(DisplayName = "s1.4-01 Many writes coalesce into one run")]
         public void Sem_1_4_01_Coalescing()
         {
             var s = Harness.Create();
@@ -149,7 +149,7 @@ namespace Fluorine
             Assert.Equal(2, Volatile.Read(ref runs));
         }
 
-        [Fact]
+        [Fact(DisplayName = "s1.5-01 Different schedulers run in parallel")]
         public void Rule_1_5_DifferentSchedulersRunInParallel()
         {
             using (var a = new ThreadHost())
@@ -201,7 +201,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "s1.8-02 Schedule exception passes unwrapped")]
         public void Rule_1_8_ScheduleExceptionPassesThrough()
         {
             var scheduler = new ThrowingScheduler();
@@ -233,7 +233,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s1.8-01")]
+        [Fact(DisplayName = "s1.8-01 Trigger/Queue/write never throw")]
         public void Sem_1_8_01_TriggerAndQueueNeverThrow()
         {
             var s = Harness.Create();
@@ -260,7 +260,7 @@ namespace Fluorine
             Assert.Null(late.Add(() => { }));
         }
 
-        [Fact(DisplayName = "s1.8-03")]
+        [Fact(DisplayName = "s1.8-03 After shutdown: no throw, nothing runs")]
         public void Sem_1_8_03_RefusedRunIsSilent()
         {
             using (var log = new Log())
@@ -306,7 +306,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s1.9-01")]
+        [Fact(DisplayName = "s1.9-01 Reads on another thread not tracked")]
         public void Sem_1_9_01_TrackingPerThread()
         {
             var s1 = Harness.Create();
@@ -394,7 +394,7 @@ namespace Fluorine
 
     public class Md2_ControlFlowTests : SemanticsAcceptanceTest
     {
-        [Fact(DisplayName = "s2-01")]
+        [Fact(DisplayName = "s2-01 Spec section 2 full-name example")]
         public void Sem_2_01_EndToEndFullNameExample()
         {
             var s = Harness.Create();
@@ -490,7 +490,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s3.1b-01")]
+        [Fact(DisplayName = "s3.1b-01 Racing writers: last run sees final")]
         public void Sem_3_1b_01_RacingWritersLoseNothing()
         {
             var s = Harness.Create();
@@ -514,7 +514,7 @@ namespace Fluorine
             Assert.InRange(final, 1, Harness.Stress);
         }
 
-        [Fact(DisplayName = "s3.1b-02")]
+        [Fact(DisplayName = "s3.1b-02 Equals not run under register lock")]
         public void Sem_3_1b_02_EqualityNotUnderRegisterLock()
         {
             var reg = new Register<ReenterEqual>();
@@ -534,7 +534,7 @@ namespace Fluorine
             Assert.Same(v, r.Value);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs1.8-03 Writing an equal value does not trigger")]
         public void Rule_3_2_NoChangeNoTrigger()
         {
             using (var host = new ThreadHost())
@@ -570,7 +570,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s4.1-01")]
+        [Fact(DisplayName = "s4.1-01 Last run sees the final value")]
         public void Sem_4_1_01_RunsAfterLastModification()
         {
             var s = Harness.Create();
@@ -651,7 +651,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s4.4-01")]
+        [Fact(DisplayName = "s4.4-01 Triggers during a run queue one more")]
         public void Sem_4_4_01_TriggerDuringRunQueuesOneMore()
         {
             var s = Harness.Create();
@@ -715,7 +715,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s4.6-01")]
+        [Fact(DisplayName = "s4.6-01 Manual trigger coalesces with write")]
         public void Sem_4_6_01_ManualTriggerQueuedLikeOthers()
         {
             var s = Harness.Create();
@@ -759,7 +759,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s6.1-01")]
+        [Fact(DisplayName = "s6.1-01 Self-write retriggers until stable")]
         public void Sem_6_1_01_SelfWriteRetriggers()
         {
             var s = Harness.Create();
@@ -777,7 +777,7 @@ namespace Fluorine
             Assert.Equal(11, Volatile.Read(ref runs));
         }
 
-        [Fact(DisplayName = "s6.2-01")]
+        [Fact(DisplayName = "s6.2-01 Endless self-trigger doesn't starve")]
         public void Sem_6_2_01_EndlessSelfTriggerDoesNotStarve()
         {
             var s = Harness.Create();
@@ -826,7 +826,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s6.3-01")]
+        [Fact(DisplayName = "s6.3-01 Writes inside Pause still trigger")]
         public void Sem_6_3_01_WritesInsidePauseStillTrigger()
         {
             var s = Harness.Create();
@@ -848,7 +848,7 @@ namespace Fluorine
             Assert.True(Volatile.Read(ref runs) > before);
         }
 
-        [Fact(DisplayName = "s6.4-01")]
+        [Fact(DisplayName = "s6.4-01 Reaction-added reaction owned by reactor")]
         public void Sem_6_4_01_ReactionCreatingReactions()
         {
             var s = Harness.Create();
@@ -946,7 +946,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s7.2-01")]
+        [Fact(DisplayName = "s7.2-01 Triggered run never sees older value")]
         public void Sem_7_2_01_TriggeredReactionSeesNewValue()
         {
             var s = Harness.Create();
@@ -1022,7 +1022,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s7.3a-01")]
+        [Fact(DisplayName = "s7.3a-01 Normal + paused read keeps subscription")]
         public void Sem_7_3a_01_NormalAndPausedReadKeepsSubscription()
         {
             var s = Harness.Create();
@@ -1045,7 +1045,7 @@ namespace Fluorine
             Assert.Equal(2, Volatile.Read(ref runs));
         }
 
-        [Fact(DisplayName = "s7.3a-02")]
+        [Fact(DisplayName = "s7.3a-02 Only-paused read drops subscription")]
         public void Sem_7_3a_02_OnlyPausedReadDropsSubscription()
         {
             var s = Harness.Create();
@@ -1079,7 +1079,7 @@ namespace Fluorine
             Assert.Equal(after, Volatile.Read(ref runs));
         }
 
-        [Fact]
+        [Fact(DisplayName = "s7.4-01 Reaction never runs re-entrantly")]
         public void Rule_7_4_ReactionNeverRunsReentrantly()
         {
             using (var host = new ThreadHost())
@@ -1124,7 +1124,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s7.5-01")]
+        [Fact(DisplayName = "s7.5-01 Triggering does not subscribe")]
         public void Sem_7_5_01_TriggerDoesNotSubscribe()
         {
             var s = Harness.Create();
@@ -1149,7 +1149,7 @@ namespace Fluorine
 
     public class Md8_ExceptionTests : SemanticsAcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs3.5-02 Throw logged; reads before throw kept")]
         public void Rule_8_1_ExceptionEndsRunKeepsReadsUpToThrow()
         {
             using (var host = new ThreadHost())
@@ -1205,7 +1205,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s8.2-01")]
+        [Fact(DisplayName = "s8.2-01 Throwing reaction doesn't stop loop")]
         public void Sem_8_2_01_ThrowingReactionDoesNotStopLoop()
         {
             using (var log = new Log())
@@ -1302,7 +1302,7 @@ namespace Fluorine
 
     public class Md11_SchedulingTests : SemanticsAcceptanceTest
     {
-        [Fact(DisplayName = "s11.1-01")]
+        [Fact(DisplayName = "s11.1-01 Runs always on the scheduler thread")]
         public void Sem_11_1_01_ReactionStaysOnItsThread()
         {
             var s = Harness.Create();
@@ -1364,7 +1364,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s11.5-01")]
+        [Fact(DisplayName = "s11.5-01 Same-loop add+write: first run sees it")]
         public void Sem_11_5_01_SameLoopStartupOrdering()
         {
             var s = Harness.Create();
@@ -1419,7 +1419,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s11.7-01")]
+        [Fact(DisplayName = "s11.7-01 No concurrent runs on one scheduler")]
         public void Sem_11_7_01_NoConcurrentRunsOnOneLoop()
         {
             var s = Harness.Create();
@@ -1466,7 +1466,7 @@ namespace Fluorine
             Assert.True(Volatile.Read(ref peak) <= 1, "in-flight " + Volatile.Read(ref peak));
         }
 
-        [Fact]
+        [Fact(DisplayName = "s11.9-01 Queued work runs first come first served")]
         public void Rule_11_9_FirstComeFirstServed()
         {
             using (var host = new ThreadHost())
@@ -1481,7 +1481,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s11.9-02")]
+        [Fact(DisplayName = "s11.9-02 Coalesced run keeps first queue spot")]
         public void Sem_11_9_02_CoalescedPositionStaysAtFirstTrigger()
         {
             var s = Harness.Create();
@@ -1502,7 +1502,7 @@ namespace Fluorine
             Assert.Equal([1, 2], order.ToArray());
         }
 
-        [Fact]
+        [Fact(DisplayName = "s14.7-01 Self-requeue goes to end of the queue")]
         public void Rule_14_7_SelfRequeueGoesToEndOfQueue()
         {
             using (var host = new ThreadHost())
@@ -1567,7 +1567,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "s11.10-01 Own write is visible immediately")]
         public void Rule_11_10_WritesTakeEffectImmediately()
         {
             using (var host = new ThreadHost())
@@ -1604,7 +1604,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s11.11-01")]
+        [Fact(DisplayName = "s11.11-01 Same-action writes seen together")]
         public void Sem_11_11_01_SameLoopMultiWritesSeenTogether()
         {
             var s = Harness.Create();
@@ -1632,7 +1632,7 @@ namespace Fluorine
                 Assert.True(seen[i] == "0,0" || seen[i] == "1,1", "observed " + seen[i]);
         }
 
-        [Fact]
+        [Fact(DisplayName = "s11.15-01 After shutdown no reaction runs again")]
         public void Rule_11_15_ShutdownDrainsThenDisposesAndRefusesNew()
         {
             var host = new ThreadHost();
@@ -1659,7 +1659,7 @@ namespace Fluorine
             Assert.True(host.Scheduler.IsFinished);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs3.9-01 Schedulers known to Reactive.Shutdown")]
         public void Rule_11_17_ReactiveShutdownAll()
         {
             var a = ThreadScheduler.CreateNew("a");
@@ -1712,7 +1712,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s12.6b-01")]
+        [Fact(DisplayName = "s12.6b-01 Trigger after dispose has no effect")]
         public void Sem_12_6b_01_LaterTriggerAfterDisposeNoEffect()
         {
             var s = Harness.Create();
@@ -1760,7 +1760,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s12.9-01")]
+        [Fact(DisplayName = "s12.9-01 Null actions are not errors")]
         public void Sem_12_9_01_NullActionsNotErrors()
         {
             using (var log = new Log())
@@ -1843,7 +1843,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s13.3-01")]
+        [Fact(DisplayName = "s13.3-01 Concurrent triggers queue only once")]
         public void Sem_13_3_01_QueuedAtMostOnceUnderConcurrency()
         {
             var s = Harness.Create();
@@ -1864,7 +1864,7 @@ namespace Fluorine
             Assert.Equal(2, Volatile.Read(ref runs));
         }
 
-        [Fact(DisplayName = "s13.5-01")]
+        [Fact(DisplayName = "s13.5-01 Register/queue locks never deadlock")]
         public void Sem_13_5_01_NoDeadlockBetweenRegisterAndQueue()
         {
             var s1 = Harness.Create();
@@ -1922,7 +1922,7 @@ namespace Fluorine
             Assert.True(done2.WaitOne(left), "deadlock: S2 did not drain within 30 s");
         }
 
-        [Fact(DisplayName = "s13.7-01")]
+        [Fact(DisplayName = "s13.7-01 Lambda never runs under a lock")]
         public void Sem_13_7_01_NoLambdaUnderLock()
         {
             var s1 = Harness.Create();
@@ -1974,7 +1974,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "s13.8-01 Writer doesn't wait for a running run")]
         public void Rule_13_8_WritersDoNotWaitForReaction()
         {
             using (var host = new ThreadHost())
@@ -2004,7 +2004,7 @@ namespace Fluorine
 
     public class Md14_DiscussionTests : SemanticsAcceptanceTest
     {
-        [Fact(DisplayName = "s14.1-01")]
+        [Fact(DisplayName = "s14.1-01 Shadow register: field change reruns")]
         public void Sem_14_1_01_ShadowRegisterPattern()
         {
             var s = Harness.Create();
@@ -2030,7 +2030,7 @@ namespace Fluorine
 
     public class Md15_LoggingTests : SemanticsAcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "s15.1-01 Reaction exception goes to the handler")]
         public void Rule_15_1_UnhandledFromReactionIsLogged()
         {
             Exception seen = null;
@@ -2050,7 +2050,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s15.2-01")]
+        [Fact(DisplayName = "s15.2-01 Usage errors thrown, not logged")]
         public void Sem_15_2_01_UsageErrorsThrownNotLogged()
         {
             using (var log = new Log())

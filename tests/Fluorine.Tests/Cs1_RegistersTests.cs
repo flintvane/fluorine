@@ -7,7 +7,7 @@ namespace Fluorine
 {
     public class Cs1_RegistersTests : AcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs1.1-01 Value-less register reruns its reader")]
         public void Rule_1_1_RegisterRemembersReaders()
         {
             using (var host = new ThreadHost())
@@ -26,14 +26,14 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs1.7-01 Initial-value ctor stores the value")]
         public void Rule_1_2_RegisterTHoldsTypedValue()
         {
             var r = new Register<int>(7);
             Assert.Equal(7, r.Value);
         }
         
-        [Fact]
+        [Fact(DisplayName = "cs1.3-02 Paused RecordRead does not subscribe")]
         public void Rule_1_3_RecordReadSubscribesCurrentWhenRecording()
         {
             using (var host = new ThreadHost())
@@ -58,7 +58,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs1.3-01")]
+        [Fact(DisplayName = "cs1.3-01 RecordRead outside reaction: no effect")]
         public void Rule_1_3_01_RecordReadOutsideReactionDoesNothing()
         {
             using (var log = new Log())
@@ -92,7 +92,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs1.4-01")]
+        [Fact(DisplayName = "cs1.4-01 TriggerReactions reruns all readers")]
         public void Rule_1_4_01_ManualTriggerRunsAllConnected()
         {
             var s = Harness.Create();
@@ -117,7 +117,7 @@ namespace Fluorine
             Assert.Equal(2, b);
         }
 
-        [Fact(DisplayName = "cs1.4-02")]
+        [Fact(DisplayName = "cs1.4-02 Trigger ignores equality, keeps value")]
         public void Rule_1_4_02_ManualTriggerIgnoresEqualityKeepsValue()
         {
             var s = Harness.Create();
@@ -135,7 +135,7 @@ namespace Fluorine
             Assert.Equal(5, reg.Value);
         }
 
-        [Fact(DisplayName = "cs1.4-03")]
+        [Fact(DisplayName = "cs1.4-03 Trigger without readers: silent")]
         public void Rule_1_4_03_TriggerWithoutReadersLogsNothing()
         {
             using (var log = new Log())
@@ -167,7 +167,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs1.6-01 Empty ctor yields default(T)")]
         public void Rule_1_6_EmptyConstructorUsesDefaultT()
         {
             Assert.Equal(0, new Register<int>().Value);
@@ -190,7 +190,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs1.7-02")]
+        [Fact(DisplayName = "cs1.7-02 Initial-value ctor triggers nothing")]
         public void Rule_1_7_02_InitialValueCtorTriggersNothing()
         {
             using (var log = new Log())
@@ -217,7 +217,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs1.8-01 Getter subscribes, new value reruns")]
         public void Rule_1_8_ValueGetterRecordsReadSetterWrites()
         {
             using (var host = new ThreadHost())
@@ -248,7 +248,7 @@ namespace Fluorine
             Assert.Null(typeof(Register<int>).GetConstructor([typeof(string)]));
         }
 
-        [Fact(DisplayName = "cs1.9-01")]
+        [Fact(DisplayName = "cs1.9-01 Register.Name is settable")]
         public void Rule_1_9_01_NameSettable()
         {
             var reg = new Register<int>();
@@ -278,7 +278,7 @@ namespace Fluorine
             Assert.Equal("kept", r.Name);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs1.11-01 Register subclassable, core not virtual")]
         public void Rule_1_11_RegistersCanBeInheritedAndCoreMembersAreNotVirtual()
         {
             var r = new NamedRegister
@@ -316,7 +316,7 @@ namespace Fluorine
             Assert.Equal(5, created.Value);
         }
 
-        [Fact(DisplayName = "cs1.13-01")]
+        [Fact(DisplayName = "cs1.13-01 Ctor/Value usable from any thread")]
         public void Rule_1_13_01_CtorAndValueFromAnyThread()
         {
             var shared = new Register<int>(-1);
@@ -378,7 +378,7 @@ namespace Fluorine
             Assert.Equal(2, r.Value);
         }
 
-        [Fact(DisplayName = "cs1.14-01")]
+        [Fact(DisplayName = "cs1.14-01 SetValue returns true on change")]
         public void Rule_1_14_01_SetValueTrueOnChange()
         {
             var s = Harness.Create();
@@ -398,7 +398,7 @@ namespace Fluorine
             Assert.Equal(2, seen);
         }
 
-        [Fact(DisplayName = "cs1.14-02")]
+        [Fact(DisplayName = "cs1.14-02 SetValue returns false on equal value")]
         public void Rule_1_14_02_SetValueFalseOnEqual()
         {
             var s = Harness.Create();
@@ -416,7 +416,7 @@ namespace Fluorine
             Assert.Equal(before, runs);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs1.15-03 SetValue(out old): old value, no read")]
         public void Rule_1_15_SetValueOutOldValueDoesNotRecordRead()
         {
             using (var host = new ThreadHost())
@@ -449,7 +449,7 @@ namespace Fluorine
             Assert.False(s.SetValue("a"));
         }
 
-        [Fact(DisplayName = "cs1.16-01")]
+        [Fact(DisplayName = "cs1.16-01 Equality uses object.Equals")]
         public void Rule_1_16_01_EqualityUsesObjectEquals()
         {
             var s = Harness.Create();
@@ -469,7 +469,7 @@ namespace Fluorine
             Assert.Same(first, reg.Value);
         }
 
-        [Fact(DisplayName = "cs1.16-02")]
+        [Fact(DisplayName = "cs1.16-02 IEquatable<T> alone is not equality")]
         public void Rule_1_16_02_IEquatableAloneDoesNotCount()
         {
             var s = Harness.Create();
@@ -490,7 +490,7 @@ namespace Fluorine
             Assert.True(runs > before, "observed runs=" + runs + " expected a trigger");
         }
 
-        [Fact(DisplayName = "cs1.16-03")]
+        [Fact(DisplayName = "cs1.16-03 Null to null no trigger, others trigger")]
         public void Rule_1_16_03_NullHandling()
         {
             var s = Harness.Create();
@@ -523,7 +523,7 @@ namespace Fluorine
             Assert.Same(a, r.Value);
         }
 
-        [Fact(DisplayName = "cs1.17-01")]
+        [Fact(DisplayName = "cs1.17-01 Throwing Equals reaches writer")]
         public void Rule_1_17_01_ThrowingEqualityReachesWriter()
         {
             using (var log = new Log())
@@ -579,7 +579,7 @@ namespace Fluorine
             Assert.Equal(0, errors);
         }
 
-        [Fact(DisplayName = "cs1.18-01")]
+        [Fact(DisplayName = "cs1.18-01 Large struct value never tears")]
         public void Rule_1_18_01_LargeStructDoesNotTear()
         {
             var reg = new Register<Big>(new Big(0));
