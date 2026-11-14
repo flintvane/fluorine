@@ -1,4 +1,4 @@
-[← Reactive sorted sets](reactive-sorted-sets.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Reactive sorted sets](reactive-sorted-sets.md) · [Topics](../index.md) · [Reactive arrays →](reactive-arrays.md)
 
 # 15. Reactive sorted dictionaries
 
@@ -166,4 +166,4 @@ There is no separate "key appeared", "key disappeared" or "value changed" event.
 
 *Key and value reads follow register recording (§7.1, cs 12.8–12.11); versions and `Diff` follow cs 12.12–12.15 and cs 12.24–12.27; construction follows cs 12.23. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← Reactive sorted sets](reactive-sorted-sets.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Reactive sorted sets](reactive-sorted-sets.md) · [Topics](../index.md) · [Reactive arrays →](reactive-arrays.md)

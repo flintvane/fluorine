@@ -29,13 +29,15 @@ The documentation is in four sections. Read the Guide in order; each topic build
 13. [Reactive dictionaries](docs/topics/reactive-dictionaries.md): `ReactiveDictionary<TKey, TValue>` for add, replace and remove; `Version` to enumerate a picture and `Diff` it against one you kept.
 14. [Reactive sorted sets](docs/topics/reactive-sorted-sets.md): `ReactiveSortedSet<T>` for an ordered set; `Version` enumerates and `Diff` reports changes in comparer order.
 15. [Reactive sorted dictionaries](docs/topics/reactive-sorted-dictionaries.md): `ReactiveSortedDictionary<TKey, TValue>` for an ordered map; `Version` enumerates and `Diff` reports changes in comparer order.
-16. [Derived values, self-writes and cycles](docs/topics/derived-values.md): Reactions that write registers, reactions that follow a state, and reactions that create reactions.
-17. [Computed values](docs/topics/computed.md): `Reactor.Computed` writes the result of a function into a register, which triggers only when the result changes.
-18. [Errors and logging](docs/topics/errors-and-logging.md): Exceptions in reactions, `Reactive.UnhandledException`, `ReactiveException` and programming errors.
-19. [Shutting down](docs/topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
-20. [Async code inside a reaction](docs/topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
-21. [Rules of thumb](docs/topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
-22. [The Reactive attribute and the source generator](docs/topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
+16. [Reactive arrays](docs/topics/reactive-arrays.md): `ReactiveArray<T>` for a fixed row of slots; the indexer watches one slot, and `Version` diffs by index.
+17. [Reactive lists](docs/topics/reactive-lists.md): `ReactiveList<T>` for insert, delete and presence; a position watch follows the index, and `Contains` follows whether a value occurs.
+18. [Derived values, self-writes and cycles](docs/topics/derived-values.md): Reactions that write registers, reactions that follow a state, and reactions that create reactions.
+19. [Computed values](docs/topics/computed.md): `Reactor.Computed` writes the result of a function into a register, which triggers only when the result changes.
+20. [Errors and logging](docs/topics/errors-and-logging.md): Exceptions in reactions, `Reactive.UnhandledException`, `ReactiveException` and programming errors.
+21. [Shutting down](docs/topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
+22. [Async code inside a reaction](docs/topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
+23. [Rules of thumb](docs/topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
+24. [The Reactive attribute and the source generator](docs/topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
 
 ## WPF
 

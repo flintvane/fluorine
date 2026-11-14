@@ -1,6 +1,6 @@
 [← Errors and logging](errors-and-logging.md) · [Topics](../index.md) · [Async code inside a reaction →](async.md)
 
-# 19. Shutting down
+# 21. Shutting down
 
 A shutdown lets a scheduler finish its queued work, disposes its reactors, and returns when that is done.
 

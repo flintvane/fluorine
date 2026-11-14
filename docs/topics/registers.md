@@ -70,6 +70,8 @@ title.Name = "page title";
 
 `ReactiveSortedSet<T>` and `ReactiveSortedDictionary<TKey, TValue>` are the same idea, kept in comparer order ([Reactive sorted sets](reactive-sorted-sets.md), [Reactive sorted dictionaries](reactive-sorted-dictionaries.md)).
 
+`ReactiveArray<T>` is a fixed-length sequence of slots ([Reactive arrays](reactive-arrays.md)). `ReactiveList<T>` is a variable-length sequence: insert and delete shift later positions, and `Contains` follows whether a value occurs at least once ([Reactive lists](reactive-lists.md)).
+
 ---
 
 *Spec references: §3.1a, §7, §12.8; cs 1.1-1.15. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
