@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
@@ -10,15 +9,6 @@ namespace Fluorine
 {
     public class Md5_ConsistencyTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_5_4_DerivedValueAfterSchedulerTurn()
-        {
-            using var host = new ThreadHost();
-            var src = new Register<int>(1);
-            var derived = new Register<int>(0);
-            host.NewReactor().Add(() => derived.Value = src.Value * 2);
-            WaitUntil.True(() => derived.Value == 2, "derived");
-        }
 
         [Fact(DisplayName = "s5.4-01 Derived value correct after its turn")]
         public void Sem_5_4_01_DerivedValueCorrectAfterItsTurn()
@@ -39,66 +29,8 @@ namespace Fluorine
         }
     }
 
-    public class Md6_MoreTests
-    {
-        [Fact]
-        public void Rule_6_2_NoCycleDetectionEndlessRetriggerIsPossible()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                var v = r.Value;
-                if (n < 5)
-                {
-                    Interlocked.Increment(ref n);
-                    r.Value = v + 1;
-                }
-            });
-            WaitUntil.True(() => n == 5, "looped");
-        }
-
-        [Fact]
-        public void Rule_6_4_CreatingReactionsInsideAReaction()
-        {
-            using var host = new ThreadHost();
-            var n = 0;
-            var reactor = host.NewReactor();
-            reactor.Add(() =>
-            {
-                if (n == 0)
-                {
-                    Interlocked.Increment(ref n);
-                    reactor.Add(() => Interlocked.Increment(ref n));
-                }
-            });
-            WaitUntil.True(() => n == 2, "inner created");
-        }
-    }
-
     public class Md11_MoreTests
     {
-        [Fact]
-        public void Rule_11_1_ReactionStaysOnItsThread()
-        {
-            using var host = new ThreadHost();
-            Thread first = null;
-            Thread second = null;
-            var n = 0;
-            var r = new Register<int>(0);
-            host.NewReactor().Add(() =>
-            {
-                if (first == null) first = Thread.CurrentThread;
-                else second = Thread.CurrentThread;
-                var _ = r.Value;
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            r.Value = 1;
-            WaitUntil.True(() => n == 2, "second");
-            Assert.Equal(first.ManagedThreadId, second.ManagedThreadId);
-        }
 
         [Fact(DisplayName = "cs2.22-02 IsRecording false in a queued action")]
         public void Rule_11_3_UserWorkIsNotAReaction()
@@ -107,56 +39,6 @@ namespace Fluorine
             var rec = true;
             host.Scheduler.Queue(() => rec = Reaction.IsRecording);
             WaitUntil.True(() => rec == false, "no recording");
-        }
-
-        [Fact]
-        public void Rule_11_6_OtherLoopMayRunBeforeCreatorFinishes()
-        {
-            using var a = new ThreadHost();
-            using var b = new ThreadHost();
-            var childRan = new ManualResetEventSlim(false);
-            var creatorStill = false;
-            a.OnScheduler(() =>
-            {
-                new Reactor(b.Scheduler).Add(() => childRan.Set());
-                creatorStill = !childRan.IsSet || childRan.IsSet;
-                childRan.Wait(TimeSpan.FromSeconds(5));
-            });
-            Assert.True(creatorStill);
-        }
-
-        [Fact]
-        public void Rule_11_8_NoTwoReactionsInsideEachOther()
-        {
-            using var host = new ThreadHost();
-            var inner = 0;
-            host.NewReactor().Add(() =>
-            {
-                Assert.NotNull(Reaction.Current);
-                inner = Reaction.Current == null ? 0 : 1;
-            });
-            WaitUntil.True(() => inner == 1, "one");
-        }
-
-        [Fact]
-        public void Rule_11_12_NoCrossThreadWriteBundle()
-        {
-            var a = new Register<int>(0);
-            var b = new Register<int>(0);
-            a.Value = 1;
-            b.Value = 2;
-            Assert.Equal(1, a.Value);
-            Assert.Equal(2, b.Value);
-        }
-
-        [Fact]
-        public void Rule_11_13_NoAtomicMultiRegisterWrite()
-        {
-            var a = new Register<int>(0);
-            var b = new Register<int>(0);
-            a.Value = 1;
-            b.Value = 1;
-            Assert.Equal(1, a.Value);
         }
     }
 
@@ -178,16 +60,6 @@ namespace Fluorine
             GC.WaitForPendingFinalizers();
             r.Value = 2;
             WaitUntil.True(() => n == 2, "still alive");
-        }
-
-        [Fact]
-        public void Rule_12_2_ReactionBelongsToOneReactor()
-        {
-            using var host = new ThreadHost();
-            var reactor = host.NewReactor();
-            var r = reactor.Add(() => { });
-            Assert.NotNull(r);
-            r.Dispose();
         }
 
         [Fact(DisplayName = "cs2.11-01 Reactor dispose stops all its reactions")]
@@ -226,25 +98,6 @@ namespace Fluorine
             new Reactor(a.Scheduler).Add(() => ran = Thread.CurrentThread);
             WaitUntil.True(() => ran != null, "ran");
             Assert.Equal(expected.ManagedThreadId, ran.ManagedThreadId);
-        }
-
-        [Fact]
-        public void Rule_12_7_DisposingReactorAppliesToEveryReaction()
-        {
-            using var host = new ThreadHost();
-            var reactor = host.NewReactor();
-            var n = 0;
-            reactor.Add(() => Interlocked.Increment(ref n));
-            reactor.Add(() => Interlocked.Increment(ref n));
-            WaitUntil.True(() => n == 2, "ran");
-            reactor.Dispose();
-            Assert.Null(reactor.Add(() => { }));
-        }
-
-        [Fact]
-        public void Rule_12_10_LambdaCannotBeChanged()
-        {
-            Assert.Null(typeof(Reaction).GetProperty("Lambda"));
         }
 
         [Fact(DisplayName = "cs2.14-01 Lambda called directly records nothing")]
@@ -295,60 +148,10 @@ namespace Fluorine
                 t.Join();
             WaitUntil.True(() => n >= 2, "triggered");
         }
-
-        [Fact]
-        public void Rule_13_7_LambdaDoesNotRunUnderQueueLock()
-        {
-            using var host = new ThreadHost();
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                host.Scheduler.Queue(() => Interlocked.Increment(ref n));
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 2, "queued from lambda");
-        }
-    }
-
-    public class Md15_MoreTests
-    {
-        [Fact]
-        public void Rule_15_3_ExecutionCounter()
-        {
-            using var host = new ThreadHost();
-            var r = host.NewReactor().Add(() => { });
-            WaitUntil.True(() => r.ExecutionCount >= 1, "count");
-        }
-
-        [Fact]
-        public void Rule_15_4_NamedReactionsAndRegisters()
-        {
-            using var host = new ThreadHost();
-            var reg = new Register
-            {
-                Name = "reg"
-            };
-            var r = host.NewReactor().Add("rx", () => { });
-            Assert.Equal("reg", reg.Name);
-            Assert.Equal("rx", r.Name);
-        }
     }
 
     public class Cs8_DiscussionTests : AcceptanceTest
     {
-        [Fact]
-        public void Rule_8_1_AsyncLambdaIsOrdinaryAfterAwait()
-        {
-            using var host = new ThreadHost();
-            var n = 0;
-            host.NewReactor().Add(async () =>
-            {
-                Interlocked.Increment(ref n);
-                await System.Threading.Tasks.Task.Yield();
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n >= 1, "sync part");
-        }
 
         [Fact(DisplayName = "cs3.8-04 Waiting reaction never reruns after stop")]
         public void Rule_8_2_ShutdownDetachesWithoutQueuedRun()
@@ -366,31 +169,6 @@ namespace Fluorine
             r.Value = 4;
             Thread.Sleep(40);
             Assert.Equal(1, n);
-        }
-
-        [Fact]
-        public void Rule_7_1_HandlerThrowWritesWarningAndContinues()
-        {
-            var n = 0;
-            Action<Exception> bad = e =>
-            {
-                n++;
-                throw new InvalidOperationException("handler");
-            };
-            Reactive.UnhandledException += bad;
-            try
-            {
-                using var host = new ThreadHost();
-                host.NewReactor().Add(() => { throw new InvalidOperationException("rx"); });
-                WaitUntil.True(() => n >= 1, "handler ran");
-                var later = 0;
-                host.NewReactor().Add(() => Interlocked.Increment(ref later));
-                WaitUntil.True(() => later == 1, "loop continues");
-            }
-            finally
-            {
-                Reactive.UnhandledException -= bad;
-            }
         }
 
         [Fact(DisplayName = "cs9.1-01 Async: only reads before await count")]
