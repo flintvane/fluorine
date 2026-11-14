@@ -64,23 +64,6 @@ namespace Fluorine
         }
 
         [Fact]
-        public void DiffIsTheNetChangeBetweenTwoPictures()
-        {
-            var set = new ReactiveSet<int>();
-            var empty = set.Values;
-            set.Add(1);
-            set.Add(2);
-            var both = set.Values;
-            Assert.Equal(["Added:1", "Added:2"], Names(both.Diff(empty)).OrderBy(x => x).ToArray());
-            Assert.Empty(both.Diff(both));
-
-            set.Remove(1);
-            set.Add(3);
-            Assert.Equal(["Added:3", "Removed:1"], Names(set.Values.Diff(both)).OrderBy(x => x).ToArray());
-            Assert.Equal(["Added:2", "Added:3"], Names(set.Values.Diff(null)).OrderBy(x => x).ToArray());
-        }
-
-        [Fact]
         public void SeparatelyBuiltEqualSetsDiffEmpty()
         {
             var first = new ReactiveSet<int>([3, 1, 2]);

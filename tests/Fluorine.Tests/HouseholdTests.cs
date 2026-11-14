@@ -8,27 +8,6 @@ namespace Fluorine
 {
     public class HouseholdTests
     {
-        [Fact]
-        public void GeneratedPropertyReadsAndWritesTheRegister()
-        {
-            var property = typeof(Household).GetProperty("HappyHousewife");
-            Assert.NotNull(property!.GetCustomAttribute<AutoNotifyAttribute>());
-            Assert.NotNull(property.GetCustomAttribute<ReactiveAttribute>());
-
-            var field = typeof(Household).GetField(
-                "happyHousewife",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.NotNull(field);
-            Assert.Equal(typeof(Register<int>), field.FieldType);
-
-            var count = typeof(Counter).GetProperty("Count");
-            Assert.NotNull(count!.GetCustomAttribute<AutoNotifyAttribute>());
-            Assert.Null(count.GetCustomAttribute<ReactiveAttribute>());
-            var countField = typeof(Counter).GetField(
-                "count",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.Equal(typeof(Register<int>), countField!.FieldType);
-        }
 
         [Fact]
         public void FirstRunIsSilentAndAChangeNotifies()

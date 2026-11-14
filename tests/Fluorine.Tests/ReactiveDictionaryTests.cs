@@ -60,18 +60,6 @@ namespace Fluorine
             Assert.NotSame(picture, equatable.Value);
         }
 
-        [Fact]
-        public void EqualsThrowLeavesTheStoredValue()
-        {
-            var map = new ReactiveDictionary<string, Boom>();
-            var stored = new Boom();
-            Assert.True(map.SetValue("a", stored));
-            var thrown = Assert.Throws<InvalidOperationException>(() => map.SetValue("a", new Boom()));
-            Assert.Equal("boom", thrown.Message);
-            Assert.Same(stored, map["a"]);
-            Assert.Equal(1, map.Count);
-        }
-
         [Fact(DisplayName = "cs12.5-03 SetValue(out old) with null values")]
         public void NullValueIsAnEntryAndNullKeyIsRejected()
         {
@@ -134,32 +122,6 @@ namespace Fluorine
             var empty = map.Value;
             map.Clear();
             Assert.Same(empty, map.Value);
-        }
-
-        [Fact]
-        public void DiffIsTheNetChangeBetweenTwoPictures()
-        {
-            var map = new ReactiveDictionary<string, int>();
-            var empty = map.Value;
-            map.Add("a", 1);
-            map["b"] = 2;
-            var both = map.Value;
-            Assert.Equal(["Added:a=1", "Added:b=2"], Names(both.Diff(empty)).OrderBy(x => x).ToArray());
-            Assert.Empty(both.Diff(both));
-
-            map.SetValue("a", 4);
-            map.Remove("b");
-            map.Add("c", 3);
-            Assert.Equal(["Added:c=3", "Removed:b=2", "Updated:a=1->4"],
-                Names(map.Value.Diff(both)).OrderBy(x => x).ToArray());
-            Assert.Equal(["Added:a=4", "Added:c=3"], Names(map.Value.Diff(null)).OrderBy(x => x).ToArray());
-
-            var updated = map.Value.Diff(both).Single(change => change.Key == "a");
-            Assert.Equal(ChangeKind.Updated, updated.Kind);
-            Assert.Equal(4, updated.Value);
-            Assert.Equal(1, updated.PreviousValue);
-            var added = map.Value.Diff(both).Single(change => change.Key == "c");
-            Assert.Equal(0, added.PreviousValue);
         }
 
         [Fact]

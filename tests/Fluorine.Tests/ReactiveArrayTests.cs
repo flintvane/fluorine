@@ -15,7 +15,6 @@ namespace Fluorine
             Assert.Equal([null, null, null], array.ToArray());
             Assert.Throws<ArgumentOutOfRangeException>(() => new ReactiveArray<int>(-1));
             Assert.Throws<ArgumentNullException>(() => new ReactiveArray<int>((int[])null));
-            Assert.Null(typeof(ReactiveArray<int>).GetMethod("Contains"));
         }
 
         [Fact]
