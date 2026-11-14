@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0-windows;net10.0-windows</TargetFrameworks>
     <!-- Partial properties are C# 13. The generator fills those in. -->
     <LangVersion>13</LangVersion>
     <IsPackable>false</IsPackable>
@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <!-- Roslyn 4.14 needs Immutable 9; .NET 8 ships 8. -->
     <PackageReference Include="System.Collections.Immutable" Version="9.0.0" Condition="'$(TargetFramework)' == 'net8.0-windows'" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
