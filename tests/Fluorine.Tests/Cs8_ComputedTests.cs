@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Threading;
 using System;
 using Xunit;
@@ -129,19 +128,6 @@ namespace Fluorine
             Assert.Equal(afterSubscribe, Volatile.Read(ref runs));
         }
 
-        [Fact]
-        public void Rule_8_3_UntilFirstRunRegisterKeepsItsValue()
-        {
-            using var host = new ThreadHost();
-            host.OnScheduler(() =>
-            {
-                var reactor = new Reactor(host.Scheduler);
-                var dest = new Register<int>(5);
-                reactor.Computed(dest, () => 9);
-                Assert.Equal(5, dest.Value);
-            });
-        }
-
         [Fact(DisplayName = "cs8.3-01 Computed first run queued, not inline")]
         public void Rule_8_3_01_FirstRunQueuedNotInline()
         {
@@ -177,30 +163,6 @@ namespace Fluorine
             WaitUntil.True(() => dest.Value == 3, "second computation");
             source.Value = 8;
             WaitUntil.True(() => dest.Value == 8, "follows new function");
-        }
-
-        [Fact]
-        public void Rule_8_5_ExceptionLeavesRegisterUnchanged()
-        {
-            using var host = new ThreadHost();
-            var dest = new Register<int>(4);
-            Exception seen = null;
-            Action<Exception> h = e => seen = e;
-            Reactive.UnhandledException += h;
-            try
-            {
-                host.NewReactor().Computed(dest, () =>
-                {
-                    throw new InvalidOperationException("compute");
-                });
-                WaitUntil.True(() => seen != null, "logged");
-                Assert.IsType<InvalidOperationException>(seen);
-                Assert.Equal(4, dest.Value);
-            }
-            finally
-            {
-                Reactive.UnhandledException -= h;
-            }
         }
 
         [Fact(DisplayName = "cs8.5-01 Throwing function: logged, dest kept")]
@@ -369,22 +331,6 @@ namespace Fluorine
             Assert.Single(items);
             Assert.Same(thrown, items[0]);
             Assert.IsNotType<ReactiveException>(items[0]);
-        }
-
-        [Fact]
-        public void Rule_8_7_DisposedReactorReturnsNullAndKeepsLastValue()
-        {
-            using var host = new ThreadHost();
-            var source = new Register<int>(1);
-            var dest = new Register<int>(0);
-            var reactor = host.NewReactor();
-            reactor.Computed(dest, () => source.Value);
-            WaitUntil.True(() => dest.Value == 1, "first");
-            reactor.Dispose();
-            Assert.Null(reactor.Computed(dest, () => 99));
-            source.Value = 2;
-            Thread.Sleep(50);
-            Assert.Equal(1, dest.Value);
         }
 
         [Fact(DisplayName = "cs8.7-01 Computed on disposed reactor is null")]
