@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -533,6 +533,8 @@ namespace Fluorine
                 value = stored.Value;
                 return true;
             }
+
+            internal int IndexOf(TKey key) => BlockTree<Entry>.IndexOf(_root, new Entry(key, default), _order);
 
             public Change[] Diff(Version previous)
             {
