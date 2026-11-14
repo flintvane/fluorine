@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
     <LangVersion>13</LangVersion>
     <IsPackable>false</IsPackable>
     <UseWPF>true</UseWPF>
