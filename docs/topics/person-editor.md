@@ -4,7 +4,7 @@
 
 `demos/PersonEditor` opens the same `Person` in a WinForms window and a WPF window. Typing in either window updates the other. The model has no reference to either UI framework. A second WPF window demonstrates `ObservableCollectionConverter` on a `ReactiveDictionary` and a `ReactiveSortedDictionary`.
 
-The demo targets .NET Framework 4.8, with WPF and WinForms, and uses C# 13. `[Reactive]` partial properties are written by the Fluorine source generator. `Person.Tags` is a `ReactiveSortedSet<string>`: the WPF window shows it through `ObservableCollectionConverter`, and the WinForms window fills a `ListBox` by enumerating the set.
+The demo targets net48, net8.0-windows and net10.0-windows, with WPF and WinForms, and uses C# 13. It references `Fluorine`, `Fluorine.Wpf` and `Fluorine.WinForms`. The namespace is `Fluorine`; WPF XAML uses `assembly=Fluorine.Wpf` for the converter. `[Reactive]` partial properties are written by the Fluorine source generator. `Person.Tags` is a `ReactiveSortedSet<string>`: the WPF window shows it through `ObservableCollectionConverter`, and the WinForms window fills a `ListBox` by enumerating the set.
 
 ## Building and running
 
@@ -81,7 +81,7 @@ static void Main()
 
 ## The WPF window
 
-`PersonWindow` sets `DataContext` to the `Person`. That attaches the bindings in `PersonWindow.xaml`, which subscribe to `PropertyChanged` and so arm the `AutoNotify` property reactions. `Tags` goes through `ObservableCollectionConverter`, which builds an `ObservableCollection<string>` on the dispatcher thread and keeps it in step with the set ([Showing a reactive set in WPF](observable-collections.md)).
+`PersonWindow` sets `DataContext` to the `Person`. That attaches the bindings in `PersonWindow.xaml`, which subscribe to `PropertyChanged` and so arm the `AutoNotify` property reactions. `Tags` goes through `ObservableCollectionConverter`, which builds an `ObservableCollection<string>` on the dispatcher thread and keeps it in step with the set ([Showing a reactive set in WPF](observable-collections.md)). The window maps the namespace with `xmlns:fluorine="clr-namespace:Fluorine;assembly=Fluorine.Wpf"`.
 
 ```xml
 <Window.Resources>

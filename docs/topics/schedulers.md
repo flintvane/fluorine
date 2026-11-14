@@ -12,7 +12,7 @@ A scheduler is an event loop that runs reactions, one at a time, on its own thre
 | `DispatcherScheduler` | a WPF `Dispatcher` | `DispatcherScheduler.AttachToCurrent()` or `DispatcherScheduler.CreateNew(name, initial)` |
 | `WinFormsScheduler` | the WinForms message loop | `WinFormsScheduler.AttachToCurrent()` |
 
-All derive from the abstract class `Scheduler` (cs 3.1).
+All derive from the abstract class `Scheduler` (cs 3.1). `ThreadScheduler` is in the `Fluorine` project. `DispatcherScheduler` is in `Fluorine.Wpf`. `WinFormsScheduler` is in `Fluorine.WinForms`. The namespace is `Fluorine` in each assembly.
 
 ### A loop thread
 

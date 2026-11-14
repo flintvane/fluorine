@@ -2,7 +2,7 @@
 
 # Maintaining these docs
 
-User documentation for the C# implementation of Fluorine (.NET Framework 4.8).
+User documentation for the C# implementation of Fluorine. The core `Fluorine` project targets net48, net8.0 and net10.0. `Fluorine.Wpf` and `Fluorine.WinForms` target net48, net8.0-windows and net10.0-windows.
 
 ## Structure
 

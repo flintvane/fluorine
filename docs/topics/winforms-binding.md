@@ -2,7 +2,7 @@
 
 # 1. Binding a model to WinForms
 
-`FormsReactor` binds WinForms controls to functions that read (and, for text boxes, write) your model. It is a `Reactor`, so its bindings are reactions: they subscribe to whatever registers the read function touches, and they run on the scheduler of the reactor.
+`FormsReactor` binds WinForms controls to functions that read (and, for text boxes, write) your model. It is a `Reactor`, so its bindings are reactions: they subscribe to whatever registers the read function touches, and they run on the scheduler of the reactor. `WinFormsScheduler` and `FormsReactor` are in `Fluorine.WinForms`. `TextConverter` is in `Fluorine`. Reference both projects from a WinForms application. The namespace is `Fluorine`.
 
 Create it on the UI thread after `WinFormsScheduler` is attached, and dispose it before the controls.
 

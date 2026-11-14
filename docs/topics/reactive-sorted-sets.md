@@ -86,7 +86,7 @@ public sealed class Version : IEnumerable<T>
 {
     public int Count { get; }
     public bool Contains(T item);
-    public Change[] Diff(Version previous);
+    public SetChange<T>[] Diff(Version previous);
 }
 ```
 
@@ -106,16 +106,16 @@ reactor.Add(() =>
 });
 ```
 
-`Diff` compares two pictures and returns the net `Added`, `Removed` and `Replaced` items, in comparer order. It does not mark either picture as seen; storing `seen = current` is what remembers the picture you applied. A null previous picture is treated as empty, so `Diff(null)` lists every current member as `Added`, still in order.
+`Diff` compares two pictures and returns the net `Added`, `Removed` and `Updated` items as a `SetChange<T>[]`, in comparer order. It does not mark either picture as seen; storing `seen = current` is what remembers the picture you applied. A null previous picture is treated as empty, so `Diff(null)` lists every current member as `Added`, still in order.
 
 Writes that happen before the reaction next runs are coalesced into one run ([When reactions run](when-reactions-run.md)). `Diff(seen)` then reports the net change since the last stored picture: adding `"Ada"` and `"Byron"` and then removing `"Ada"` appears as `Added: Byron`.
 
 If a run returns before it updates `seen`, the next run still diffs against that older picture and applies everything that has happened since.
 
 ```csharp
-public enum ChangeKind { Added, Removed, Replaced }
+public enum ChangeKind { Added, Removed, Updated }
 
-public readonly struct Change
+public readonly struct SetChange<T>
 {
     public ChangeKind Kind { get; }
     public T Item { get; }
@@ -123,7 +123,7 @@ public readonly struct Change
 }
 ```
 
-`Item` is the added instance, the removed instance, or the instance now stored for `Replaced`. `Previous` is the instance that was stored for `Replaced`, and `default(T)` for `Added` and `Removed`. `Replaced` is reported when both pictures hold an equal element as different instances of a reference type: `Item` is the instance in the newer picture, `Previous` the one in the picture you kept.
+`ChangeKind` and `SetChange<T>` are shared with `ReactiveSet<T>`. `Item` is the added instance, the removed instance, or the instance now stored for `Updated`. `Previous` is the instance that was stored for `Updated`, and `default(T)` for `Added` and `Removed`. `Updated` is reported when both pictures hold an equal element as different instances of a reference type: `Item` is the instance in the newer picture, `Previous` the one in the picture you kept.
 
 ---
 

@@ -8,6 +8,8 @@ Program state lives in registers. Code that must stay in step with that state is
 
 This repository holds the C# implementation: the base library, with schedulers and bindings for both WPF and WinForms.
 
+The core `Fluorine` project targets net48, net8.0 and net10.0. WPF types live in `Fluorine.Wpf` and WinForms types in `Fluorine.WinForms`, each targeting net48, net8.0-windows and net10.0-windows. The namespace is `Fluorine`; WPF XAML uses `assembly=Fluorine.Wpf`.
+
 ## Documentation: using Fluorine from C#
 
 The documentation is in four sections. Read the Guide in order; each topic builds on the ones before it. WPF and WinForms follow the Guide, then the comparison to other frameworks.

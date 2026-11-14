@@ -2,7 +2,7 @@
 
 # 2. Your first reaction
 
-This page builds a complete console program. It shows every piece once; later pages explain each of them in depth.
+This page builds a complete console program. It shows every piece once; later pages explain each of them in depth. Reference the `Fluorine` project. A WPF application also references `Fluorine.Wpf`; a WinForms application also references `Fluorine.WinForms`. Types stay in the `Fluorine` namespace.
 
 ## The program
 

@@ -2,7 +2,7 @@
 
 # 1. AutoNotify: notifying WPF
 
-WPF bindings listen to `INotifyPropertyChanged`. `AutoNotify` is a model base class that raises `PropertyChanged` when a marked getter starts returning a different value (cs 11). The getter reads registers in the usual way, so the notification is just another reaction: it runs on the scheduler where the object was created.
+WPF bindings listen to `INotifyPropertyChanged`. `AutoNotify` is a model base class that raises `PropertyChanged` when a marked getter starts returning a different value (cs 11). It lives in the `Fluorine` project. The getter reads registers in the usual way, so the notification is just another reaction: it runs on the scheduler where the object was created.
 
 ## A model
 
@@ -36,7 +36,7 @@ public class Person : AutoNotify
 }
 ```
 
-Construct the object on the dispatcher thread, after that thread has a `DispatcherScheduler`. `AutoNotify()` creates the object's reactor on `Scheduler.Current` (cs 11.1). In this implementation `AutoNotify` itself derives from `Reactor`, so the object is the reactor: you can call `Add`, `Computed` and `Dispose` on it.
+Construct the object on the dispatcher thread, after that thread has a `DispatcherScheduler` from `Fluorine.Wpf`. `AutoNotify()` creates the object's reactor on `Scheduler.Current` (cs 11.1). In this implementation `AutoNotify` itself derives from `Reactor`, so the object is the reactor: you can call `Add`, `Computed` and `Dispose` on it.
 
 A constructor with no scheduler on the thread throws `ReactiveException`, as `new Reactor()` does (cs 2.2, 11.1). The exception is not logged.
 

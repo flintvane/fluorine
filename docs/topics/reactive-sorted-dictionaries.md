@@ -120,7 +120,7 @@ public sealed class Version : IEnumerable<KeyValuePair<TKey, TValue>>
     public TValue this[TKey key] { get; }
     public IEnumerable<TKey> Keys { get; }
     public IEnumerable<TValue> Values { get; }
-    public Change[] Diff(Version previous);
+    public DictChange<TKey, TValue>[] Diff(Version previous);
 }
 ```
 
@@ -140,7 +140,7 @@ reactor.Add(() =>
 });
 ```
 
-`Diff` compares two pictures and returns the net `Added`, `Removed` and `Updated` entries, in comparer order. It does not mark either picture as seen; storing `seen = current` is what remembers the picture you applied. A null previous picture is treated as empty.
+`Diff` compares two pictures and returns the net `Added`, `Removed` and `Updated` entries as a `DictChange<TKey, TValue>[]`, in comparer order. It does not mark either picture as seen; storing `seen = current` is what remembers the picture you applied. A null previous picture is treated as empty.
 
 Writes that happen before the reaction next runs are coalesced into one run ([When reactions run](when-reactions-run.md)). `Diff(seen)` then reports the net change since the last stored picture. Setting `"a"` to `1` and then to `2` before the next run appears as one `Added` with value `2` when `"a"` was absent from the picture you kept, and as one `Updated` to `2` when `"a"` was already in that picture.
 
@@ -149,7 +149,7 @@ If a run returns before it updates `seen`, the next run still diffs against that
 ```csharp
 public enum ChangeKind { Added, Removed, Updated }
 
-public readonly struct Change
+public readonly struct DictChange<TKey, TValue>
 {
     public ChangeKind Kind { get; }
     public TKey Key { get; }
@@ -157,6 +157,8 @@ public readonly struct Change
     public TValue PreviousValue { get; }
 }
 ```
+
+`ChangeKind` and `DictChange<TKey, TValue>` are shared with `ReactiveDictionary<TKey, TValue>`.
 
 `Value` is the value in the newer picture for `Added` and `Updated`, and the value that left for `Removed`. `PreviousValue` is the value that was replaced for `Updated`, and `default(TValue)` for `Added` and `Removed`. For `Updated` and `Removed`, `Key` is the instance from the picture you kept.
 

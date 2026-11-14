@@ -60,7 +60,7 @@ Any reactor can scan any object. The object does not have to derive from `AutoNo
 
 Partial properties need a recent C# language version. The generator tests and the PersonEditor demo use `<LangVersion>13</LangVersion>`. Writing registers by hand also works with `AutoNotify`.
 
-Add the generator as an analyzer next to the Fluorine project reference:
+Add the generator as an analyzer next to the `Fluorine` project reference. A WPF application also references `Fluorine.Wpf`; a WinForms application also references `Fluorine.WinForms`.
 
 ```xml
 <PropertyGroup>

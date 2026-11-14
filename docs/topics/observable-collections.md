@@ -4,6 +4,8 @@
 
 A WPF `ItemsControl` or `ListBox` binds to an `ObservableCollection`. `ObservableCollectionConverter` is an `IValueConverter` that turns a reactive set or dictionary into an `ObservableCollection` and keeps that collection in step with the source.
 
+The converter is in `Fluorine.Wpf`. Reference that project from a WPF application, along with `Fluorine`. The namespace is `Fluorine`; the XAML mapping uses `assembly=Fluorine.Wpf`.
+
 Put the converter in the window resources and bind the set through it:
 
 ```xml
@@ -36,7 +38,7 @@ The reaction starts when the first `CollectionChanged` handler attaches, typical
 
 - `Added` appends the item.
 - `Removed` moves the last item into the gap and then drops the last slot. A set has no order, so the collection does not shift the items after the hole.
-- `Replaced` puts the new instance at the same index.
+- `Updated` puts the new instance at the same index.
 
 The collection is written only by that reaction. An outside write, such as `Add` or `Clear` on the collection itself, throws `InvalidOperationException`.
 
