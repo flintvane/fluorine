@@ -13,13 +13,13 @@ namespace Fluorine
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ReactiveSet<>))
             {
                 Type t = type.GetGenericArguments()[0];
-                Type properType = typeof(ObservableReactiveCollection<>).MakeGenericType(t);
+                Type properType = typeof(ObservableReactiveSet<>).MakeGenericType(t);
                 return Activator.CreateInstance(properType, value);
             }
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ReactiveSortedSet<>))
             {
                 Type t = type.GetGenericArguments()[0];
-                Type properType = typeof(ObservableReactiveSortedCollection<>).MakeGenericType(t);
+                Type properType = typeof(ObservableReactiveSortedSet<>).MakeGenericType(t);
                 return Activator.CreateInstance(properType, value);
             }
             throw new InvalidOperationException($"Cannot cast {type} to an observable collection");
