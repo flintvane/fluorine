@@ -12,7 +12,7 @@ namespace Fluorine
     /// and does not point back at it, so a version nobody holds can be collected.
     /// Membership uses <see cref="IComparer{T}"/>. Compare returning zero means
     /// the same element. Add leaves an existing member in place. Diff reports
-    /// <see cref="ChangeKind.Replaced"/> when two pictures hold different instances
+    /// <see cref="ChangeKind.Updated"/> when two pictures hold different instances
     /// of the same member. Enumeration and <see cref="Version.Diff"/> run in
     /// comparer order. Comparison results must stay stable while an element is in the set.
     /// </summary>
@@ -304,7 +304,7 @@ namespace Fluorine
                 return new Version(null, comparer);
             }
 
-            public int Count => _root == null ? 0 : _root.Count;
+            public int Count => _root?.Count ?? 0;
 
             public bool Contains(T item)
             {
@@ -313,14 +313,14 @@ namespace Fluorine
 
             internal int IndexOf(T item) => BlockTree<T>.IndexOf(_root, item, _comparer);
 
-            public Change[] Diff(Version previous)
+            public SetChange<T>[] Diff(Version previous)
             {
-                var older = previous == null ? null : previous._root;
+                var older = previous?._root;
                 if (ReferenceEquals(_root, older))
                     return [];
-                var changes = new List<Change>();
+                var changes = new List<SetChange<T>>();
                 BlockTree<T>.Diff(older, _root, _comparer, new Sink(changes));
-                return changes.Count == 0 ? [] : changes.ToArray();
+                return changes.Count == 0 ? [] : [.. changes];
             }
 
             public IEnumerator<T> GetEnumerator() => new BlockTree<T>.Enumerator(_root);
@@ -331,7 +331,7 @@ namespace Fluorine
 
             internal int SharedWith(Version other)
             {
-                return BlockTree<T>.CountShared(_root, other == null ? null : other._root);
+                return BlockTree<T>.CountShared(_root, other?._root);
             }
 
             internal void Check()
@@ -357,47 +357,24 @@ namespace Fluorine
                 return new Version(root, _comparer);
             }
 
-            readonly struct Sink(List<Change> changes) : BlockTree<T>.IDiff
+            readonly struct Sink(List<SetChange<T>> changes) : BlockTree<T>.IDiff
             {
                 public void Added(T item)
                 {
-                    changes.Add(new Change(ChangeKind.Added, item));
+                    changes.Add(new SetChange<T>(ChangeKind.Added, item));
                 }
 
                 public void Removed(T item)
                 {
-                    changes.Add(new Change(ChangeKind.Removed, item));
+                    changes.Add(new SetChange<T>(ChangeKind.Removed, item));
                 }
 
                 public void Matched(T older, T newer)
                 {
                     if (!SameInstance(older, newer))
-                        changes.Add(new Change(ChangeKind.Replaced, newer, older));
+                        changes.Add(new SetChange<T>(ChangeKind.Updated, newer, older));
                 }
             }
-        }
-
-        public enum ChangeKind
-        {
-            Added,
-            Removed,
-            Replaced
-        }
-
-        public readonly struct Change(ChangeKind kind, T item, T previous)
-        {
-            public Change(ChangeKind kind, T item)
-                : this(kind, item, default)
-            {
-            }
-
-            public ChangeKind Kind { get; } = kind;
-
-            /// <summary>The added instance, the removed instance, or the instance now stored.</summary>
-            public T Item { get; } = item;
-
-            /// <summary>The instance that was stored, when <see cref="Kind"/> is <see cref="ChangeKind.Replaced"/>.</summary>
-            public T Previous { get; } = previous;
         }
 
         // Equals already matched. Value types have no instance to tell apart.

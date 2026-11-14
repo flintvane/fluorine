@@ -503,7 +503,7 @@ namespace Fluorine
                 return new Version(null, order);
             }
 
-            public int Count => _root == null ? 0 : _root.Count;
+            public int Count => _root?.Count ?? 0;
 
             public TValue this[TKey key]
             {
@@ -536,14 +536,14 @@ namespace Fluorine
 
             internal int IndexOf(TKey key) => BlockTree<Entry>.IndexOf(_root, new Entry(key, default), _order);
 
-            public Change[] Diff(Version previous)
+            public DictChange<TKey,TValue>[] Diff(Version previous)
             {
-                var older = previous == null ? null : previous._root;
+                var older = previous?._root;
                 if (ReferenceEquals(_root, older))
                     return [];
-                var changes = new List<Change>();
+                var changes = new List<DictChange<TKey,TValue>>();
                 BlockTree<Entry>.Diff(older, _root, _order, new Sink(changes));
-                return changes.Count == 0 ? [] : changes.ToArray();
+                return changes.Count == 0 ? [] : [.. changes];
             }
 
             public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -561,7 +561,7 @@ namespace Fluorine
 
             internal int SharedWith(Version other)
             {
-                return BlockTree<Entry>.CountShared(_root, other == null ? null : other._root);
+                return BlockTree<Entry>.CountShared(_root, other?._root);
             }
 
             internal void Check()
@@ -597,39 +597,24 @@ namespace Fluorine
                 return new Version(root, _order);
             }
 
-            readonly struct Sink(List<Change> changes) : BlockTree<Entry>.IDiff
+            readonly struct Sink(List<DictChange<TKey,TValue>> changes) : BlockTree<Entry>.IDiff
             {
                 public void Added(Entry item)
                 {
-                    changes.Add(new Change(ChangeKind.Added, item.Key, item.Value, default));
+                    changes.Add(new DictChange<TKey,TValue>(ChangeKind.Added, item.Key, item.Value, default));
                 }
 
                 public void Removed(Entry item)
                 {
-                    changes.Add(new Change(ChangeKind.Removed, item.Key, item.Value, default));
+                    changes.Add(new DictChange<TKey,TValue>(ChangeKind.Removed, item.Key, item.Value, default));
                 }
 
                 public void Matched(Entry older, Entry newer)
                 {
                     if (!Equals(older.Value, newer.Value))
-                        changes.Add(new Change(ChangeKind.Updated, older.Key, newer.Value, older.Value));
+                        changes.Add(new DictChange<TKey,TValue>(ChangeKind.Updated, older.Key, newer.Value, older.Value));
                 }
             }
-        }
-
-        public enum ChangeKind
-        {
-            Added,
-            Removed,
-            Updated
-        }
-
-        public readonly struct Change(ChangeKind kind, TKey key, TValue value, TValue previousValue)
-        {
-            public ChangeKind Kind { get; } = kind;
-            public TKey Key { get; } = key;
-            public TValue Value { get; } = value;
-            public TValue PreviousValue { get; } = previousValue;
         }
 
         sealed class PairEnumerator(BlockTree<Entry>.Enumerator inner) : IEnumerator<KeyValuePair<TKey, TValue>>
@@ -692,4 +677,5 @@ namespace Fluorine
             public void Dispose() => inner.Dispose();
         }
     }
+
 }

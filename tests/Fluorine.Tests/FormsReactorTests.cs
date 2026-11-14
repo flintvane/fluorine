@@ -21,14 +21,12 @@ namespace Fluorine
 
             RoundTrip(TextConverters.String, "Ada", "Ada");
             Assert.Equal("", TextConverters.String.Format(null));
-            string parsedText;
-            Assert.True(TextConverters.String.TryParse(null, out parsedText));
+            Assert.True(TextConverters.String.TryParse(null, out var parsedText));
             Assert.Equal("", parsedText);
 
             RoundTrip(TextConverters.Boolean, true, "True");
             RoundTrip(TextConverters.Boolean, false, "False");
-            bool parsedFlag;
-            Assert.True(TextConverters.Boolean.TryParse("true", out parsedFlag));
+            Assert.True(TextConverters.Boolean.TryParse("true", out var parsedFlag));
             Assert.True(parsedFlag);
             Reject(TextConverters.Boolean, "yes");
             Reject(TextConverters.Boolean, "");
@@ -46,8 +44,7 @@ namespace Fluorine
             RoundTrip(TextConverters.DoubleIn(culture), -2.25d, "-2.25");
             RoundTrip(TextConverters.DecimalIn(culture), 12.5m, "12.5");
 
-            int parsed;
-            Assert.True(TextConverters.Int32In(culture).TryParse("  8 ", out parsed));
+            Assert.True(TextConverters.Int32In(culture).TryParse("  8 ", out var parsed));
             Assert.Equal(8, parsed);
             Reject(TextConverters.Int32In(culture), "");
             Reject(TextConverters.Int32In(culture), "1a");
@@ -380,8 +377,7 @@ namespace Fluorine
         static void RoundTrip<T>(TextConverter<T> converter, T value, string text)
         {
             Assert.Equal(text, converter.Format(value));
-            T parsed;
-            Assert.True(converter.TryParse(text, out parsed));
+            Assert.True(converter.TryParse(text, out var parsed));
             Assert.Equal(value, parsed);
         }
 

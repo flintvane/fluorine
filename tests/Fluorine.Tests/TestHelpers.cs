@@ -285,8 +285,10 @@ namespace Fluorine
                 {
                     done.Set();
                 }
-            });
-            thread.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             thread.Start();
             Assert.True(done.WaitOne(2000), "Reactive.Shutdown did not return promptly");
             Assert.Null(error);
@@ -406,8 +408,10 @@ namespace Fluorine
                 {
                     createDone.Set();
                 }
-            });
-            creator.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             creator.Start();
             var shutdownStarted = new ManualResetEvent(false);
             try
@@ -421,8 +425,10 @@ namespace Fluorine
                     Reactive.Shutdown();
                     shutdownSawInitial = Volatile.Read(ref initialDone) == 1;
                     shutdownDone.Set();
-                });
-                caller.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 caller.Start();
                 WaitUntilBlocked(caller, shutdownStarted);
                 if (shutdownDone.WaitOne(0))
@@ -455,8 +461,10 @@ namespace Fluorine
                 scheduler.Shutdown();
                 if (returned != null)
                     returned.Set();
-            });
-            thread.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             thread.Start();
             return thread;
         }
@@ -660,8 +668,10 @@ namespace Fluorine
         public static DispatcherLoop Start()
         {
             var loop = new DispatcherLoop();
-            var thread = new Thread(loop.Run);
-            thread.IsBackground = true;
+            var thread = new Thread(loop.Run)
+            {
+                IsBackground = true
+            };
             thread.SetApartmentState(ApartmentState.STA);
             thread.Name = "acceptance-dispatcher";
             loop.Thread = thread;
@@ -726,8 +736,10 @@ namespace Fluorine
         public static WinFormsLoop Start()
         {
             var loop = new WinFormsLoop();
-            var thread = new Thread(loop.Run);
-            thread.IsBackground = true;
+            var thread = new Thread(loop.Run)
+            {
+                IsBackground = true
+            };
             thread.SetApartmentState(ApartmentState.STA);
             thread.Name = "acceptance-winforms";
             loop.Thread = thread;
@@ -813,7 +825,7 @@ namespace Fluorine
             for (int i = 0; i < 8; i++)
             {
                 int index = i;
-                mirrors[index] = new HashSet<int>();
+                mirrors[index] = [];
                 values[index] = new Dictionary<int, string>();
                 threads[index] = new Thread(() =>
                 {
@@ -881,8 +893,10 @@ namespace Fluorine
                     {
                         errors[index] = ex;
                     }
-                });
-                threads[index].IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 threads[index].Start();
             }
             foreach (var thread in threads)
@@ -905,8 +919,7 @@ namespace Fluorine
                     else
                     {
                         Assert.Equal(expected, dc.ContainsKey(key));
-                        string v;
-                        Assert.Equal(expected, dc.TryGetValue(key, out v));
+                        Assert.Equal(expected, dc.TryGetValue(key, out var v));
                         if (expected)
                             Assert.Equal(values[i][id], v);
                     }
@@ -995,7 +1008,7 @@ namespace Fluorine
             sc.Remove(k1);
             Harness.Barrier(s);
             Assert.Equal(3, n);
-            Assert.Equal(new[] { false, true, false }, seen.ToArray());
+            Assert.Equal([false, true, false], seen.ToArray());
         }
 
         protected static void PresenceAddRemoveDict(Action<ReactiveDictionary<K, string>> add)
@@ -1011,7 +1024,7 @@ namespace Fluorine
             dc.Remove(k1);
             Harness.Barrier(s);
             Assert.Equal(3, n);
-            Assert.Equal(new[] { false, true, false }, seen.ToArray());
+            Assert.Equal([false, true, false], seen.ToArray());
         }
 
         protected static void AssertRose(ref int n, Action write, Scheduler s)
@@ -1046,57 +1059,7 @@ namespace Fluorine
             if (value.A != value.B || value.B != value.C || value.C != value.D)
                 Interlocked.Increment(ref mismatch);
         }
-
-        protected static void AssertVersionSurface(Type collection, bool set)
-        {
-            var version = collection.GetNestedType("Version");
-            Assert.NotNull(version);
-            Assert.NotNull(version.GetProperty("Count"));
-            var diff = version.GetMethod("Diff");
-            Assert.NotNull(diff);
-            Assert.True(diff.ReturnType.IsArray);
-            Assert.Equal("Change", diff.ReturnType.GetElementType().Name);
-            if (set)
-            {
-                Assert.NotNull(version.GetMethod("Contains"));
-            }
-            else
-            {
-                Assert.NotNull(version.GetMethod("ContainsKey"));
-                Assert.NotNull(version.GetMethod("TryGetValue"));
-                var indexer = version.GetProperty("Item");
-                Assert.NotNull(indexer);
-                Assert.NotNull(indexer.GetGetMethod());
-                Assert.Null(indexer.GetSetMethod());
-            }
-
-            var change = collection.GetNestedType("Change");
-            Assert.NotNull(change);
-            Assert.NotNull(change.GetProperty("Kind"));
-            Assert.Equal("ChangeKind", change.GetProperty("Kind").PropertyType.Name);
-            if (set)
-            {
-                Assert.NotNull(change.GetProperty("Item"));
-                Assert.NotNull(change.GetProperty("Previous"));
-            }
-            else
-            {
-                Assert.NotNull(change.GetProperty("Key"));
-                Assert.NotNull(change.GetProperty("Value"));
-                Assert.NotNull(change.GetProperty("PreviousValue"));
-            }
-
-            var kind = collection.GetNestedType("ChangeKind");
-            Assert.NotNull(kind);
-            Assert.True(kind.IsEnum);
-            Assert.True(Enum.IsDefined(kind, Enum.Parse(kind, "Added")));
-            Assert.True(Enum.IsDefined(kind, Enum.Parse(kind, "Removed")));
-            if (set)
-                Assert.True(Enum.IsDefined(kind, Enum.Parse(kind, "Replaced")));
-            else
-                Assert.True(Enum.IsDefined(kind, Enum.Parse(kind, "Updated")));
-        }
-
+        
         [MethodImpl(MethodImplOptions.NoInlining)]
         protected static WeakReference MakeSetVersion(out ReactiveSet<K>.Version v1)
         {
@@ -1126,14 +1089,14 @@ namespace Fluorine
             return wr;
         }
 
-        protected static string SetTag(ReactiveSet<K>.Change change)
+        protected static string SetTag(SetChange<K> change)
         {
             string item = change.Item == null ? "null" : change.Item.Id.ToString();
             string previous = change.Previous == null ? "null" : change.Previous.Id.ToString();
             return change.Kind + ":" + item + ":" + previous;
         }
 
-        protected static string DictTag(ReactiveDictionary<K, string>.Change change)
+        protected static string DictTag(DictChange<K, string> change)
         {
             string key = change.Key == null ? "null" : change.Key.Id.ToString();
             return change.Kind + ":" + key + ":" + change.Value + ":" + change.PreviousValue;
@@ -1147,12 +1110,12 @@ namespace Fluorine
             return tags;
         }
 
-        protected static void AssertSetTags(ReactiveSet<K>.Change[] actual, params string[] expected)
+        protected static void AssertSetTags(SetChange<K>[] actual, params string[] expected)
         {
             AssertMultiset(Tags(actual, SetTag), expected);
         }
 
-        protected static void AssertDictTags(ReactiveDictionary<K, string>.Change[] actual, params string[] expected)
+        protected static void AssertDictTags(DictChange<K, string>[] actual, params string[] expected)
         {
             AssertMultiset(Tags(actual, DictTag), expected);
         }
@@ -1244,8 +1207,10 @@ namespace Fluorine
             var threads = new Thread[count];
             for (int i = 0; i < count; i++)
             {
-                threads[i] = new Thread(() => body());
-                threads[i].IsBackground = true;
+                threads[i] = new Thread(() => body())
+                {
+                    IsBackground = true
+                };
                 threads[i].Start();
             }
             return threads;
@@ -1298,8 +1263,10 @@ namespace Fluorine
                     {
                         done.Set();
                     }
-                });
-                thread.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 thread.Start();
                 if (!done.WaitOne(Harness.TimeoutMs))
                     throw new TimeoutException("equality re-entered the register and deadlocked");

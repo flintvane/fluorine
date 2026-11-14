@@ -733,8 +733,10 @@ namespace Fluorine
                     {
                         done.Set();
                     }
-                });
-                thread.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 thread.Start();
                 Assert.True(done.WaitOne(1000), "second Shutdown did not return promptly");
                 Assert.Null(error);
@@ -843,8 +845,10 @@ namespace Fluorine
                 {
                     started.Set();
                     Reactive.Shutdown();
-                });
-                caller.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 caller.Start();
                 Harness.WaitUntilBlocked(caller, started);
                 for (int i = 0; i < holds.Length; i++)
@@ -898,8 +902,10 @@ namespace Fluorine
                 started.Set();
                 Reactive.Shutdown();
                 returned.Set();
-            });
-            caller.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             try
             {
                 caller.Start();
@@ -970,8 +976,10 @@ namespace Fluorine
                 {
                     done.Set();
                 }
-            });
-            thread.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             thread.Start();
             Assert.True(done.WaitOne(Harness.TimeoutMs), "Reactive.Shutdown hung on a finished scheduler");
             Assert.Null(error);
@@ -1106,8 +1114,10 @@ namespace Fluorine
                 seen = Scheduler.ForThread(Thread.CurrentThread);
                 ran = true;
                 done.Set();
-            });
-            thread.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             thread.Start();
             Harness.Wait(done, "plain thread");
             Assert.True(ran);

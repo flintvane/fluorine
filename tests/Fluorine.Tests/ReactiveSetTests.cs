@@ -60,7 +60,7 @@ namespace Fluorine
             Assert.Equal([Change(false, 1), Change(false, 2), Change(false, 3)],
                 Names(set.Value.Diff(before)).OrderBy(x => x).ToArray());
             set.Clear();
-            Assert.Empty(set.Value.Diff(before).Where(c => c.Kind == ReactiveSet<int>.ChangeKind.Added));
+            Assert.Empty(set.Value.Diff(before).Where(c => c.Kind == ChangeKind.Added));
         }
 
         [Fact]
@@ -128,8 +128,8 @@ namespace Fluorine
             Assert.Equal(plainMirror.Count, plain.Count);
             AssertSameMembers(plainMirror, plain);
             var sinceMark = plain.Value.Diff(marked);
-            var added = new HashSet<int>(sinceMark.Where(c => c.Kind == ReactiveSet<int>.ChangeKind.Added).Select(c => c.Item));
-            var removed = new HashSet<int>(sinceMark.Where(c => c.Kind == ReactiveSet<int>.ChangeKind.Removed).Select(c => c.Item));
+            var added = new HashSet<int>(sinceMark.Where(c => c.Kind == ChangeKind.Added).Select(c => c.Item));
+            var removed = new HashSet<int>(sinceMark.Where(c => c.Kind == ChangeKind.Removed).Select(c => c.Item));
             var markedItems = new HashSet<int>(marked);
             Assert.Equal(plainMirror.Where(item => !markedItems.Contains(item)).OrderBy(x => x), added.OrderBy(x => x));
             Assert.Equal(markedItems.Where(item => !plainMirror.Contains(item)).OrderBy(x => x), removed.OrderBy(x => x));
@@ -371,7 +371,7 @@ namespace Fluorine
             Assert.True(set.Remove(first));
             Assert.True(set.Add(second));
             var net = Assert.Single(set.Value.Diff(before));
-            Assert.Equal(ReactiveSet<Entity>.ChangeKind.Replaced, net.Kind);
+            Assert.Equal(ChangeKind.Updated, net.Kind);
             Assert.Same(second, net.Item);
             Assert.Same(first, net.Previous);
         }
@@ -408,7 +408,7 @@ namespace Fluorine
 
         static string Change(bool added, int item) => (added ? "Added:" : "Removed:") + item;
 
-        static IEnumerable<string> Names<T>(ReactiveSet<T>.Change[] changes) => changes.Select(change => change.Kind + ":" + change.Item);
+        static IEnumerable<string> Names<T>(SetChange<T>[] changes) => changes.Select(change => change.Kind + ":" + change.Item);
 
         sealed class Entity(int id, string name)
         {
@@ -489,25 +489,23 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.13-06")]
         public void Rule_12_13_06_SetDiffReportsReplacedForOtherInstance()
         {
-            var sc = new ReactiveSet<K>();
-            sc.Add(k1);
+            var sc = new ReactiveSet<K> { k1 };
             var v1 = sc.Value;
             sc.Remove(k1);
             sc.Add(k1p);
             var v2 = sc.Value;
             var forward = v2.Diff(v1);
             Assert.Equal(1, forward.Length);
-            Assert.Equal(ReactiveSet<K>.ChangeKind.Replaced, forward[0].Kind);
+            Assert.Equal(ChangeKind.Updated, forward[0].Kind);
             Assert.True(ReferenceEquals(forward[0].Item, k1p));
             Assert.True(ReferenceEquals(forward[0].Previous, k1));
             var back = v1.Diff(v2);
             Assert.Equal(1, back.Length);
-            Assert.Equal(ReactiveSet<K>.ChangeKind.Replaced, back[0].Kind);
+            Assert.Equal(ChangeKind.Updated, back[0].Kind);
             Assert.True(ReferenceEquals(back[0].Item, k1));
             Assert.True(ReferenceEquals(back[0].Previous, k1p));
 
-            var ints = new ReactiveSet<int>();
-            ints.Add(1);
+            var ints = new ReactiveSet<int> { 1 };
             var w1 = ints.Value;
             ints.Remove(1);
             ints.Add(1);

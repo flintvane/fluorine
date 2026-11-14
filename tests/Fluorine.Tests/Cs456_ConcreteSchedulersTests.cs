@@ -116,8 +116,10 @@ namespace Fluorine
                 {
                     createDone.Set();
                 }
-            });
-            creator.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             creator.Start();
             var shutdownStarted = new ManualResetEvent(false);
             try
@@ -132,8 +134,10 @@ namespace Fluorine
                     Reactive.Shutdown();
                     shutdownSawInitial = Volatile.Read(ref initialDone) == 1;
                     shutdownDone.Set();
-                });
-                caller.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 caller.Start();
                 WaitUntilBlocked(caller, shutdownStarted);
                 Assert.False(shutdownDone.WaitOne(0));
@@ -207,8 +211,10 @@ namespace Fluorine
                     {
                         done.Set();
                     }
-                });
-                waiter.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 waiter.Start();
                 Assert.True(done.WaitOne(2000), "Reactive.Shutdown did not return promptly");
                 Assert.Null(error);
@@ -696,8 +702,10 @@ namespace Fluorine
                             ranOn = Thread.CurrentThread;
                             ran.Set();
                         });
-                    });
-                    starter.IsBackground = true;
+                    })
+                    {
+                        IsBackground = true
+                    };
                     starter.Start();
                     Assert.True(starter.Join(500), "Queue blocked while the dispatcher was busy");
                     Assert.False(ran.WaitOne(0));
@@ -731,8 +739,10 @@ namespace Fluorine
                 {
                     loop.Scheduler.Shutdown();
                     done.Set();
-                });
-                thread.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 thread.Start();
                 Assert.True(done.WaitOne(Harness.TimeoutMs), "Shutdown did not complete");
             }
@@ -795,8 +805,10 @@ namespace Fluorine
                     {
                         done.Set();
                     }
-                });
-                plain.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 plain.Start();
                 Harness.Wait(done, "plain attach");
                 Assert.IsType<ReactiveException>(error);
@@ -820,8 +832,10 @@ namespace Fluorine
                     {
                         done2.Set();
                     }
-                });
-                other.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 other.Start();
                 Harness.Wait(done2, "other context");
                 Assert.IsType<ReactiveException>(error);
@@ -892,8 +906,10 @@ namespace Fluorine
                     {
                         forms.Scheduler.Queue(() => { });
                         finished.Set();
-                    });
-                    thread.IsBackground = true;
+                    })
+                    {
+                        IsBackground = true
+                    };
                     thread.Start();
                     Assert.True(finished.WaitOne(500), "Queue blocked");
                 }
@@ -1067,8 +1083,10 @@ namespace Fluorine
                     {
                         done.Set();
                     }
-                });
-                thread.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 thread.Start();
                 Harness.Wait(done, "reactor without scheduler");
                 Assert.IsType<ReactiveException>(thrown);
@@ -1171,8 +1189,10 @@ namespace Fluorine
                     {
                         error = ex;
                     }
-                });
-                reader.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 reader.Start();
                 Assert.True(reader.Join(Harness.TimeoutMs));
                 Assert.Null(error);
@@ -1202,8 +1222,10 @@ namespace Fluorine
         [Fact]
         public void Rule_7_5_DiagnosticsModeIsImplementationDefined()
         {
-            var r = new Register();
-            r.Name = "diag";
+            var r = new Register
+            {
+                Name = "diag"
+            };
             Assert.Equal("diag", r.Name);
         }
 
@@ -1283,8 +1305,10 @@ namespace Fluorine
                 {
                     done.Set();
                 }
-            });
-            thread.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             thread.Start();
             Harness.Wait(done, "winforms without context");
             Assert.IsType<ReactiveException>(error);

@@ -19,17 +19,17 @@ class ObservableReactiveSortedSet<T>(ReactiveSortedSet<T> set) : ObservableReact
         Write(() =>
         {
             for (var i = changes.Length - 1; i >= 0; i--)
-                if (changes[i].Kind == ReactiveSortedSet<T>.ChangeKind.Removed)
+                if (changes[i].Kind == ChangeKind.Removed)
                     RemoveAt(_applied.IndexOf(changes[i].Item));
 
             foreach (var change in changes)
             {
                 switch (change.Kind)
                 {
-                    case ReactiveSortedSet<T>.ChangeKind.Added:
+                    case ChangeKind.Added:
                         Insert(current.IndexOf(change.Item), change.Item);
                         break;
-                    case ReactiveSortedSet<T>.ChangeKind.Replaced:
+                    case ChangeKind.Updated:
                         this[current.IndexOf(change.Item)] = change.Item;
                         break;
                 }

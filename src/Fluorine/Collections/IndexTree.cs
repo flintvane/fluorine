@@ -130,13 +130,13 @@ namespace Fluorine
             {
                 if (index != 0)
                     throw new ArgumentOutOfRangeException(nameof(index));
-                return new Leaf(new[] { item });
+                return new Leaf([item]);
             }
 
             var edit = InsertNode(root, index, item);
             if (edit.Split == null)
                 return edit.Node;
-            return new Branch(new[] { edit.Node, edit.Split });
+            return new Branch([edit.Node, edit.Split]);
         }
 
         internal static Node RemoveAt(Node root, int index)
@@ -424,7 +424,7 @@ namespace Fluorine
 
             if (list.Count == 0)
                 return null;
-            return new Branch(list.ToArray());
+            return new Branch([.. list]);
         }
 
         static void FixUnderfull(List<Node> siblings, int index)

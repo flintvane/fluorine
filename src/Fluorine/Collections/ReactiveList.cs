@@ -46,7 +46,7 @@ namespace Fluorine
                 NoteAdded(item, out _);
             }
 
-            _version = buffer.Count == 0 ? _empty : Version.FromItems(buffer.ToArray());
+            _version = buffer.Count == 0 ? _empty : Version.FromItems([.. buffer]);
         }
 
         public Version Value
@@ -491,7 +491,7 @@ namespace Fluorine
                     matches.Add(watch);
             }
 
-            return matches.ToArray();
+            return [.. matches];
         }
 
         IndexWatch[] WatchesBefore(int count)
@@ -503,7 +503,7 @@ namespace Fluorine
                     matches.Add(watch);
             }
 
-            return matches.ToArray();
+            return [.. matches];
         }
 
         Presence[] SnapshotPresences()
@@ -712,7 +712,7 @@ namespace Fluorine
                 var older = previous == null ? null : previous._root;
                 var olderCount = previous == null ? 0 : previous.Count;
                 if (ReferenceEquals(_root, older))
-                    return new Change[0];
+                    return [];
                 var changes = new List<Change>();
                 var limit = olderCount < Count ? olderCount : Count;
                 var index = 0;
@@ -736,7 +736,7 @@ namespace Fluorine
                     changes.Add(new Change(ChangeKind.Added, added, IndexTree<T>.Get(_root, added), default(T)));
                 for (var removed = limit; removed < olderCount; removed++)
                     changes.Add(new Change(ChangeKind.Removed, removed, IndexTree<T>.Get(older, removed), default(T)));
-                return changes.Count == 0 ? new Change[0] : changes.ToArray();
+                return changes.Count == 0 ? [] : [.. changes];
             }
 
             public IEnumerator<T> GetEnumerator() => new IndexTree<T>.Enumerator(_root);

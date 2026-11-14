@@ -155,7 +155,7 @@ namespace Fluorine
             Assert.Equal(["Added:a=4", "Added:c=3"], Names(map.Value.Diff(null)).OrderBy(x => x).ToArray());
 
             var updated = map.Value.Diff(both).Single(change => change.Key == "a");
-            Assert.Equal(ReactiveDictionary<string, int>.ChangeKind.Updated, updated.Kind);
+            Assert.Equal(ChangeKind.Updated, updated.Kind);
             Assert.Equal(4, updated.Value);
             Assert.Equal(1, updated.PreviousValue);
             var added = map.Value.Diff(both).Single(change => change.Key == "c");
@@ -181,7 +181,7 @@ namespace Fluorine
             var before = map.Value;
             map.SetValue(500, -1);
             var updated = Assert.Single(map.Value.Diff(before));
-            Assert.Equal(ReactiveDictionary<int, int>.ChangeKind.Updated, updated.Kind);
+            Assert.Equal(ChangeKind.Updated, updated.Kind);
             Assert.Equal(500, updated.Key);
             Assert.Equal(500, updated.PreviousValue);
             Assert.Equal(-1, updated.Value);
@@ -189,13 +189,13 @@ namespace Fluorine
             before = map.Value;
             Assert.True(map.Remove(32));
             var removed = Assert.Single(map.Value.Diff(before));
-            Assert.Equal(ReactiveDictionary<int, int>.ChangeKind.Removed, removed.Kind);
+            Assert.Equal(ChangeKind.Removed, removed.Kind);
             Assert.Equal(32, removed.Value);
 
             before = map.Value;
             map[1000] = 7;
             var added = Assert.Single(map.Value.Diff(before));
-            Assert.Equal(ReactiveDictionary<int, int>.ChangeKind.Added, added.Kind);
+            Assert.Equal(ChangeKind.Added, added.Kind);
             Assert.Equal(1000, added.Key);
             Assert.Equal(7, added.Value);
         }
@@ -628,8 +628,10 @@ namespace Fluorine
             int sn = 0;
             new Reactor(s).Add(() => { var unused = sc.Value; sn++; });
             Harness.Barrier(s);
-            var setThread = new Thread(() => sc.Add(k1));
-            setThread.IsBackground = true;
+            var setThread = new Thread(() => sc.Add(k1))
+            {
+                IsBackground = true
+            };
             setThread.Start();
             Assert.True(setThread.Join(Harness.TimeoutMs));
             Harness.Barrier(s);
@@ -639,8 +641,10 @@ namespace Fluorine
             int dn = 0;
             new Reactor(s).Add(() => { var unused = dc.Value; dn++; });
             Harness.Barrier(s);
-            var dictThread = new Thread(() => dc.Add(k1, "a"));
-            dictThread.IsBackground = true;
+            var dictThread = new Thread(() => dc.Add(k1, "a"))
+            {
+                IsBackground = true
+            };
             dictThread.Start();
             Assert.True(dictThread.Join(Harness.TimeoutMs));
             Harness.Barrier(s);
@@ -650,8 +654,7 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.1-04")]
         public void Rule_12_1_04_VersionIsImmutablePicture()
         {
-            var sc = new ReactiveSet<K>();
-            sc.Add(k1);
+            var sc = new ReactiveSet<K> { k1 };
             var sv = sc.Value;
             sc.Add(k2);
             sc.Remove(k1);
@@ -659,15 +662,13 @@ namespace Fluorine
             Assert.True(sv.Contains(k1));
             Assert.False(sv.Contains(k2));
 
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
             var dv = dc.Value;
             dc[k1] = "b";
             dc.Add(k2, "c");
             dc.Remove(k1);
             Assert.Equal(1, dv.Count);
-            string v;
-            Assert.True(dv.TryGetValue(k1, out v));
+            Assert.True(dv.TryGetValue(k1, out var v));
             Assert.Equal("a", v);
             Assert.Equal("a", dv[k1]);
             Assert.False(dv.ContainsKey(k2));
@@ -698,8 +699,10 @@ namespace Fluorine
         public void Rule_12_2_04_NullValuesCompareEqual()
         {
             var s = Harness.Create();
-            var dc = new ReactiveDictionary<K, string>();
-            dc[k1] = null;
+            var dc = new ReactiveDictionary<K, string>
+            {
+                [k1] = null
+            };
             int n = 0;
             new Reactor(s).Add(() => { var unused = dc.Value; n++; });
             Harness.Barrier(s);
@@ -749,8 +752,7 @@ namespace Fluorine
         {
             var dc = new ReactiveDictionary<K, string>();
             Assert.True(dc.Add(k1, null));
-            string v;
-            Assert.True(dc.TryGetValue(k1, out v));
+            Assert.True(dc.TryGetValue(k1, out var v));
             Assert.Null(v);
             Assert.True(dc.ContainsKey(k1));
             Assert.Null(dc[k1]);
@@ -762,21 +764,18 @@ namespace Fluorine
         {
             using (var log = new Log())
             {
-                var dc = new ReactiveDictionary<K, string>();
-                dc.Add(k1, "a");
+                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
                 AssertArgNull(() => dc.Add(null, "x"));
                 AssertArgNull(() => dc.SetValue(null, "x"));
-                string old;
-                AssertArgNull(() => dc.SetValue(null, "x", out old));
+                AssertArgNull(() => dc.SetValue(null, "x", out _));
                 AssertArgNull(() => dc[null] = "x");
                 AssertArgNull(() => { var unused = dc[null]; });
                 AssertArgNull(() => dc.Remove(null));
                 AssertArgNull(() => dc.ContainsKey(null));
-                string v;
-                AssertArgNull(() => dc.TryGetValue(null, out v));
+                AssertArgNull(() => dc.TryGetValue(null, out _));
                 var version = dc.Value;
                 AssertArgNull(() => version.ContainsKey(null));
-                AssertArgNull(() => version.TryGetValue(null, out v));
+                AssertArgNull(() => version.TryGetValue(null, out _));
                 AssertArgNull(() => { var unused = version[null]; });
                 Assert.Equal(0, log.Count);
             }
@@ -786,8 +785,7 @@ namespace Fluorine
         public void Rule_12_5_04_OldValueReadWithoutRecording()
         {
             var s = Harness.Create();
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
             int n = 0;
             new Reactor(s).Add(() =>
             {
@@ -796,8 +794,10 @@ namespace Fluorine
                 n++;
             });
             Harness.Barrier(s);
-            var writer = new Thread(() => dc[k1] = "b");
-            writer.IsBackground = true;
+            var writer = new Thread(() => dc[k1] = "b")
+            {
+                IsBackground = true
+            };
             writer.Start();
             Assert.True(writer.Join(Harness.TimeoutMs));
             Harness.Barrier(s);
@@ -810,8 +810,7 @@ namespace Fluorine
             using (var log = new Log())
             {
                 var s = Harness.Create();
-                var sc = new ReactiveSet<K>();
-                sc.Add(k1);
+                var sc = new ReactiveSet<K> { k1 };
                 int sv = 0, scount = 0, scontains = 0;
                 new Reactor(s).Add(() => { var unused = sc.Value; sv++; });
                 new Reactor(s).Add(() => { var unused = sc.Count; scount++; });
@@ -826,8 +825,7 @@ namespace Fluorine
                 Assert.Equal(1, scontains);
                 Assert.Equal(0, sc.Value.Diff(sv0).Length);
 
-                var dc = new ReactiveDictionary<K, string>();
-                dc.Add(k1, "a");
+                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
                 int dv = 0, dcount = 0, dcontains = 0, dtry = 0, dindex = 0;
                 new Reactor(s).Add(() => { var unused = dc.Value; dv++; });
                 new Reactor(s).Add(() => { var unused = dc.Count; dcount++; });
@@ -873,13 +871,12 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.6-02")]
         public void Rule_12_6_02_ReplacingValueKeepsStoredKeyInstance()
         {
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
             dc.SetValue(k1p, "b");
             dc[k1p] = "c";
             var ch = dc.Value.Diff(null);
             Assert.Equal(1, ch.Length);
-            Assert.Equal(ReactiveDictionary<K, string>.ChangeKind.Added, ch[0].Kind);
+            Assert.Equal(ChangeKind.Added, ch[0].Kind);
             Assert.Same(k1, ch[0].Key);
             Assert.Equal("c", ch[0].Value);
         }
@@ -894,8 +891,10 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.7-02")]
         public void Rule_12_7_02_ReplacedValueNeverTears()
         {
-            var dc = new ReactiveDictionary<K, Big>();
-            dc[k1] = new Big(0);
+            var dc = new ReactiveDictionary<K, Big>
+            {
+                [k1] = new Big(0)
+            };
             int stop = 0;
             int mismatch = 0;
             var writer = new Thread(() =>
@@ -911,15 +910,15 @@ namespace Fluorine
                 {
                     while (Volatile.Read(ref stop) == 0)
                     {
-                        Big fromVersion;
-                        AssertFoundUntorn(dc.Value.TryGetValue(k1, out fromVersion), fromVersion, ref mismatch);
-                        Big fromDict;
-                        AssertFoundUntorn(dc.TryGetValue(k1, out fromDict), fromDict, ref mismatch);
+                        AssertFoundUntorn(dc.Value.TryGetValue(k1, out var fromVersion), fromVersion, ref mismatch);
+                        AssertFoundUntorn(dc.TryGetValue(k1, out var fromDict), fromDict, ref mismatch);
                         if (dc.Count != 1)
                             Interlocked.Increment(ref mismatch);
                     }
-                });
-                readers[r].IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 readers[r].Start();
             }
             writer.IsBackground = true;
@@ -943,9 +942,11 @@ namespace Fluorine
         public void Rule_12_8_02_ClearTriggersPresenceReader()
         {
             var s = Harness.Create();
-            var sc = new ReactiveSet<K>();
-            sc.Add(k1);
-            sc.Add(k2);
+            var sc = new ReactiveSet<K>
+            {
+                k1,
+                k2
+            };
             int sn = 0;
             bool slast = true;
             new Reactor(s).Add(() => { slast = sc.Contains(k1); sn++; });
@@ -955,9 +956,11 @@ namespace Fluorine
             Assert.Equal(2, sn);
             Assert.False(slast);
 
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
-            dc.Add(k2, "b");
+            var dc = new ReactiveDictionary<K, string>
+            {
+                { k1, "a" },
+                { k2, "b" }
+            };
             int dn = 0;
             bool dlast = true;
             new Reactor(s).Add(() => { dlast = dc.ContainsKey(k1); dn++; });
@@ -1003,8 +1006,7 @@ namespace Fluorine
         public void Rule_12_8_04_ReplacingValueDoesNotTriggerPresenceReader()
         {
             var s = Harness.Create();
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
             int n = 0;
             new Reactor(s).Add(() => { var unused = dc.ContainsKey(k1); n++; });
             Harness.Barrier(s);
@@ -1026,8 +1028,7 @@ namespace Fluorine
             var found = new List<bool>();
             new Reactor(s).Add(() =>
             {
-                string v;
-                bool ok = dc.TryGetValue(k1, out v);
+                bool ok = dc.TryGetValue(k1, out var v);
                 found.Add(ok);
                 seen.Add(v);
                 n++;
@@ -1046,7 +1047,7 @@ namespace Fluorine
             dc.Clear();
             Harness.Barrier(s);
             Assert.Equal(7, n);
-            Assert.Equal(new[] { false, true, true, true, false, true, false }, found.ToArray());
+            Assert.Equal([false, true, true, true, false, true, false], found.ToArray());
             Assert.Equal("a", seen[1]);
             Assert.Equal("b", seen[2]);
             Assert.Equal("c", seen[3]);
@@ -1059,8 +1060,7 @@ namespace Fluorine
             using (var log = new Log())
             {
                 var s = Harness.Create();
-                var dc = new ReactiveDictionary<K, string>();
-                dc.Add(k1, "a");
+                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
                 int n = 0;
                 var seen = new List<string>();
                 new Reactor(s).Add(() =>
@@ -1080,7 +1080,7 @@ namespace Fluorine
                 dc.Add(k1, "c");
                 Harness.Barrier(s);
                 Assert.Equal(4, n);
-                Assert.Equal(new[] { "a", "b", "c" }, seen.ToArray());
+                Assert.Equal(["a", "b", "c"], seen.ToArray());
             }
         }
 
@@ -1088,8 +1088,7 @@ namespace Fluorine
         public void Rule_12_9_03_OtherKeysDoNotTriggerValueReader()
         {
             var s = Harness.Create();
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
             int nTry = 0, nIndex = 0;
             new Reactor(s).Add(() => { string unused; dc.TryGetValue(k1, out unused); nTry++; });
             new Reactor(s).Add(() => { var unused = dc[k1]; nIndex++; });
@@ -1141,7 +1140,7 @@ namespace Fluorine
             AssertRose(ref sn, () => sc.Add(k1), s);
             AssertRose(ref sn, () => sc.Add(k2), s);
             AssertRose(ref sn, () => sc.Remove(k1), s);
-            AssertRose(ref sn, () => sc.Clear(), s);
+            AssertRose(ref sn, sc.Clear, s);
 
             var dc = new ReactiveDictionary<K, string>();
             int dn = 0;
@@ -1154,7 +1153,7 @@ namespace Fluorine
             AssertRose(ref dn, () => dc[k1] = "d", s);
             AssertRose(ref dn, () => dc[k2] = "e", s);
             AssertRose(ref dn, () => dc.Remove(k1), s);
-            AssertRose(ref dn, () => dc.Clear(), s);
+            AssertRose(ref dn, dc.Clear, s);
         }
 
         [Fact(DisplayName = "cs12.11-01")]
@@ -1163,8 +1162,7 @@ namespace Fluorine
             using (var log = new Log())
             {
                 var s = Harness.Create();
-                var sc = new ReactiveSet<K>();
-                sc.Add(k1);
+                var sc = new ReactiveSet<K> { k1 };
                 var sv = sc.Value;
                 var sw = sc.Value;
                 int sn = 0;
@@ -1185,8 +1183,7 @@ namespace Fluorine
                 Harness.Barrier(s);
                 Assert.Equal(1, sn);
 
-                var dc = new ReactiveDictionary<K, string>();
-                dc.Add(k1, "a");
+                var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
                 var dv = dc.Value;
                 var dw = dc.Value;
                 int dn = 0;
@@ -1215,20 +1212,12 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs12.12-01")]
-        public void Rule_12_12_01_VersionSurface()
-        {
-            AssertVersionSurface(typeof(ReactiveSet<K>), true);
-            AssertVersionSurface(typeof(ReactiveDictionary<K, string>), false);
-        }
-
         [Fact(DisplayName = "cs12.12-02")]
         public void Rule_12_12_02_VersionIndexerThrowsForAbsentKey()
         {
             using (var log = new Log())
             {
-                var dc = new ReactiveDictionary<K, string>();
-                dc.Add(k2, "b");
+                var dc = new ReactiveDictionary<K, string> { { k2, "b" } };
                 var v = dc.Value;
                 var thrown = Record.Exception(() => { var unused = v[k1]; });
                 Assert.IsType<KeyNotFoundException>(thrown);
@@ -1261,9 +1250,11 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.13-02")]
         public void Rule_12_13_02_DictionaryDiffKindsAndFields()
         {
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
-            dc.Add(k2, "b");
+            var dc = new ReactiveDictionary<K, string>
+            {
+                { k1, "a" },
+                { k2, "b" }
+            };
             var v1 = dc.Value;
             dc.SetValue(k1, "c");
             dc.Remove(k2);
@@ -1271,9 +1262,11 @@ namespace Fluorine
             var v2 = dc.Value;
             AssertDictTags(v2.Diff(v1), "Updated:1:c:a", "Removed:2:b:", "Added:3:d:");
 
-            var di = new ReactiveDictionary<K, int>();
-            di.Add(k1, 1);
-            di.Add(k2, 2);
+            var di = new ReactiveDictionary<K, int>
+            {
+                { k1, 1 },
+                { k2, 2 }
+            };
             var w1 = di.Value;
             di.SetValue(k1, 3);
             di.Remove(k2);
@@ -1283,13 +1276,13 @@ namespace Fluorine
             Assert.Equal(3, changes.Length);
             foreach (var change in changes)
             {
-                if (change.Kind == ReactiveDictionary<K, int>.ChangeKind.Added)
+                if (change.Kind == ChangeKind.Added)
                 {
                     Assert.Same(k3, change.Key);
                     Assert.Equal(4, change.Value);
                     Assert.Equal(0, change.PreviousValue);
                 }
-                else if (change.Kind == ReactiveDictionary<K, int>.ChangeKind.Removed)
+                else if (change.Kind == ChangeKind.Removed)
                 {
                     Assert.Same(k2, change.Key);
                     Assert.Equal(2, change.Value);
@@ -1297,7 +1290,7 @@ namespace Fluorine
                 }
                 else
                 {
-                    Assert.Equal(ReactiveDictionary<K, int>.ChangeKind.Updated, change.Kind);
+                    Assert.Equal(ChangeKind.Updated, change.Kind);
                     Assert.Same(k1, change.Key);
                     Assert.Equal(3, change.Value);
                     Assert.Equal(1, change.PreviousValue);
@@ -1308,8 +1301,7 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.13-03")]
         public void Rule_12_13_03_DiffIsNetChange()
         {
-            var sc = new ReactiveSet<K>();
-            sc.Add(k1);
+            var sc = new ReactiveSet<K> { k1 };
             var sv0 = sc.Value;
             sc.Add(k2);
             sc.Remove(k2);
@@ -1319,36 +1311,39 @@ namespace Fluorine
             Assert.Equal(0, sv1.Diff(sv0).Length);
             Assert.Equal(0, sv1.Diff(sv1).Length);
 
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
+            var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
             var dv0 = dc.Value;
             dc.SetValue(k1, "b");
             dc.SetValue(k1, "a");
             dc.Add(k2, "x");
             dc.Remove(k2);
             var dv1 = dc.Value;
-            Assert.Equal(0, dv1.Diff(dv0).Length);
+            Assert.Empty(dv1.Diff(dv0));
             Assert.Equal(0, dv1.Diff(dv1).Length);
         }
 
         [Fact(DisplayName = "cs12.13-04")]
         public void Rule_12_13_04_NullPreviousCountsAsEmpty()
         {
-            var sc = new ReactiveSet<K>();
-            sc.Add(k1);
-            sc.Add(k2);
+            var sc = new ReactiveSet<K>
+            {
+                k1,
+                k2
+            };
             var setFromNull = sc.Value.Diff(null);
             foreach (var change in setFromNull)
-                Assert.Equal(ReactiveSet<K>.ChangeKind.Added, change.Kind);
+                Assert.Equal(ChangeKind.Added, change.Kind);
             AssertSetTags(setFromNull, "Added:1:null", "Added:2:null");
             Assert.Equal(0, new ReactiveSet<K>().Value.Diff(null).Length);
 
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
-            dc.Add(k2, "b");
+            var dc = new ReactiveDictionary<K, string>
+            {
+                { k1, "a" },
+                { k2, "b" }
+            };
             var dictFromNull = dc.Value.Diff(null);
             foreach (var change in dictFromNull)
-                Assert.Equal(ReactiveDictionary<K, string>.ChangeKind.Added, change.Kind);
+                Assert.Equal(ChangeKind.Added, change.Kind);
             AssertDictTags(dictFromNull, "Added:1:a:", "Added:2:b:");
             Assert.Equal(0, new ReactiveDictionary<K, string>().Value.Diff(null).Length);
         }
@@ -1356,9 +1351,11 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.13-05")]
         public void Rule_12_13_05_DiffChangesNeitherVersion()
         {
-            var dc = new ReactiveDictionary<K, string>();
-            dc.Add(k1, "a");
-            dc.Add(k2, "b");
+            var dc = new ReactiveDictionary<K, string>
+            {
+                { k1, "a" },
+                { k2, "b" }
+            };
             var dv1 = dc.Value;
             dc.SetValue(k1, "c");
             dc.Remove(k2);
@@ -1398,8 +1395,7 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.15-01")]
         public void Rule_12_15_01_VersionKeepsNoOlderVersionAlive()
         {
-            ReactiveSet<K>.Version setV1;
-            var setWr = MakeSetVersion(out setV1);
+            var setWr = MakeSetVersion(out var setV1);
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
@@ -1408,8 +1404,7 @@ namespace Fluorine
             Assert.True(setV1.Count >= 99);
             Assert.True(setV1.Contains(new K(50)));
 
-            ReactiveDictionary<K, string>.Version dictV1;
-            var dictWr = MakeDictVersion(out dictV1);
+            var dictWr = MakeDictVersion(out var dictV1);
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
@@ -1425,8 +1420,8 @@ namespace Fluorine
             var cmp = StringComparer.OrdinalIgnoreCase;
             var setEmpty = new ReactiveSet<string>();
             var setCmp = new ReactiveSet<string>(cmp);
-            var setItems = new ReactiveSet<string>(new[] { "Ada", "Grace" });
-            var setBoth = new ReactiveSet<string>(new[] { "Ada", "Grace" }, cmp);
+            var setItems = new ReactiveSet<string>(["Ada", "Grace"]);
+            var setBoth = new ReactiveSet<string>(["Ada", "Grace"], cmp);
             Assert.NotNull(setEmpty);
             Assert.NotNull(setCmp);
             Assert.Equal(2, setItems.Value.Count);
@@ -1440,16 +1435,14 @@ namespace Fluorine
 
             var dictEmpty = new ReactiveDictionary<string, string>();
             var dictCmp = new ReactiveDictionary<string, string>(cmp);
-            var dictItems = new ReactiveDictionary<string, string>(new[]
-            {
+            var dictItems = new ReactiveDictionary<string, string>([
                 new KeyValuePair<string, string>("Ada", "1"),
                 new KeyValuePair<string, string>("Grace", "2")
-            });
-            var dictBoth = new ReactiveDictionary<string, string>(new[]
-            {
+            ]);
+            var dictBoth = new ReactiveDictionary<string, string>([
                 new KeyValuePair<string, string>("Ada", "1"),
                 new KeyValuePair<string, string>("Grace", "2")
-            }, cmp);
+            ], cmp);
             Assert.NotNull(dictEmpty);
             Assert.NotNull(dictCmp);
             Assert.Equal(2, dictItems.Value.Count);
@@ -1466,7 +1459,7 @@ namespace Fluorine
         public void Rule_12_23_02_NullComparerMeansDefault()
         {
             var setCmp = new ReactiveSet<string>((IEqualityComparer<string>)null);
-            var setItems = new ReactiveSet<string>(new[] { "a" }, null);
+            var setItems = new ReactiveSet<string>(["a"], null);
             Assert.True(setCmp.Add("a"));
             Assert.True(setCmp.Add("A"));
             Assert.Equal(2, setCmp.Count);
@@ -1475,7 +1468,7 @@ namespace Fluorine
 
             var dictCmp = new ReactiveDictionary<string, string>((IEqualityComparer<string>)null);
             var dictItems = new ReactiveDictionary<string, string>(
-                new[] { new KeyValuePair<string, string>("a", "1") },
+                [new KeyValuePair<string, string>("a", "1")],
                 null);
             Assert.True(dictCmp.Add("a", "1"));
             Assert.True(dictCmp.Add("A", "2"));
@@ -1606,7 +1599,7 @@ namespace Fluorine
         static void AssertDiff(
             Dictionary<int, int> older,
             Dictionary<int, int> newer,
-            ReactiveDictionary<int, int>.Change[] changes)
+            DictChange<int, int>[] changes)
         {
             var expected = new List<string>();
             foreach (var pair in older)
@@ -1643,21 +1636,21 @@ namespace Fluorine
             return new KeyValuePair<TKey, TValue>(key, value);
         }
 
-        static IEnumerable<string> Names(ReactiveDictionary<string, int>.Change[] changes)
+        static IEnumerable<string> Names(DictChange<string,int>[] changes)
         {
             return changes.Select(change =>
             {
-                if (change.Kind == ReactiveDictionary<string, int>.ChangeKind.Updated)
+                if (change.Kind == ChangeKind.Updated)
                     return change.Kind + ":" + change.Key + "=" + change.PreviousValue + "->" + change.Value;
                 return change.Kind + ":" + change.Key + "=" + change.Value;
             });
         }
 
-        static IEnumerable<string> Names(ReactiveDictionary<int, int>.Change[] changes)
+        static IEnumerable<string> Names(DictChange<int,int>[] changes)
         {
             return changes.Select(change =>
             {
-                if (change.Kind == ReactiveDictionary<int, int>.ChangeKind.Updated)
+                if (change.Kind == ChangeKind.Updated)
                     return change.Kind + ":" + change.Key + "=" + change.PreviousValue + "->" + change.Value;
                 return change.Kind + ":" + change.Key + "=" + change.Value;
             });

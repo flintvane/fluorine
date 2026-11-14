@@ -310,16 +310,14 @@ namespace Fluorine
         Presence GetOrCreatePresence(TKey key)
         {
             var slot = GetOrCreateSlot(key);
-            if (slot.Presence == null)
-                slot.Presence = new Presence(this, key);
+            slot.Presence ??= new Presence(this, key);
             return slot.Presence;
         }
 
         ValueWatch GetOrCreateValue(TKey key)
         {
             var slot = GetOrCreateSlot(key);
-            if (slot.Value == null)
-                slot.Value = new ValueWatch(this, key);
+            slot.Value ??= new ValueWatch(this, key);
             return slot.Value;
         }
 
@@ -500,12 +498,12 @@ namespace Fluorine
                 return _root.TryGet(_comparer.GetHashCode(key), key, 0, _comparer, out value);
             }
 
-            public Change[] Diff(Version previous)
+            public DictChange<TKey,TValue>[] Diff(Version previous)
             {
-                var older = previous == null ? null : previous._root;
+                var older = previous?._root;
                 if (ReferenceEquals(_root, older))
                     return [];
-                var changes = new List<Change>();
+                var changes = new List<DictChange<TKey,TValue>>();
                 DiffNodes(older, _root, _comparer, changes);
                 if (changes.Count == 0)
                     return [];
@@ -569,7 +567,7 @@ namespace Fluorine
                 return new Version(root, Count - 1, _comparer);
             }
 
-            static void DiffNodes(Node older, Node newer, IEqualityComparer<TKey> comparer, List<Change> changes)
+            static void DiffNodes(Node older, Node newer, IEqualityComparer<TKey> comparer, List<DictChange<TKey,TValue>> changes)
             {
                 if (ReferenceEquals(older, newer))
                     return;
@@ -604,33 +602,21 @@ namespace Fluorine
                     var value = oldItems[i].Value;
                     olderHas[key] = value;
                     if (!newerHas.TryGetValue(key, out var newValue))
-                        changes.Add(new Change(ChangeKind.Removed, key, value, default(TValue)));
+                        changes.Add(new DictChange<TKey,TValue>(ChangeKind.Removed, key, value, default(TValue)));
                     else if (!ValuesEqual(value, newValue))
-                        changes.Add(new Change(ChangeKind.Updated, key, newValue, value));
+                        changes.Add(new DictChange<TKey,TValue>(ChangeKind.Updated, key, newValue, value));
                 }
 
                 for (var i = 0; i < newItems.Count; i++)
                 {
                     if (!olderHas.ContainsKey(newItems[i].Key))
-                        changes.Add(new Change(ChangeKind.Added, newItems[i].Key, newItems[i].Value, default(TValue)));
+                        changes.Add(new DictChange<TKey,TValue>(ChangeKind.Added, newItems[i].Key, newItems[i].Value, default(TValue)));
                 }
             }
         }
 
-        public enum ChangeKind
-        {
-            Added,
-            Removed,
-            Updated
-        }
 
-        public readonly struct Change(ChangeKind kind, TKey key, TValue value, TValue previousValue)
-        {
-            public ChangeKind Kind { get; } = kind;
-            public TKey Key { get; } = key;
-            public TValue Value { get; } = value;
-            public TValue PreviousValue { get; } = previousValue;
-        }
+
 
         abstract class Node : IEnumerable<KeyValuePair<TKey, TValue>>
         {

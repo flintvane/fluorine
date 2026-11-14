@@ -94,8 +94,10 @@ namespace Fluorine
                     {
                         done.Set();
                     }
-                });
-                thread.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 thread.Start();
                 Harness.Wait(done, "reactor ctor");
                 Assert.IsType<ReactiveException>(thrown);

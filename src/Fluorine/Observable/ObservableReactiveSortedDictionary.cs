@@ -21,17 +21,17 @@ class ObservableReactiveSortedDictionary<TKey, TValue, TItem>(
         Write(() =>
         {
             for (var i = changes.Length - 1; i >= 0; i--)
-                if (changes[i].Kind == ReactiveSortedDictionary<TKey, TValue>.ChangeKind.Removed)
+                if (changes[i].Kind == ChangeKind.Removed)
                     RemoveAt(_applied.IndexOf(changes[i].Key));
 
             foreach (var change in changes)
             {
                 switch (change.Kind)
                 {
-                    case ReactiveSortedDictionary<TKey, TValue>.ChangeKind.Added:
+                    case ChangeKind.Added:
                         Insert(current.IndexOf(change.Key), project(change.Key, change.Value));
                         break;
-                    case ReactiveSortedDictionary<TKey, TValue>.ChangeKind.Updated:
+                    case ChangeKind.Updated:
                         if (followsValues)
                             this[current.IndexOf(change.Key)] = project(change.Key, change.Value);
                         break;

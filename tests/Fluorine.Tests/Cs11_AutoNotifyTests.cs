@@ -1133,7 +1133,7 @@ namespace Fluorine
 
         sealed class Handler
         {
-            readonly List<string> _names = new();
+            readonly List<string> _names = [];
 
             public int Count;
             public object Sender;

@@ -18,8 +18,8 @@ namespace Fluorine
             Assert.Equal(1, map["ADA"]);
             Assert.True(map.ContainsKey("Ada"));
             Assert.Equal(2, map.Count);
-            Assert.Equal(new[] { "Ada", "b" }, map.Keys.ToArray());
-            Assert.Equal(new[] { 1, 2 }, map.Values.ToArray());
+            Assert.Equal(["Ada", "b"], map.Keys.ToArray());
+            Assert.Equal([1, 2], map.Values.ToArray());
 
             var picture = map.Value;
             Assert.False(map.SetValue("ADA", 1));
@@ -34,7 +34,7 @@ namespace Fluorine
             Assert.True(map.Remove("ADA"));
             Assert.False(map.ContainsKey("Ada"));
             Assert.False(map.Remove("Ada"));
-            Assert.Equal(new[] { "b" }, map.Keys.ToArray());
+            Assert.Equal(["b"], map.Keys.ToArray());
             map.CheckInvariants();
         }
 
@@ -62,8 +62,8 @@ namespace Fluorine
             Assert.True(equatable.SetValue("a", new EquatableOnly(1)));
             Assert.NotSame(picture, equatable.Value);
 
-            var ada = new string(new[] { 'A', 'd', 'a' });
-            var again = new string(new[] { 'a', 'd', 'a' });
+            var ada = new string(['A', 'd', 'a']);
+            var again = new string(['a', 'd', 'a']);
             var names = new ReactiveSortedDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             Assert.True(names.Add(ada, 1));
             Assert.True(names.SetValue(again, 4, out var was));
@@ -113,19 +113,18 @@ namespace Fluorine
         [Fact]
         public void ConstructorKeepsTheFirstValueAndEnumeratesInOrder()
         {
-            var map = new ReactiveSortedDictionary<string, int>(new[]
-            {
+            var map = new ReactiveSortedDictionary<string, int>([
                 Pair("b", 2),
                 Pair("a", 1),
                 Pair("a", 3),
                 Pair("c", 4)
-            });
+            ]);
             Assert.Equal(3, map.Count);
             Assert.Equal(1, map["a"]);
-            Assert.Equal(new[] { "a", "b", "c" }, map.Select(pair => pair.Key).ToArray());
-            Assert.Equal(new[] { 1, 2, 4 }, map.Values.ToArray());
+            Assert.Equal(["a", "b", "c"], map.Select(pair => pair.Key).ToArray());
+            Assert.Equal([1, 2, 4], map.Values.ToArray());
             Assert.Throws<ArgumentNullException>(() => new ReactiveSortedDictionary<string, int>((IEnumerable<KeyValuePair<string, int>>)null));
-            Assert.Throws<ArgumentNullException>(() => new ReactiveSortedDictionary<string, int>(new[] { Pair<string, int>(null, 1) }));
+            Assert.Throws<ArgumentNullException>(() => new ReactiveSortedDictionary<string, int>([Pair<string, int>(null, 1)]));
             map.CheckInvariants();
         }
 
@@ -147,17 +146,17 @@ namespace Fluorine
             map["b"] = 2;
             map.Add("a", 1);
             var both = map.Value;
-            Assert.Equal(new[] { "Added:a=1", "Added:b=2" }, Names(both.Diff(empty)).ToArray());
+            Assert.Equal(["Added:a=1", "Added:b=2"], Names(both.Diff(empty)).ToArray());
             Assert.Empty(both.Diff(both));
 
             map.SetValue("a", 4);
             map.Remove("b");
             map.Add("c", 3);
-            Assert.Equal(new[] { "Updated:a=1->4", "Removed:b=2", "Added:c=3" }, Names(map.Value.Diff(both)).ToArray());
-            Assert.Equal(new[] { "Added:a=4", "Added:c=3" }, Names(map.Value.Diff(null)).ToArray());
+            Assert.Equal(["Updated:a=1->4", "Removed:b=2", "Added:c=3"], Names(map.Value.Diff(both)).ToArray());
+            Assert.Equal(["Added:a=4", "Added:c=3"], Names(map.Value.Diff(null)).ToArray());
 
             var updated = map.Value.Diff(both).Single(change => change.Key == "a");
-            Assert.Equal(ReactiveSortedDictionary<string, int>.ChangeKind.Updated, updated.Kind);
+            Assert.Equal(ChangeKind.Updated, updated.Kind);
             Assert.Equal(4, updated.Value);
             Assert.Equal(1, updated.PreviousValue);
             Assert.Equal("a", updated.Key);
@@ -190,7 +189,7 @@ namespace Fluorine
             map.CheckInvariants();
             map.SetValue(50, -1);
             var updated = Assert.Single(map.Value.Diff(before));
-            Assert.Equal(ReactiveSortedDictionary<int, int>.ChangeKind.Updated, updated.Kind);
+            Assert.Equal(ChangeKind.Updated, updated.Kind);
             Assert.Equal(50, updated.Key);
             Assert.Equal(50, updated.PreviousValue);
             Assert.Equal(-1, updated.Value);
@@ -199,14 +198,14 @@ namespace Fluorine
             before = map.Value;
             Assert.True(map.Remove(32));
             var removed = Assert.Single(map.Value.Diff(before));
-            Assert.Equal(ReactiveSortedDictionary<int, int>.ChangeKind.Removed, removed.Kind);
+            Assert.Equal(ChangeKind.Removed, removed.Kind);
             Assert.Equal(32, removed.Key);
             Assert.Equal(32, removed.Value);
 
             before = map.Value;
             map[1000] = 7;
             var added = Assert.Single(map.Value.Diff(before));
-            Assert.Equal(ReactiveSortedDictionary<int, int>.ChangeKind.Added, added.Kind);
+            Assert.Equal(ChangeKind.Added, added.Kind);
             Assert.Equal(1000, added.Key);
             Assert.Equal(7, added.Value);
             map.CheckInvariants();
@@ -216,11 +215,11 @@ namespace Fluorine
         [Fact]
         public void ClearDropsEveryEntryInOrder()
         {
-            var map = new ReactiveSortedDictionary<string, int>(new[] { Pair("b", 2), Pair("a", 1) });
+            var map = new ReactiveSortedDictionary<string, int>([Pair("b", 2), Pair("a", 1)]);
             var before = map.Value;
             map.Clear();
             Assert.Equal(0, map.Count);
-            Assert.Equal(new[] { "Removed:a=1", "Removed:b=2" }, Names(map.Value.Diff(before)).ToArray());
+            Assert.Equal(["Removed:a=1", "Removed:b=2"], Names(map.Value.Diff(before)).ToArray());
             var empty = map.Value;
             map.Clear();
             Assert.Same(empty, map.Value);
@@ -235,7 +234,7 @@ namespace Fluorine
                 for (var i = 0; i < n; i++)
                     Assert.True(map.Add(i, i * 10));
                 map.CheckInvariants();
-                Assert.Equal(Enumerable.Range(0, n).Reverse(), map.Keys.ToArray());
+                Assert.Equal(Enumerable.Range(0, n).Reverse(), [.. map.Keys]);
                 for (var i = 0; i < n; i++)
                 {
                     Assert.True(map.TryGetValue(i, out var value));
@@ -276,7 +275,7 @@ namespace Fluorine
             first.Join();
             second.Join();
             Assert.Equal(count, map.Count);
-            Assert.Equal(Enumerable.Range(0, count), map.Keys.ToArray());
+            Assert.Equal(Enumerable.Range(0, count), [.. map.Keys]);
             foreach (var value in map.Values)
                 Assert.True(value == 1 || value == 2);
             map.CheckInvariants();
@@ -423,7 +422,7 @@ namespace Fluorine
                     Assert.True(picture.TryGetValue(1, out var value));
                     Assert.Equal(1, value);
                     Assert.Equal(1, picture[1]);
-                    Assert.Equal(new[] { 1 }, picture.Select(pair => pair.Key).ToArray());
+                    Assert.Equal([1], picture.Select(pair => pair.Key).ToArray());
                     Assert.Equal(1, picture.Count);
                 });
                 scheduler.Pump();
@@ -497,12 +496,12 @@ namespace Fluorine
 
                 ready.Value = true;
                 scheduler.Pump();
-                Assert.Equal(new[] { "Added:a=2" }, applied.ToArray());
+                Assert.Equal(["Added:a=2"], applied.ToArray());
 
                 map.SetValue("a", 4);
                 map.Remove("a");
                 scheduler.Pump();
-                Assert.Equal(new[] { "Added:a=2", "Removed:a=2" }, applied.ToArray());
+                Assert.Equal(["Added:a=2", "Removed:a=2"], applied.ToArray());
             }
             finally
             {
@@ -548,8 +547,8 @@ namespace Fluorine
                     mirror[key] = value;
                 }
 
-                Assert.Equal(mirror.Keys, map.Keys.ToArray());
-                Assert.Equal(mirror.Values, map.Values.ToArray());
+                Assert.Equal(mirror.Keys, [.. map.Keys]);
+                Assert.Equal(mirror.Values, [.. map.Values]);
                 foreach (var pair in mirror)
                 {
                     Assert.True(map.Value.TryGetValue(pair.Key, out var stored));
@@ -593,7 +592,7 @@ namespace Fluorine
         static void AssertDiff(
             Dictionary<int, int> older,
             SortedDictionary<int, int> newer,
-            ReactiveSortedDictionary<int, int>.Change[] changes,
+            DictChange<int, int>[] changes,
             IComparer<int> comparer)
         {
             var expected = new List<string>();
@@ -611,7 +610,7 @@ namespace Fluorine
                     expected.Add("Added:" + pair.Key + "=" + pair.Value);
             }
 
-            Assert.Equal(expected.OrderBy(line => LineKey(line), comparer).ToArray(), Names(changes).ToArray());
+            Assert.Equal([.. expected.OrderBy(LineKey, comparer)], Names(changes).ToArray());
         }
 
         static int LineKey(string line)
@@ -626,21 +625,21 @@ namespace Fluorine
             return new KeyValuePair<TKey, TValue>(key, value);
         }
 
-        static IEnumerable<string> Names(ReactiveSortedDictionary<string, int>.Change[] changes)
+        static IEnumerable<string> Names(DictChange<string, int>[] changes)
         {
             return changes.Select(change =>
             {
-                if (change.Kind == ReactiveSortedDictionary<string, int>.ChangeKind.Updated)
+                if (change.Kind == ChangeKind.Updated)
                     return change.Kind + ":" + change.Key + "=" + change.PreviousValue + "->" + change.Value;
                 return change.Kind + ":" + change.Key + "=" + change.Value;
             });
         }
 
-        static IEnumerable<string> Names(ReactiveSortedDictionary<int, int>.Change[] changes)
+        static IEnumerable<string> Names(DictChange<int,int>[] changes)
         {
             return changes.Select(change =>
             {
-                if (change.Kind == ReactiveSortedDictionary<int, int>.ChangeKind.Updated)
+                if (change.Kind == ChangeKind.Updated)
                     return change.Kind + ":" + change.Key + "=" + change.PreviousValue + "->" + change.Value;
                 return change.Kind + ":" + change.Key + "=" + change.Value;
             });

@@ -237,9 +237,7 @@ namespace App
                     sources.Add(new Generated(generated.HintName, generated.SourceText.ToString()));
             }
 
-            var diagnostics = new List<Diagnostic>();
-            foreach (var diagnostic in driverDiagnostics)
-                diagnostics.Add(diagnostic);
+            List<Diagnostic> diagnostics = [.. driverDiagnostics];
             foreach (var diagnostic in updated.GetDiagnostics())
             {
                 if (diagnostic.Severity == DiagnosticSeverity.Error)

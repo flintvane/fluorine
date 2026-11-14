@@ -10,17 +10,16 @@ namespace Fluorine
         [Fact]
         public void AddInsertRemoveAndClearFollowListOrder()
         {
-            var list = new ReactiveList<string>();
-            list.Add("a");
+            var list = new ReactiveList<string> { "a" };
             list.Insert(0, "b");
             list.Insert(2, "c");
-            Assert.Equal(new[] { "b", "a", "c" }, list.ToArray());
+            Assert.Equal(["b", "a", "c"], list.ToArray());
             Assert.Equal(1, list.IndexOf("a"));
             Assert.True(list.Contains("c"));
             Assert.True(list.Remove("a"));
             Assert.False(list.Remove("a"));
             list.RemoveAt(0);
-            Assert.Equal(new[] { "c" }, list.ToArray());
+            Assert.Equal(["c"], list.ToArray());
             list.Clear();
             var cleared = list.Value;
             Assert.Equal(0, list.Count);
@@ -32,8 +31,8 @@ namespace Fluorine
         [Fact]
         public void ConstructorKeepsDuplicatesAndRejectsNull()
         {
-            var list = new ReactiveList<int>(new[] { 1, 1, 2 });
-            Assert.Equal(new[] { 1, 1, 2 }, list.ToArray());
+            var list = new ReactiveList<int>([1, 1, 2]);
+            Assert.Equal([1, 1, 2], list.ToArray());
             Assert.True(list.Contains(1));
             Assert.Equal(0, list.IndexOf(1));
             Assert.Throws<ArgumentNullException>(() => new ReactiveList<int>((int[])null));
@@ -45,8 +44,7 @@ namespace Fluorine
         [Fact]
         public void SetValueUsesObjectEqualsAndKeepsTheStoredInstance()
         {
-            var list = new ReactiveList<ByValue>();
-            list.Add(null);
+            var list = new ReactiveList<ByValue> { null };
             var first = new ByValue(1);
             var equal = new ByValue(1);
             Assert.True(list.SetValue(0, first, out var missing));
@@ -56,8 +54,7 @@ namespace Fluorine
             Assert.Same(first, list[0]);
             Assert.Same(list.Value, list.Value);
 
-            var equatable = new ReactiveList<EquatableOnly>();
-            equatable.Add(new EquatableOnly(1));
+            var equatable = new ReactiveList<EquatableOnly> { new EquatableOnly(1) };
             var picture = equatable.Value;
             Assert.True(equatable.SetValue(0, new EquatableOnly(1)));
             Assert.NotSame(picture, equatable.Value);
@@ -81,11 +78,13 @@ namespace Fluorine
         [Fact]
         public void NullIsAnElement()
         {
-            var list = new ReactiveList<string>();
-            list.Add(null);
-            list.Add("a");
+            var list = new ReactiveList<string>
+            {
+                null,
+                "a"
+            };
             list.Insert(1, null);
-            Assert.Equal(new string[] { null, null, "a" }, list.ToArray());
+            Assert.Equal([null, null, "a"], list.ToArray());
             Assert.True(list.Contains(null));
             Assert.Equal(0, list.IndexOf(null));
             Assert.True(list.Remove(null));
@@ -98,8 +97,7 @@ namespace Fluorine
         [Fact]
         public void OutOfRangeSetThrowsAndGetterPastTheEndSubscribes()
         {
-            var list = new ReactiveList<int>();
-            list.Add(1);
+            var list = new ReactiveList<int> { 1 };
             Assert.Throws<ArgumentOutOfRangeException>(() => list[1] = 2);
             Assert.Throws<ArgumentOutOfRangeException>(() => list.Insert(3, 2));
             Assert.Throws<ArgumentOutOfRangeException>(() => list.RemoveAt(1));
@@ -111,29 +109,29 @@ namespace Fluorine
         [Fact]
         public void DiffIsThePictureComparedByIndex()
         {
-            var list = new ReactiveList<string>();
-            list.Add("A");
-            list.Add("B");
-            list.Add("C");
+            var list = new ReactiveList<string>
+            {
+                "A",
+                "B",
+                "C"
+            };
             var before = list.Value;
             list.Insert(0, "X");
-            Assert.Equal(new[]
-            {
+            Assert.Equal([
                 "Updated:0:A->X",
                 "Updated:1:B->A",
                 "Updated:2:C->B",
                 "Added:3:C"
-            }, Names(list.Value.Diff(before)));
+            ], Names(list.Value.Diff(before)));
 
             var inserted = list.Value;
             list.RemoveAt(0);
-            Assert.Equal(new[]
-            {
+            Assert.Equal([
                 "Updated:0:X->A",
                 "Updated:1:A->B",
                 "Updated:2:B->C",
                 "Removed:3:C"
-            }, Names(list.Value.Diff(inserted)));
+            ], Names(list.Value.Diff(inserted)));
 
             var tail = list.Value;
             list.Add("D");
@@ -142,15 +140,14 @@ namespace Fluorine
             Assert.Equal(3, added.Index);
             Assert.Equal("D", added.Value);
             Assert.Null(added.Previous);
-            Assert.Equal(new[] { "Added:0:A", "Added:1:B", "Added:2:C", "Added:3:D" }, Names(list.Value.Diff(null)));
+            Assert.Equal(["Added:0:A", "Added:1:B", "Added:2:C", "Added:3:D"], Names(list.Value.Diff(null)));
         }
 
         [Fact]
         public void SeparatelyBuiltEqualListsDiffEmpty()
         {
-            var first = new ReactiveList<int>(new[] { 1, 2, 3 });
-            var second = new ReactiveList<int>();
-            second.Add(1);
+            var first = new ReactiveList<int>([1, 2, 3]);
+            var second = new ReactiveList<int> { 1 };
             second.Insert(1, 2);
             second.Add(3);
             Assert.Empty(first.Value.Diff(second.Value));
@@ -259,7 +256,7 @@ namespace Fluorine
             var scheduler = new ManualScheduler();
             try
             {
-                var list = new ReactiveList<int>(new[] { 7, 7, 1, 2, 3 });
+                var list = new ReactiveList<int>([7, 7, 1, 2, 3]);
                 var runs = 0;
                 var seen = 0;
                 new Reactor(scheduler).Add(() =>
@@ -355,7 +352,7 @@ namespace Fluorine
             var scheduler = new ManualScheduler();
             try
             {
-                var list = new ReactiveList<int>(new[] { 7, 1 });
+                var list = new ReactiveList<int>([7, 1]);
                 var runs = 0;
                 var index = -1;
                 new Reactor(scheduler).Add(() =>
@@ -384,7 +381,7 @@ namespace Fluorine
             var scheduler = new ManualScheduler();
             try
             {
-                var list = new ReactiveList<int>(new[] { 1 });
+                var list = new ReactiveList<int>([1]);
                 var runs = 0;
                 var count = 0;
                 new Reactor(scheduler).Add(() =>
@@ -410,7 +407,7 @@ namespace Fluorine
             var scheduler = new ManualScheduler();
             try
             {
-                var list = new ReactiveList<int>(new[] { 1, 2 });
+                var list = new ReactiveList<int>([1, 2]);
                 var picture = list.Value;
                 var runs = 0;
                 new Reactor(scheduler).Add(() =>
@@ -537,27 +534,33 @@ namespace Fluorine
                 changes.Add("Added:" + i + ":" + newer[i]);
             for (var i = limit; i < older.Count; i++)
                 changes.Add("Removed:" + i + ":" + older[i]);
-            return changes.ToArray();
+            return [.. changes];
         }
 
         static string[] Names(ReactiveList<string>.Change[] changes)
         {
-            return changes.Select(change =>
-            {
-                if (change.Kind == ReactiveList<string>.ChangeKind.Updated)
-                    return change.Kind + ":" + change.Index + ":" + change.Previous + "->" + change.Value;
-                return change.Kind + ":" + change.Index + ":" + change.Value;
-            }).ToArray();
+            return
+            [
+                .. changes.Select(change =>
+                {
+                    if (change.Kind == ReactiveList<string>.ChangeKind.Updated)
+                        return change.Kind + ":" + change.Index + ":" + change.Previous + "->" + change.Value;
+                    return change.Kind + ":" + change.Index + ":" + change.Value;
+                })
+            ];
         }
 
         static string[] Names(ReactiveList<int>.Change[] changes)
         {
-            return changes.Select(change =>
-            {
-                if (change.Kind == ReactiveList<int>.ChangeKind.Updated)
-                    return change.Kind + ":" + change.Index + ":" + change.Previous + "->" + change.Value;
-                return change.Kind + ":" + change.Index + ":" + change.Value;
-            }).ToArray();
+            return
+            [
+                .. changes.Select(change =>
+                {
+                    if (change.Kind == ReactiveList<int>.ChangeKind.Updated)
+                        return change.Kind + ":" + change.Index + ":" + change.Previous + "->" + change.Value;
+                    return change.Kind + ":" + change.Index + ":" + change.Value;
+                })
+            ];
         }
 
         sealed class ByValue(int number)

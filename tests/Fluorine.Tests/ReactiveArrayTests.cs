@@ -12,7 +12,7 @@ namespace Fluorine
             var array = new ReactiveArray<string>(3);
             Assert.Equal(3, array.Length);
             Assert.Equal(3, array.Count);
-            Assert.Equal(new string[] { null, null, null }, array.ToArray());
+            Assert.Equal([null, null, null], array.ToArray());
             Assert.Throws<ArgumentOutOfRangeException>(() => new ReactiveArray<int>(-1));
             Assert.Throws<ArgumentNullException>(() => new ReactiveArray<int>((int[])null));
             Assert.Null(typeof(ReactiveArray<int>).GetMethod("Contains"));
@@ -21,8 +21,8 @@ namespace Fluorine
         [Fact]
         public void ConstructorKeepsOrderAndDuplicates()
         {
-            var array = new ReactiveArray<int>(new[] { 2, 2, 1 });
-            Assert.Equal(new[] { 2, 2, 1 }, array.ToArray());
+            var array = new ReactiveArray<int>([2, 2, 1]);
+            Assert.Equal([2, 2, 1], array.ToArray());
             Assert.Equal(3, array.Length);
             var empty = new ReactiveArray<int>(new int[0]);
             Assert.Equal(0, empty.Length);
@@ -47,8 +47,10 @@ namespace Fluorine
             Assert.Same(first, previous);
             Assert.Same(other, array[0]);
 
-            var equatable = new ReactiveArray<EquatableOnly>(1);
-            equatable[0] = new EquatableOnly(1);
+            var equatable = new ReactiveArray<EquatableOnly>(1)
+            {
+                [0] = new EquatableOnly(1)
+            };
             var picture = equatable.Value;
             Assert.True(equatable.SetValue(0, new EquatableOnly(1)));
             Assert.NotSame(picture, equatable.Value);
@@ -71,7 +73,7 @@ namespace Fluorine
         [Fact]
         public void OutOfRangeReadsAndWritesDoNotSubscribe()
         {
-            var array = new ReactiveArray<int>(new[] { 1 });
+            var array = new ReactiveArray<int>([1]);
             Assert.Throws<ArgumentOutOfRangeException>(() => array[1]);
             Assert.Throws<ArgumentOutOfRangeException>(() => array[-1]);
             Assert.Throws<ArgumentOutOfRangeException>(() => array[1] = 2);
@@ -83,18 +85,18 @@ namespace Fluorine
         [Fact]
         public void DiffReportsUpdatedSlotsInIndexOrder()
         {
-            var array = new ReactiveArray<int>(new[] { 1, 2, 3 });
+            var array = new ReactiveArray<int>([1, 2, 3]);
             var before = array.Value;
             Assert.False(array.SetValue(1, 2));
             Assert.Same(before, array.Value);
             array[0] = 9;
             array[2] = 8;
-            Assert.Equal(new[] { "Updated:0:1->9", "Updated:2:3->8" }, Names(array.Value.Diff(before)));
+            Assert.Equal(["Updated:0:1->9", "Updated:2:3->8"], Names(array.Value.Diff(before)));
             Assert.Empty(array.Value.Diff(array.Value));
-            Assert.Equal(new[] { "Added:0:9", "Added:1:2", "Added:2:8" }, Names(array.Value.Diff(null)));
+            Assert.Equal(["Added:0:9", "Added:1:2", "Added:2:8"], Names(array.Value.Diff(null)));
 
-            var shorter = new ReactiveArray<int>(new[] { 9 });
-            Assert.Equal(new[] { "Removed:1:2", "Removed:2:8" }, Names(shorter.Value.Diff(array.Value)));
+            var shorter = new ReactiveArray<int>([9]);
+            Assert.Equal(["Removed:1:2", "Removed:2:8"], Names(shorter.Value.Diff(array.Value)));
             var updated = array.Value.Diff(before)[0];
             Assert.Equal(ReactiveArray<int>.ChangeKind.Updated, updated.Kind);
             Assert.Equal(9, updated.Value);
@@ -104,11 +106,13 @@ namespace Fluorine
         [Fact]
         public void SeparatelyBuiltEqualArraysDiffEmpty()
         {
-            var first = new ReactiveArray<int>(new[] { 1, 2, 3 });
-            var second = new ReactiveArray<int>(3);
-            second[0] = 1;
-            second[1] = 2;
-            second[2] = 3;
+            var first = new ReactiveArray<int>([1, 2, 3]);
+            var second = new ReactiveArray<int>(3)
+            {
+                [0] = 1,
+                [1] = 2,
+                [2] = 3
+            };
             Assert.Empty(first.Value.Diff(second.Value));
             Assert.False(first.Value == second.Value);
         }
@@ -136,7 +140,7 @@ namespace Fluorine
             var scheduler = new ManualScheduler();
             try
             {
-                var array = new ReactiveArray<int>(new[] { 0, 0, 0 });
+                var array = new ReactiveArray<int>([0, 0, 0]);
                 var runs = 0;
                 var seen = 0;
                 new Reactor(scheduler).Add(() =>
@@ -205,7 +209,7 @@ namespace Fluorine
             var scheduler = new ManualScheduler();
             try
             {
-                var array = new ReactiveArray<int>(new[] { 1, 2 });
+                var array = new ReactiveArray<int>([1, 2]);
                 var picture = array.Value;
                 var runs = 0;
                 new Reactor(scheduler).Add(() =>
@@ -216,7 +220,7 @@ namespace Fluorine
                         var unused = array[0];
                     });
                     Assert.Equal(1, picture[0]);
-                    Assert.Equal(new[] { 1, 2 }, picture.ToArray());
+                    Assert.Equal([1, 2], picture.ToArray());
                 });
                 scheduler.Pump();
                 Assert.Equal(1, runs);
@@ -258,12 +262,15 @@ namespace Fluorine
 
         static string[] Names(ReactiveArray<int>.Change[] changes)
         {
-            return changes.Select(change =>
-            {
-                if (change.Kind == ReactiveArray<int>.ChangeKind.Updated)
-                    return change.Kind + ":" + change.Index + ":" + change.Previous + "->" + change.Value;
-                return change.Kind + ":" + change.Index + ":" + change.Value;
-            }).ToArray();
+            return
+            [
+                .. changes.Select(change =>
+                {
+                    if (change.Kind == ReactiveArray<int>.ChangeKind.Updated)
+                        return change.Kind + ":" + change.Index + ":" + change.Previous + "->" + change.Value;
+                    return change.Kind + ":" + change.Index + ":" + change.Value;
+                })
+            ];
         }
 
         sealed class ByValue(int number)

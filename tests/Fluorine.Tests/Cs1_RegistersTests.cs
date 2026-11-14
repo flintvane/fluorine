@@ -240,11 +240,15 @@ namespace Fluorine
         [Fact]
         public void Rule_1_9_NameIsSettableAndNoNameConstructor()
         {
-            var r = new Register();
-            r.Name = "alpha";
+            var r = new Register
+            {
+                Name = "alpha"
+            };
             Assert.Equal("alpha", r.Name);
-            var typed = new Register<int>();
-            typed.Name = "beta";
+            var typed = new Register<int>
+            {
+                Name = "beta"
+            };
             Assert.Equal("beta", typed.Name);
             Assert.Null(typeof(Register).GetConstructor([typeof(string)]));
             Assert.Null(typeof(Register<int>).GetConstructor([typeof(string)]));
@@ -278,16 +282,20 @@ namespace Fluorine
         [Fact]
         public void Rule_1_10_NameIsRetained()
         {
-            var r = new Register();
-            r.Name = "kept";
+            var r = new Register
+            {
+                Name = "kept"
+            };
             Assert.Equal("kept", r.Name);
         }
 
         [Fact]
         public void Rule_1_11_RegistersCanBeInheritedAndCoreMembersAreNotVirtual()
         {
-            var r = new NamedRegister();
-            r.Value = 3;
+            var r = new NamedRegister
+            {
+                Value = 3
+            };
             Assert.Equal(3, r.Value);
             Assert.False(typeof(Register).GetMethod("RecordRead").IsVirtual);
             Assert.False(typeof(Register).GetMethod("TriggerReactions").IsVirtual);
@@ -340,8 +348,10 @@ namespace Fluorine
             Register<int> created = null;
             var t = new Thread(() =>
             {
-                created = new Register<int>(4);
-                created.Value = 5;
+                created = new Register<int>(4)
+                {
+                    Value = 5
+                };
             });
             t.Start();
             t.Join();
@@ -380,8 +390,10 @@ namespace Fluorine
                     {
                         Interlocked.CompareExchange(ref error, ex, null);
                     }
-                });
-                threads[i].IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 threads[i].Start();
             }
             Assert.True(ready.Wait(Harness.TimeoutMs), "workers ready");
@@ -463,8 +475,7 @@ namespace Fluorine
                 r.Value = 5;
                 Thread.Sleep(40);
                 Assert.Equal(1, n);
-                int old2;
-                Assert.False(r.SetValue(5, out old2));
+                Assert.False(r.SetValue(5, out var old2));
                 Assert.Equal(5, old2);
                 Assert.True(r.SetValue(8, out old2));
                 Assert.Equal(5, old2);
@@ -629,8 +640,10 @@ namespace Fluorine
                         if (value.A != value.B || value.B != value.C || value.C != value.D)
                             Interlocked.Increment(ref mismatch);
                     }
-                });
-                readers[i].IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 readers[i].Start();
             }
             var writers = new Thread[4];
@@ -644,8 +657,10 @@ namespace Fluorine
                         long n = id + (long)k * 4 + 1;
                         reg.Value = new Big(n);
                     }
-                });
-                writers[i].IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 writers[i].Start();
             }
             for (int i = 0; i < writers.Length; i++)

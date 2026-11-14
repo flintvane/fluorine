@@ -17,14 +17,14 @@ class ObservableReactiveSet<T>(ReactiveSet<T> set) : ObservableReactiveCollectio
             {
                 switch (change.Kind)
                 {
-                    case ReactiveSet<T>.ChangeKind.Added:
+                    case ChangeKind.Added:
                         SetIndex(change.Item, Count);
                         Add(change.Item);
                         break;
-                    case ReactiveSet<T>.ChangeKind.Removed:
+                    case ChangeKind.Removed:
                         RemoveBySwap(change.Item);
                         break;
-                    case ReactiveSet<T>.ChangeKind.Replaced:
+                    case ChangeKind.Updated:
                         var at = TakeIndex(change.Previous);
                         SetIndex(change.Item, at);
                         this[at] = change.Item;

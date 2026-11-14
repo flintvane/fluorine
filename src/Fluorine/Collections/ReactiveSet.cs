@@ -11,7 +11,7 @@ namespace Fluorine
     /// A version shares unchanged structure with the version it was built from
     /// and does not point back at it, so a version nobody holds can be collected.
     /// Membership uses <see cref="EqualityComparer{T}"/> (Equals and GetHashCode).
-    /// Add leaves an existing member in place. Diff reports <see cref="ChangeKind.Replaced"/>
+    /// Add leaves an existing member in place. Diff reports <see cref="ChangeKind.Updated"/>
     /// when two pictures hold different instances of the same member.
     /// Hash codes must stay stable while an element is in the set.
     /// </summary>
@@ -288,12 +288,12 @@ namespace Fluorine
                 return _root.Contains(_comparer.GetHashCode(item), item, 0, _comparer);
             }
 
-            public Change[] Diff(Version previous)
+            public SetChange<T>[] Diff(Version previous)
             {
                 var older = previous?._root;
                 if (ReferenceEquals(_root, older))
                     return [];
-                var changes = new List<Change>();
+                var changes = new List<SetChange<T>>();
                 DiffNodes(older, _root, _comparer, changes);
                 return changes.Count == 0 ? [] : [.. changes];
             }
@@ -331,7 +331,7 @@ namespace Fluorine
                 return new Version(root, Count - 1, _comparer);
             }
 
-            static void DiffNodes(Node older, Node newer, IEqualityComparer<T> comparer, List<Change> changes)
+            static void DiffNodes(Node older, Node newer, IEqualityComparer<T> comparer, List<SetChange<T>> changes)
             {
                 if (ReferenceEquals(older, newer))
                     return;
@@ -371,40 +371,19 @@ namespace Fluorine
                     var found = old == null ? (j = nullIndex) >= 0 : newIndex.TryGetValue(old, out j);
                     if (!found)
                     {
-                        changes.Add(new Change(ChangeKind.Removed, old));
+                        changes.Add(new SetChange<T>(ChangeKind.Removed, old));
                         continue;
                     }
                     matched[j] = true;
                     if (!SameInstance(old, newItems[j]))
-                        changes.Add(new Change(ChangeKind.Replaced, newItems[j], old));
+                        changes.Add(new SetChange<T>(ChangeKind.Updated, newItems[j], old));
                 }
                 for (var j = 0; j < newItems.Count; j++)
                     if (!matched[j])
-                        changes.Add(new Change(ChangeKind.Added, newItems[j]));
+                        changes.Add(new SetChange<T>(ChangeKind.Added, newItems[j]));
             }
         }
-
-        public enum ChangeKind
-        {
-            Added,
-            Removed,
-            Replaced
-        }
-
-        public readonly struct Change(ChangeKind kind, T item, T previous)
-        {
-            public Change(ChangeKind kind, T item) : this(kind, item, default)
-            {
-            }
-
-            public ChangeKind Kind { get; } = kind;
-
-            /// <summary>The added instance, the removed instance, or the instance now stored.</summary>
-            public T Item { get; } = item;
-
-            /// <summary>The instance that was stored, when <see cref="Kind"/> is <see cref="ChangeKind.Replaced"/>.</summary>
-            public T Previous { get; } = previous;
-        }
+        
 
         // Equals already matched. Value types have no instance to tell apart.
         static bool SameInstance(T stored, T incoming)

@@ -30,8 +30,10 @@ namespace Fluorine
         [Fact]
         public void Rule_5_3_AggregateValueIsAtomic()
         {
-            var r = new Register<Tuple<int, int>>(Tuple.Create(1, 1));
-            r.Value = Tuple.Create(2, 2);
+            var r = new Register<Tuple<int, int>>(Tuple.Create(1, 1))
+            {
+                Value = Tuple.Create(2, 2)
+            };
             Assert.Equal(Tuple.Create(2, 2), r.Value);
         }
 
@@ -372,8 +374,10 @@ namespace Fluorine
         {
             using (var host = new ThreadHost())
             {
-                var reg = new Register();
-                reg.Name = "reg";
+                var reg = new Register
+                {
+                    Name = "reg"
+                };
                 var r = host.NewReactor().Add("rx", () => { });
                 Assert.Equal("reg", reg.Name);
                 Assert.Equal("rx", r.Name);
@@ -589,7 +593,7 @@ namespace Fluorine
             }
 
             string[] required =
-            {
+            [
                 "cs2.2-02", "s15.2-01",
                 "cs2.3-02",
                 "Rule_2_20_ContinueRecordingAtZeroThrows", // cs2.20-02: acceptance copy dropped, covered by this Fluorine.Tests test
@@ -599,7 +603,7 @@ namespace Fluorine
                 "Rule_3_16_NestedRunThrowsToCaller", // cs3.16-01: acceptance copy dropped, covered by this Fluorine.Tests test
                 "cs4.2-05", "cs5.2-03",
                 "cs6.1-03"
-            };
+            ];
             foreach (var id in required)
                 Assert.True(names.Contains(id), "cs10.1 case list missing " + id);
         }

@@ -25,15 +25,15 @@ class ObservableReactiveDictionary<TKey, TValue, TItem>(
             {
                 switch (change.Kind)
                 {
-                    case ReactiveDictionary<TKey, TValue>.ChangeKind.Added:
+                    case ChangeKind.Added:
                         _index[change.Key] = Count;
                         _keys.Add(change.Key);
                         Add(project(change.Key, change.Value));
                         break;
-                    case ReactiveDictionary<TKey, TValue>.ChangeKind.Removed:
+                    case ChangeKind.Removed:
                         RemoveBySwap(change.Key);
                         break;
-                    case ReactiveDictionary<TKey, TValue>.ChangeKind.Updated:
+                    case ChangeKind.Updated:
                         if (followsValues)
                             this[_index[change.Key]] = project(change.Key, change.Value);
                         break;

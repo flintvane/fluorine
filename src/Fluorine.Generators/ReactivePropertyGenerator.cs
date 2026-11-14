@@ -422,9 +422,7 @@ namespace Fluorine.Generators
 
         static string Members(INamedTypeSymbol type)
         {
-            var names = new List<string>();
-            foreach (var name in type.MemberNames)
-                names.Add(name);
+            List<string> names = [.. type.MemberNames];
             names.Sort(StringComparer.Ordinal);
             return string.Join("\n", names);
         }

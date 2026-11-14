@@ -331,8 +331,10 @@ namespace Fluorine
                     {
                         var unused = reg.Value;
                         onPlain.Set();
-                    });
-                    plain.IsBackground = true;
+                    })
+                    {
+                        IsBackground = true
+                    };
                     plain.Start();
                     Harness.Wait(onPlain, "plain read");
                     plain.Join();
@@ -585,8 +587,10 @@ namespace Fluorine
                     var random = new Random(seed);
                     for (int i = 0; i < Harness.Stress / 4; i++)
                         reg.Value = random.Next();
-                });
-                threads[t].IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 threads[t].Start();
             }
             JoinAll(threads);
@@ -787,8 +791,10 @@ namespace Fluorine
             {
                 s.Shutdown();
                 finished.Set();
-            });
-            thread.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             thread.Start();
             Assert.True(finished.WaitOne(Harness.TimeoutMs), "Shutdown did not complete");
             Assert.True(thread.Join(Harness.TimeoutMs));
@@ -959,8 +965,10 @@ namespace Fluorine
             {
                 for (int i = 1; i <= Harness.Stress; i++)
                     reg.Value = i;
-            });
-            writer.IsBackground = true;
+            })
+            {
+                IsBackground = true
+            };
             writer.Start();
             Assert.True(writer.Join(Harness.TimeoutMs));
             Harness.Barrier2(s);
@@ -1315,8 +1323,10 @@ namespace Fluorine
                 {
                     reaction.Trigger();
                     done.Set();
-                });
-                worker.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 worker.Start();
                 Harness.Wait(done, "trigger");
                 worker.Join();
@@ -1948,8 +1958,10 @@ namespace Fluorine
                     {
                         done.Set();
                     }
-                });
-                worker.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 worker.Start();
                 Assert.True(done.WaitOne(Harness.TimeoutMs), "worker blocked while a reaction held the register");
                 Assert.Null(error);
@@ -2057,8 +2069,10 @@ namespace Fluorine
                         caught = ex;
                     }
                     ready.Set();
-                });
-                thread.IsBackground = true;
+                })
+                {
+                    IsBackground = true
+                };
                 thread.Start();
                 Harness.Wait(ready, "no-scheduler thread");
                 Assert.IsType<ReactiveException>(caught);

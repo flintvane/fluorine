@@ -104,7 +104,7 @@ namespace Fluorine
                 previous = default;
                 changed = true;
                 inserted = true;
-                return new Leaf(new[] { incoming });
+                return new Leaf([incoming]);
             }
 
             var edit = UpdateNode(root, incoming, comparer, replace);
@@ -115,7 +115,7 @@ namespace Fluorine
                 return root;
             if (edit.SplitRight == null)
                 return edit.Node;
-            return new Branch(new[] { edit.Node, edit.SplitRight });
+            return new Branch([edit.Node, edit.SplitRight]);
         }
 
         internal static Node Remove(Node root, T item, IComparer<T> comparer, out bool removed)
@@ -522,7 +522,7 @@ namespace Fluorine
 
             if (list.Count == 0)
                 return null;
-            return new Branch(list.ToArray());
+            return new Branch([.. list]);
         }
 
         static void FixUnderfull(List<Node> siblings, int index)
