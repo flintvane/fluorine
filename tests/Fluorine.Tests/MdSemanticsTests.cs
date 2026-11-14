@@ -1,10 +1,12 @@
-using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
+using System;
 using Xunit;
 
 namespace Fluorine.Tests
 {
-    public class Md1_ThreadingTests
+    public class Md1_ThreadingTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_1_1_EventLoopProcessesOneAtATime()
@@ -44,6 +46,50 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s1.2-01")]
+        public void Sem_1_2_01_RunsNeverParallelWithThemselves()
+        {
+            // The row's pause is a blocked run. A gate stands in for it so the harness does not sleep.
+            var s = Harness.Create();
+            int inflight = 0;
+            int peak = 0;
+            int runs = 0;
+            var entered = new ManualResetEvent(false);
+            var release = new ManualResetEvent(false);
+            Reaction reaction = null;
+            try
+            {
+                reaction = new Reactor(s).Add(() =>
+                {
+                    int now = Interlocked.Increment(ref inflight);
+                    NotePeak(ref peak, now);
+                    int n = Interlocked.Increment(ref runs);
+                    if (n == 2)
+                    {
+                        entered.Set();
+                        release.WaitOne();
+                    }
+                    Interlocked.Decrement(ref inflight);
+                });
+                Harness.Barrier(s);
+                reaction.Trigger();
+                Harness.Wait(entered, "held run");
+                var threads = StartThreads(8, () =>
+                {
+                    for (int i = 0; i < Harness.Stress / 8; i++)
+                        reaction.Trigger();
+                });
+                JoinAll(threads);
+                Assert.True(Volatile.Read(ref peak) <= 1, "in-flight " + Volatile.Read(ref peak));
+            }
+            finally
+            {
+                release.Set();
+            }
+            Harness.Barrier2(s);
+            Assert.True(Volatile.Read(ref peak) <= 1, "in-flight " + Volatile.Read(ref peak));
+        }
+
         [Fact]
         public void Rule_1_3_RegistersAreNotPinned()
         {
@@ -78,6 +124,29 @@ namespace Fluorine.Tests
                 go.Set();
                 WaitUntil.True(() => n == 2, "coalesced to one extra");
             }
+        }
+
+        [Fact(DisplayName = "s1.4-01")]
+        public void Sem_1_4_01_Coalescing()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            new Reactor(s).Add(() =>
+            {
+                var unused = reg.Value;
+                Interlocked.Increment(ref runs);
+            });
+            Harness.Barrier(s);
+            Assert.Equal(1, Volatile.Read(ref runs));
+            using (var hold = Harness.Gate(s))
+            {
+                for (int i = 1; i <= 100; i++)
+                    reg.Value = i;
+                hold.Release();
+            }
+            Harness.Barrier(s);
+            Assert.Equal(2, Volatile.Read(ref runs));
         }
 
         [Fact]
@@ -164,6 +233,55 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s1.8-01")]
+        public void Sem_1_8_01_TriggerAndQueueNeverThrow()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(1);
+            var reactor = new Reactor(s);
+            var reaction = reactor.Add(() =>
+            {
+                var unused = reg.Value;
+            });
+            Harness.Barrier(s);
+            reaction.Dispose();
+            reactor.Dispose();
+            s.Shutdown();
+
+            Assert.Null(Record.Exception(() => reaction.Trigger()));
+            Assert.Null(Record.Exception(() => reg.TriggerReactions()));
+            Assert.Null(Record.Exception(() => { reg.Value = 2; }));
+            Assert.Null(Record.Exception(() => reactor.Queue((Action)null)));
+            Assert.Null(Record.Exception(() => reactor.Queue(() => { })));
+            Assert.Null(Record.Exception(() => s.Queue((Action)null)));
+            Assert.Null(Record.Exception(() => s.Queue(() => { })));
+            var late = new Reactor(s);
+            Assert.Null(Record.Exception(() => late.Queue((Action)null)));
+            Assert.Null(late.Add(() => { }));
+        }
+
+        [Fact(DisplayName = "s1.8-03")]
+        public void Sem_1_8_03_RefusedRunIsSilent()
+        {
+            using (var log = new Log())
+            {
+                var s = Harness.Create();
+                var reactor = new Reactor(s);
+                int runs = 0;
+                var reaction = reactor.Add(() => runs++);
+                Harness.Barrier(s);
+                s.Shutdown();
+                log.Clear();
+                int actions = 0;
+                Assert.Null(Record.Exception(() => reaction.Trigger()));
+                Assert.Null(Record.Exception(() => s.Queue(() => actions++)));
+                Assert.Null(Record.Exception(() => reactor.Queue(() => actions++)));
+                Assert.Equal(0, log.Count);
+                Assert.Equal(1, runs);
+                Assert.Equal(0, actions);
+            }
+        }
+
         [Fact]
         public void Rule_1_9_TrackingIsPerThread()
         {
@@ -186,6 +304,51 @@ namespace Fluorine.Tests
                 Thread.Sleep(40);
                 Assert.Equal(1, bn);
             }
+        }
+
+        [Fact(DisplayName = "s1.9-01")]
+        public void Sem_1_9_01_TrackingPerThread()
+        {
+            var s1 = Harness.Create();
+            var s2 = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            Exception error = null;
+            new Reactor(s1).Add(() =>
+            {
+                try
+                {
+                    Interlocked.Increment(ref runs);
+                    var onS2 = new ManualResetEvent(false);
+                    s2.Queue(() =>
+                    {
+                        var unused = reg.Value;
+                        onS2.Set();
+                    });
+                    Harness.Wait(onS2, "s2 read");
+                    var onPlain = new ManualResetEvent(false);
+                    var plain = new Thread(() =>
+                    {
+                        var unused = reg.Value;
+                        onPlain.Set();
+                    });
+                    plain.IsBackground = true;
+                    plain.Start();
+                    Harness.Wait(onPlain, "plain read");
+                    plain.Join();
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+            });
+            Harness.Barrier(s1);
+            Assert.Null(error);
+            int after = Volatile.Read(ref runs);
+            Assert.Equal(1, after);
+            reg.Value = 1;
+            Harness.Barrier(s1);
+            Assert.Equal(after, Volatile.Read(ref runs));
         }
 
         sealed class ThrowingScheduler : Scheduler
@@ -227,7 +390,75 @@ namespace Fluorine.Tests
         }
     }
 
-    public class Md3_EqualityTests
+    public class Md2_ControlFlowTests : SemanticsAcceptanceTest
+    {
+        [Fact(DisplayName = "s2-01")]
+        public void Sem_2_01_EndToEndFullNameExample()
+        {
+            var s = Harness.Create();
+            var first = new Register<string>("");
+            var last = new Register<string>("");
+            var labels = new List<string>();
+            int runs = 0;
+            Reaction reaction = null;
+            var ready = new ManualResetEvent(false);
+            s.Queue(() =>
+            {
+                first.Value = "Ada";
+                last.Value = "Lovelace";
+                reaction = new Reactor().Add(() =>
+                {
+                    Interlocked.Increment(ref runs);
+                    string label = first.Value == ""
+                        ? "Must have a first name"
+                        : first.Value + " " + last.Value;
+                    lock (labels)
+                        labels.Add(label);
+                });
+                ready.Set();
+            });
+            Harness.Wait(ready, "setup");
+            Harness.Barrier(s);
+            Assert.Equal(["Ada Lovelace"], Snapshot(labels));
+
+            using (var hold = Harness.Gate(s))
+            {
+                last.Value = "Byron";
+                first.Value = "Augusta";
+                hold.Release();
+            }
+            Harness.Barrier(s);
+            Assert.Equal(["Ada Lovelace", "Augusta Byron"], Snapshot(labels));
+            Assert.Equal(2, Volatile.Read(ref runs));
+
+            first.Value = "Augusta";
+            Harness.Barrier(s);
+            Assert.Equal(2, Volatile.Read(ref runs));
+            Assert.Equal("Augusta Byron", Last(labels));
+
+            first.Value = "";
+            Harness.Barrier(s);
+            Assert.Equal("Must have a first name", Last(labels));
+            int afterEmpty = Volatile.Read(ref runs);
+            last.Value = "X";
+            Harness.Barrier(s);
+            Assert.Equal(afterEmpty, Volatile.Read(ref runs));
+            Assert.Equal("Must have a first name", Last(labels));
+
+            first.Value = "Ada";
+            Harness.Barrier(s);
+            Assert.Equal("Ada X", Last(labels));
+
+            int beforeDispose = Volatile.Read(ref runs);
+            reaction.Dispose();
+            first.Value = "ZZ";
+            last.Value = "YY";
+            Harness.Barrier(s);
+            Assert.Equal(beforeDispose, Volatile.Read(ref runs));
+        }
+    }
+
+    public class Md3_EqualityTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_3_1_ObjectEquals()
@@ -255,6 +486,41 @@ namespace Fluorine.Tests
                 r.Value = 2;
                 WaitUntil.True(() => seen == 2, "new value");
             }
+        }
+
+        [Fact(DisplayName = "s3.1b-01")]
+        public void Sem_3_1b_01_RacingWritersLoseNothing()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int seen = 0;
+            new Reactor(s).Add(() => { seen = reg.Value; });
+            Harness.Barrier(s);
+            int next = 0;
+            var threads = StartThreads(4, () =>
+            {
+                for (int i = 0; i < Harness.Stress / 4; i++)
+                {
+                    int value = Interlocked.Increment(ref next);
+                    reg.Value = value;
+                }
+            });
+            JoinAll(threads);
+            int final = reg.Value;
+            Harness.Barrier2(s);
+            Assert.Equal(final, seen);
+            Assert.InRange(final, 1, Harness.Stress);
+        }
+
+        [Fact(DisplayName = "s3.1b-02")]
+        public void Sem_3_1b_02_EqualityNotUnderRegisterLock()
+        {
+            var reg = new Register<ReenterEqual>();
+            var first = new ReenterEqual { Id = 1, Reg = reg };
+            var second = new ReenterEqual { Id = 2, Reg = reg };
+            reg.Value = first;
+            reg.Value = second;
+            Assert.Equal(2, reg.Value.Id);
         }
 
         [Fact]
@@ -286,7 +552,7 @@ namespace Fluorine.Tests
         }
     }
 
-    public class Md4_RunGuaranteeTests
+    public class Md4_RunGuaranteeTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_4_1_RunsAtLeastOnceAfterLastModification()
@@ -300,6 +566,33 @@ namespace Fluorine.Tests
                 r.Value = 9;
                 WaitUntil.True(() => last == 9, "last");
             }
+        }
+
+        [Fact(DisplayName = "s4.1-01")]
+        public void Sem_4_1_01_RunsAfterLastModification()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int seen = 0;
+            new Reactor(s).Add(() => { seen = reg.Value; });
+            Harness.Barrier(s);
+            var threads = new Thread[4];
+            for (int t = 0; t < threads.Length; t++)
+            {
+                int seed = t + 1;
+                threads[t] = new Thread(() =>
+                {
+                    var random = new Random(seed);
+                    for (int i = 0; i < Harness.Stress / 4; i++)
+                        reg.Value = random.Next();
+                });
+                threads[t].IsBackground = true;
+                threads[t].Start();
+            }
+            JoinAll(threads);
+            int final = reg.Value;
+            Harness.Barrier2(s);
+            Assert.Equal(final, seen);
         }
 
         [Fact]
@@ -354,6 +647,39 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s4.4-01")]
+        public void Sem_4_4_01_TriggerDuringRunQueuesOneMore()
+        {
+            var s = Harness.Create();
+            int runs = 0;
+            var entered = new ManualResetEvent(false);
+            var release = new ManualResetEvent(false);
+            Reaction reaction = null;
+            try
+            {
+                reaction = new Reactor(s).Add(() =>
+                {
+                    int n = Interlocked.Increment(ref runs);
+                    if (n == 2)
+                    {
+                        entered.Set();
+                        release.WaitOne();
+                    }
+                });
+                Harness.Barrier(s);
+                reaction.Trigger();
+                Harness.Wait(entered, "run 2");
+                for (int i = 0; i < 5; i++)
+                    reaction.Trigger();
+            }
+            finally
+            {
+                release.Set();
+            }
+            Harness.Barrier2(s);
+            Assert.Equal(3, Volatile.Read(ref runs));
+        }
+
         [Fact]
         public void Rule_4_5_ManualRegisterTriggerIgnoresEquality()
         {
@@ -384,9 +710,32 @@ namespace Fluorine.Tests
                 WaitUntil.True(() => n == 2, "manual");
             }
         }
+
+        [Fact(DisplayName = "s4.6-01")]
+        public void Sem_4_6_01_ManualTriggerQueuedLikeOthers()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            Reaction reaction = null;
+            reaction = new Reactor(s).Add(() =>
+            {
+                var unused = reg.Value;
+                Interlocked.Increment(ref runs);
+            });
+            Harness.Barrier(s);
+            using (var hold = Harness.Gate(s))
+            {
+                reg.Value = 1;
+                reaction.Trigger();
+                hold.Release();
+            }
+            Harness.Barrier(s);
+            Assert.Equal(2, Volatile.Read(ref runs));
+        }
     }
 
-    public class Md6_CyclesTests
+    public class Md6_CyclesTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_6_1_SelfWriteRetriggers()
@@ -404,6 +753,45 @@ namespace Fluorine.Tests
                 });
                 WaitUntil.True(() => n >= 4 && r.Value == 3, "self writes");
             }
+        }
+
+        [Fact(DisplayName = "s6.1-01")]
+        public void Sem_6_1_01_SelfWriteRetriggers()
+        {
+            var s = Harness.Create();
+            var c = new Register<int>(0);
+            int runs = 0;
+            new Reactor(s).Add(() =>
+            {
+                Interlocked.Increment(ref runs);
+                if (c.Value < 10)
+                    c.Value++;
+            });
+            for (int i = 0; i < 12; i++)
+                Harness.Barrier(s);
+            Assert.Equal(10, c.Value);
+            Assert.Equal(11, Volatile.Read(ref runs));
+        }
+
+        [Fact(DisplayName = "s6.2-01")]
+        public void Sem_6_2_01_EndlessSelfTriggerDoesNotStarve()
+        {
+            var s = Harness.Create();
+            var c = new Register<int>(0);
+            new Reactor(s).Add(() => { c.Value++; });
+            var ran = new ManualResetEvent(false);
+            s.Queue(() => ran.Set());
+            Assert.True(ran.WaitOne(1000), "queued action did not run within 1 s");
+            var finished = new ManualResetEvent(false);
+            var thread = new Thread(() =>
+            {
+                s.Shutdown();
+                finished.Set();
+            });
+            thread.IsBackground = true;
+            thread.Start();
+            Assert.True(finished.WaitOne(Harness.TimeoutMs), "Shutdown did not complete");
+            Assert.True(thread.Join(Harness.TimeoutMs));
         }
 
         [Fact]
@@ -431,9 +819,94 @@ namespace Fluorine.Tests
                 Assert.Equal(1, n);
             }
         }
+
+        [Fact(DisplayName = "s6.3-01")]
+        public void Sem_6_3_01_WritesInsidePauseStillTrigger()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            new Reactor(s).Add(() =>
+            {
+                var unused = reg.Value;
+                Interlocked.Increment(ref runs);
+            });
+            Harness.Barrier(s);
+            int before = Volatile.Read(ref runs);
+            new Reactor(s).Add(() =>
+            {
+                using (Reaction.Pause())
+                    reg.Value = 1;
+            });
+            Harness.Barrier2(s);
+            Assert.True(Volatile.Read(ref runs) > before);
+        }
+
+        [Fact(DisplayName = "s6.4-01")]
+        public void Sem_6_4_01_ReactionCreatingReactions()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            var reactor = new Reactor(s);
+            int r1Runs = 0;
+            int r2Runs = 0;
+            Reaction created = null;
+            var r1 = reactor.Add(() =>
+            {
+                Interlocked.Increment(ref r1Runs);
+                if (created == null)
+                {
+                    created = reactor.Add(() =>
+                    {
+                        var unused = reg.Value;
+                        Interlocked.Increment(ref r2Runs);
+                    });
+                }
+            });
+            Harness.Barrier2(s);
+            Assert.True(Volatile.Read(ref r2Runs) >= 1);
+            int r1Before = Volatile.Read(ref r1Runs);
+            int r2Before = Volatile.Read(ref r2Runs);
+            r1.Dispose();
+            reg.Value = 1;
+            Harness.Barrier2(s);
+            Assert.Equal(r1Before, Volatile.Read(ref r1Runs));
+            Assert.True(Volatile.Read(ref r2Runs) > r2Before);
+
+            var other = Harness.Create();
+            var reg2 = new Register<int>(0);
+            var owner = new Reactor(other);
+            int a = 0;
+            int b = 0;
+            Reaction child = null;
+            owner.Add(() =>
+            {
+                var unused = reg2.Value;
+                Interlocked.Increment(ref a);
+                if (child == null)
+                {
+                    child = owner.Add(() =>
+                    {
+                        var ignored = reg2.Value;
+                        Interlocked.Increment(ref b);
+                    });
+                }
+            });
+            Harness.Barrier2(other);
+            Assert.True(Volatile.Read(ref a) >= 1);
+            Assert.True(Volatile.Read(ref b) >= 1);
+            int a0 = Volatile.Read(ref a);
+            int b0 = Volatile.Read(ref b);
+            owner.Dispose();
+            reg2.Value = 2;
+            child.Trigger();
+            Harness.Barrier(other);
+            Assert.Equal(a0, Volatile.Read(ref a));
+            Assert.Equal(b0, Volatile.Read(ref b));
+        }
     }
 
-    public class Md7_ProtocolTests
+    public class Md7_ProtocolTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_7_1_SubscribeBeforeValueReturned()
@@ -465,6 +938,34 @@ namespace Fluorine.Tests
                 r.Value = 5;
                 WaitUntil.True(() => seen == 5, "stored");
             }
+        }
+
+        [Fact(DisplayName = "s7.2-01")]
+        public void Sem_7_2_01_TriggeredReactionSeesNewValue()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int lastSeen = 0;
+            int older = 0;
+            new Reactor(s).Add(() =>
+            {
+                int value = reg.Value;
+                if (value < lastSeen)
+                    Interlocked.Exchange(ref older, value);
+                lastSeen = value;
+            });
+            Harness.Barrier(s);
+            var writer = new Thread(() =>
+            {
+                for (int i = 1; i <= Harness.Stress; i++)
+                    reg.Value = i;
+            });
+            writer.IsBackground = true;
+            writer.Start();
+            Assert.True(writer.Join(Harness.TimeoutMs));
+            Harness.Barrier2(s);
+            Assert.Equal(0, Volatile.Read(ref older));
+            Assert.Equal(reg.Value, lastSeen);
         }
 
         [Fact]
@@ -513,6 +1014,63 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s7.3a-01")]
+        public void Sem_7_3a_01_NormalAndPausedReadKeepsSubscription()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            new Reactor(s).Add(() =>
+            {
+                Interlocked.Increment(ref runs);
+                var normal = reg.Value;
+                using (Reaction.Pause())
+                {
+                    var paused = reg.Value;
+                    GC.KeepAlive(paused);
+                }
+                GC.KeepAlive(normal);
+            });
+            Harness.Barrier(s);
+            reg.Value = 1;
+            Harness.Barrier(s);
+            Assert.Equal(2, Volatile.Read(ref runs));
+        }
+
+        [Fact(DisplayName = "s7.3a-02")]
+        public void Sem_7_3a_02_OnlyPausedReadDropsSubscription()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            Reaction reaction = null;
+            reaction = new Reactor(s).Add(() =>
+            {
+                int n = Interlocked.Increment(ref runs);
+                if (n == 1)
+                {
+                    var normal = reg.Value;
+                    GC.KeepAlive(normal);
+                }
+                else
+                {
+                    using (Reaction.Pause())
+                    {
+                        var paused = reg.Value;
+                        GC.KeepAlive(paused);
+                    }
+                }
+            });
+            Harness.Barrier(s);
+            reaction.Trigger();
+            Harness.Barrier(s);
+            int after = Volatile.Read(ref runs);
+            Assert.Equal(2, after);
+            reg.Value = 5;
+            Harness.Barrier(s);
+            Assert.Equal(after, Volatile.Read(ref runs));
+        }
+
         [Fact]
         public void Rule_7_4_ReactionNeverRunsReentrantly()
         {
@@ -557,9 +1115,31 @@ namespace Fluorine.Tests
                 Assert.Equal(1, n);
             }
         }
+
+        [Fact(DisplayName = "s7.5-01")]
+        public void Sem_7_5_01_TriggerDoesNotSubscribe()
+        {
+            var s = Harness.Create();
+            var sig = new Register();
+            int r1Runs = 0;
+            int r2Runs = 0;
+            Reaction r2 = null;
+            r2 = new Reactor(s).Add(() => { Interlocked.Increment(ref r2Runs); });
+            new Reactor(s).Add(() =>
+            {
+                Interlocked.Increment(ref r1Runs);
+                sig.TriggerReactions();
+                r2.Trigger();
+            });
+            Harness.Barrier2(s);
+            int before = Volatile.Read(ref r1Runs);
+            sig.TriggerReactions();
+            Harness.Barrier(s);
+            Assert.Equal(before, Volatile.Read(ref r1Runs));
+        }
     }
 
-    public class Md8_ExceptionTests
+    public class Md8_ExceptionTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_8_1_ExceptionEndsRunKeepsReadsUpToThrow()
@@ -614,6 +1194,29 @@ namespace Fluorine.Tests
                 {
                     Reactive.UnhandledException -= Ignore;
                 }
+            }
+        }
+
+        [Fact(DisplayName = "s8.2-01")]
+        public void Sem_8_2_01_ThrowingReactionDoesNotStopLoop()
+        {
+            using (var log = new Log())
+            {
+                var s = Harness.Create();
+                var reaction = new Reactor(s).Add(() => { throw new InvalidOperationException("again"); });
+                Harness.Barrier(s);
+                log.Clear();
+                for (int i = 0; i < 10; i++)
+                {
+                    reaction.Trigger();
+                    Harness.Barrier(s);
+                }
+                var items = log.Snapshot();
+                Assert.Equal(10, items.Length);
+                bool ran = false;
+                s.Queue(() => ran = true);
+                Harness.Barrier(s);
+                Assert.True(ran);
             }
         }
 
@@ -689,8 +1292,40 @@ namespace Fluorine.Tests
 
     }
 
-    public class Md11_SchedulingTests
+    public class Md11_SchedulingTests : SemanticsAcceptanceTest
     {
+        [Fact(DisplayName = "s11.1-01")]
+        public void Sem_11_1_01_ReactionStaysOnItsThread()
+        {
+            var s = Harness.Create();
+            var owner = Harness.ThreadOf(s);
+            int runs = 0;
+            int wrong = 0;
+            var reaction = new Reactor(s).Add(() =>
+            {
+                Interlocked.Increment(ref runs);
+                if (!object.ReferenceEquals(Thread.CurrentThread, owner))
+                    Interlocked.Exchange(ref wrong, 1);
+            });
+            Harness.Barrier(s);
+            for (int n = 0; n < 100; n++)
+            {
+                var done = new ManualResetEvent(false);
+                var worker = new Thread(() =>
+                {
+                    reaction.Trigger();
+                    done.Set();
+                });
+                worker.IsBackground = true;
+                worker.Start();
+                Harness.Wait(done, "trigger");
+                worker.Join();
+                Harness.Barrier(s);
+            }
+            Assert.Equal(0, Volatile.Read(ref wrong));
+            Assert.Equal(101, Volatile.Read(ref runs));
+        }
+
         [Fact]
         public void Rule_11_2_ReactorCapturesCreatingThreadScheduler()
         {
@@ -719,6 +1354,38 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s11.5-01")]
+        public void Sem_11_5_01_SameLoopStartupOrdering()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            int seen = -1;
+            Exception error = null;
+            s.Queue(() =>
+            {
+                try
+                {
+                    new Reactor().Add(() =>
+                    {
+                        seen = reg.Value;
+                        Interlocked.Increment(ref runs);
+                    });
+                    reg.Value = 5;
+                    if (Volatile.Read(ref runs) != 0)
+                        throw new InvalidOperationException("run before the action ended: " + runs);
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+            });
+            Harness.Barrier2(s);
+            Assert.Null(error);
+            Assert.True(Volatile.Read(ref runs) >= 1);
+            Assert.Equal(5, seen);
+        }
+
         [Fact]
         public void Rule_11_7_TwoReactionsOnSameLoopNeverConcurrent()
         {
@@ -742,6 +1409,53 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s11.7-01")]
+        public void Sem_11_7_01_NoConcurrentRunsOnOneLoop()
+        {
+            var s = Harness.Create();
+            var reactor = new Reactor(s);
+            int inflight = 0;
+            int peak = 0;
+            int arm = 0;
+            var entered = new ManualResetEvent(false);
+            var release = new ManualResetEvent(false);
+            var reactions = new Reaction[10];
+            try
+            {
+                for (int i = 0; i < reactions.Length; i++)
+                {
+                    int index = i;
+                    reactions[i] = reactor.Add(() =>
+                    {
+                        int now = Interlocked.Increment(ref inflight);
+                        NotePeak(ref peak, now);
+                        if (index == 0 && Interlocked.Increment(ref arm) == 2)
+                        {
+                            entered.Set();
+                            release.WaitOne();
+                        }
+                        Interlocked.Decrement(ref inflight);
+                    });
+                }
+                Harness.Barrier(s);
+                reactions[0].Trigger();
+                Harness.Wait(entered, "held run");
+                var threads = StartThreads(8, () =>
+                {
+                    for (int i = 0; i < Harness.Stress / 8; i++)
+                        reactions[i % reactions.Length].Trigger();
+                });
+                JoinAll(threads);
+                Assert.True(Volatile.Read(ref peak) <= 1, "in-flight " + Volatile.Read(ref peak));
+            }
+            finally
+            {
+                release.Set();
+            }
+            Harness.Barrier2(s);
+            Assert.True(Volatile.Read(ref peak) <= 1, "in-flight " + Volatile.Read(ref peak));
+        }
+
         [Fact]
         public void Rule_11_9_FirstComeFirstServed()
         {
@@ -755,6 +1469,27 @@ namespace Fluorine.Tests
                 go.Set();
                 WaitUntil.True(() => order == "ab", "fifo");
             }
+        }
+
+        [Fact(DisplayName = "s11.9-02")]
+        public void Sem_11_9_02_CoalescedPositionStaysAtFirstTrigger()
+        {
+            var s = Harness.Create();
+            var order = new List<int>();
+            int phase = 0;
+            var r1 = new Reactor(s).Add(() => { if (Volatile.Read(ref phase) == 1) lock (order) order.Add(1); });
+            var r2 = new Reactor(s).Add(() => { if (Volatile.Read(ref phase) == 1) lock (order) order.Add(2); });
+            Harness.Barrier(s);
+            using (var hold = Harness.Gate(s))
+            {
+                Volatile.Write(ref phase, 1);
+                r1.Trigger();
+                r2.Trigger();
+                r1.Trigger();
+                hold.Release();
+            }
+            Harness.Barrier(s);
+            Assert.Equal([1, 2], order.ToArray());
         }
 
         [Fact]
@@ -859,6 +1594,34 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s11.11-01")]
+        public void Sem_11_11_01_SameLoopMultiWritesSeenTogether()
+        {
+            var s = Harness.Create();
+            var a = new Register<int>(0);
+            var b = new Register<int>(0);
+            var pairs = new List<string>();
+            new Reactor(s).Add(() =>
+            {
+                int av = a.Value;
+                int bv = b.Value;
+                lock (pairs)
+                    pairs.Add(av + "," + bv);
+            });
+            Harness.Barrier(s);
+            s.Queue(() =>
+            {
+                a.Value = 1;
+                b.Value = 1;
+            });
+            Harness.Barrier2(s);
+            var seen = Snapshot(pairs);
+            Assert.Contains("0,0", seen);
+            Assert.Contains("1,1", seen);
+            for (int i = 0; i < seen.Length; i++)
+                Assert.True(seen[i] == "0,0" || seen[i] == "1,1", "observed " + seen[i]);
+        }
+
         [Fact]
         public void Rule_11_15_ShutdownDrainsThenDisposesAndRefusesNew()
         {
@@ -897,7 +1660,7 @@ namespace Fluorine.Tests
         }
     }
 
-    public class Md12_LifetimeTests
+    public class Md12_LifetimeTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_12_5_DisposeRemovesSubscriptions()
@@ -939,6 +1702,26 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s12.6b-01")]
+        public void Sem_12_6b_01_LaterTriggerAfterDisposeNoEffect()
+        {
+            var s = Harness.Create();
+            var reg = new Register<int>(0);
+            int runs = 0;
+            var reaction = new Reactor(s).Add(() =>
+            {
+                var unused = reg.Value;
+                Interlocked.Increment(ref runs);
+            });
+            Harness.Barrier(s);
+            reaction.Dispose();
+            int before = Volatile.Read(ref runs);
+            reg.Value = 1;
+            reaction.Trigger();
+            Harness.Barrier(s);
+            Assert.Equal(before, Volatile.Read(ref runs));
+        }
+
         [Fact]
         public void Rule_12_8_ValuelessRegisterIsPureSignal()
         {
@@ -967,6 +1750,21 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s12.9-01")]
+        public void Sem_12_9_01_NullActionsNotErrors()
+        {
+            using (var log = new Log())
+            {
+                var s = Harness.Create();
+                var reactor = new Reactor(s);
+                Assert.Null(Record.Exception(() => Reaction.Pause((Action)null)));
+                Assert.Null(Record.Exception(() => reactor.Queue((Action)null)));
+                Assert.Null(Record.Exception(() => s.Queue((Action)null)));
+                Harness.Barrier(s);
+                Assert.Equal(0, log.Count);
+            }
+        }
+
         [Fact]
         public void Rule_12_12_AddDuringDisposeCreatesNothing()
         {
@@ -979,7 +1777,7 @@ namespace Fluorine.Tests
         }
     }
 
-    public class Md13_SyncTests
+    public class Md13_SyncTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_13_1_NoTearing()
@@ -1035,6 +1833,135 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s13.3-01")]
+        public void Sem_13_3_01_QueuedAtMostOnceUnderConcurrency()
+        {
+            var s = Harness.Create();
+            int runs = 0;
+            var reaction = new Reactor(s).Add(() => { Interlocked.Increment(ref runs); });
+            Harness.Barrier(s);
+            using (var hold = Harness.Gate(s))
+            {
+                var threads = StartThreads(16, () =>
+                {
+                    for (int i = 0; i < 1000; i++)
+                        reaction.Trigger();
+                });
+                JoinAll(threads);
+                hold.Release();
+            }
+            Harness.Barrier(s);
+            Assert.Equal(2, Volatile.Read(ref runs));
+        }
+
+        [Fact(DisplayName = "s13.5-01")]
+        public void Sem_13_5_01_NoDeadlockBetweenRegisterAndQueue()
+        {
+            var s1 = Harness.Create();
+            var s2 = Harness.Create();
+            var a = new Register<int>(0);
+            var b = new Register<int>(0);
+            var c = new Register<int>(0);
+            int budget = 200;
+            var r1 = new Reactor(s1).Add(() =>
+            {
+                int av = a.Value;
+                var unused = b.Value;
+                if (Interlocked.Decrement(ref budget) > 0)
+                    c.Value = av;
+            });
+            var r2 = new Reactor(s2).Add(() =>
+            {
+                int cv = c.Value;
+                var unused = a.Value;
+                if (Interlocked.Decrement(ref budget) > 0 && b.Value != cv)
+                    b.Value = cv;
+            });
+            var sw = Stopwatch.StartNew();
+            var threads = StartThreads(4, () =>
+            {
+                for (int i = 0; i < Harness.Stress / 4; i++)
+                {
+                    int value = i % 64;
+                    a.Value = value;
+                    b.Value = value;
+                    c.Value = value;
+                    r1.Trigger();
+                    r2.Trigger();
+                    a.TriggerReactions();
+                }
+            });
+            for (int i = 0; i < threads.Length; i++)
+            {
+                int remaining = 30000 - (int)sw.ElapsedMilliseconds;
+                if (remaining < 1)
+                    remaining = 1;
+                Assert.True(threads[i].Join(remaining), "deadlock: writer did not finish within 30 s");
+            }
+            int left = 30000 - (int)sw.ElapsedMilliseconds;
+            if (left < 1)
+                left = 1;
+            var done1 = new ManualResetEvent(false);
+            var done2 = new ManualResetEvent(false);
+            s1.Queue(() => done1.Set());
+            s2.Queue(() => done2.Set());
+            Assert.True(done1.WaitOne(left), "deadlock: S1 did not drain within 30 s");
+            left = 30000 - (int)sw.ElapsedMilliseconds;
+            if (left < 1)
+                left = 1;
+            Assert.True(done2.WaitOne(left), "deadlock: S2 did not drain within 30 s");
+        }
+
+        [Fact(DisplayName = "s13.7-01")]
+        public void Sem_13_7_01_NoLambdaUnderLock()
+        {
+            var s1 = Harness.Create();
+            var reg = new Register<int>(0);
+            var entered = new ManualResetEvent(false);
+            var release = new ManualResetEvent(false);
+            Thread worker = null;
+            try
+            {
+                new Reactor(s1).Add(() =>
+                {
+                    var unused = reg.Value;
+                    entered.Set();
+                    release.WaitOne();
+                });
+                Harness.Wait(entered, "reaction blocked");
+                var done = new ManualResetEvent(false);
+                Exception error = null;
+                worker = new Thread(() =>
+                {
+                    try
+                    {
+                        reg.Value = 4;
+                        reg.RecordRead();
+                        reg.TriggerReactions();
+                        s1.Queue(() => { });
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                    }
+                    finally
+                    {
+                        done.Set();
+                    }
+                });
+                worker.IsBackground = true;
+                worker.Start();
+                Assert.True(done.WaitOne(Harness.TimeoutMs), "worker blocked while a reaction held the register");
+                Assert.Null(error);
+            }
+            finally
+            {
+                release.Set();
+                if (worker != null)
+                    worker.Join(Harness.TimeoutMs);
+            }
+        }
+
         [Fact]
         public void Rule_13_8_WritersDoNotWaitForReaction()
         {
@@ -1063,7 +1990,33 @@ namespace Fluorine.Tests
         }
     }
 
-    public class Md15_LoggingTests
+    public class Md14_DiscussionTests : SemanticsAcceptanceTest
+    {
+        [Fact(DisplayName = "s14.1-01")]
+        public void Sem_14_1_01_ShadowRegisterPattern()
+        {
+            var s = Harness.Create();
+            var sig = new Register();
+            int field = 0;
+            int seen = -1;
+            int runs = 0;
+            new Reactor(s).Add(() =>
+            {
+                Interlocked.Increment(ref runs);
+                sig.RecordRead();
+                seen = field;
+            });
+            Harness.Barrier(s);
+            int before = Volatile.Read(ref runs);
+            field = 4;
+            sig.TriggerReactions();
+            Harness.Barrier(s);
+            Assert.True(Volatile.Read(ref runs) > before);
+            Assert.Equal(4, seen);
+        }
+    }
+
+    public class Md15_LoggingTests : SemanticsAcceptanceTest
     {
         [Fact]
         public void Rule_15_1_UnhandledFromReactionIsLogged()
@@ -1085,5 +2038,48 @@ namespace Fluorine.Tests
             }
         }
 
+        [Fact(DisplayName = "s15.2-01")]
+        public void Sem_15_2_01_UsageErrorsThrownNotLogged()
+        {
+            using (var log = new Log())
+            {
+                Exception caught = null;
+                var ready = new ManualResetEvent(false);
+                var thread = new Thread(() =>
+                {
+                    try
+                    {
+                        var reactor = new Reactor();
+                        GC.KeepAlive(reactor);
+                    }
+                    catch (Exception ex)
+                    {
+                        caught = ex;
+                    }
+                    ready.Set();
+                });
+                thread.IsBackground = true;
+                thread.Start();
+                Harness.Wait(ready, "no-scheduler thread");
+                Assert.IsType<ReactiveException>(caught);
+
+                var s = Harness.Create();
+                bool caughtInReaction = false;
+                new Reactor(s).Add(() =>
+                {
+                    try
+                    {
+                        Reaction.ContinueRecording();
+                    }
+                    catch (ReactiveException)
+                    {
+                        caughtInReaction = true;
+                    }
+                });
+                Harness.Barrier(s);
+                Assert.True(caughtInReaction);
+                Assert.Equal(0, log.Count);
+            }
+        }
     }
 }

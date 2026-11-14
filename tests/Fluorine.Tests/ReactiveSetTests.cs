@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Xunit;
 
 namespace Fluorine.Tests
 {
-    public class ReactiveSetTests
+    public class ReactiveSetTests : CollectionAcceptanceTest
     {
         [Fact]
         public void AddRemoveAndContainsFollowEqualsAndHashCode()
@@ -462,6 +464,57 @@ namespace Fluorine.Tests
             set.Add(new Entity(1, "Ploppy"));
             while (collection.Count == 0) Thread.Yield();
             scheduler.Shutdown();
+        }
+
+        [Fact(DisplayName = "cs12.13-01")]
+        public void Rule_12_13_01_SetDiffReportsNetAddedAndRemoved()
+        {
+            var sc = new ReactiveSet<K>();
+            var v0 = sc.Value;
+            sc.Add(k1);
+            sc.Add(k2);
+            var v1 = sc.Value;
+            sc.Remove(k1);
+            sc.Add(k3);
+            var v2 = sc.Value;
+            AssertSetTags(v1.Diff(v0), "Added:1:null", "Added:2:null");
+            AssertSetTags(v2.Diff(v1), "Removed:1:null", "Added:3:null");
+            AssertSetTags(v2.Diff(v0), "Added:2:null", "Added:3:null");
+            foreach (var change in v1.Diff(v0))
+                Assert.Null(change.Previous);
+            foreach (var change in v2.Diff(v1))
+                Assert.Null(change.Previous);
+            foreach (var change in v2.Diff(v0))
+                Assert.Null(change.Previous);
+        }
+
+        [Fact(DisplayName = "cs12.13-06")]
+        public void Rule_12_13_06_SetDiffReportsReplacedForOtherInstance()
+        {
+            var sc = new ReactiveSet<K>();
+            sc.Add(k1);
+            var v1 = sc.Value;
+            sc.Remove(k1);
+            sc.Add(k1p);
+            var v2 = sc.Value;
+            var forward = v2.Diff(v1);
+            Assert.Equal(1, forward.Length);
+            Assert.Equal(ReactiveSet<K>.ChangeKind.Replaced, forward[0].Kind);
+            Assert.True(ReferenceEquals(forward[0].Item, k1p));
+            Assert.True(ReferenceEquals(forward[0].Previous, k1));
+            var back = v1.Diff(v2);
+            Assert.Equal(1, back.Length);
+            Assert.Equal(ReactiveSet<K>.ChangeKind.Replaced, back[0].Kind);
+            Assert.True(ReferenceEquals(back[0].Item, k1));
+            Assert.True(ReferenceEquals(back[0].Previous, k1p));
+
+            var ints = new ReactiveSet<int>();
+            ints.Add(1);
+            var w1 = ints.Value;
+            ints.Remove(1);
+            ints.Add(1);
+            var w2 = ints.Value;
+            Assert.Equal(0, w2.Diff(w1).Length);
         }
 
         private void Dummy(object sender, NotifyCollectionChangedEventArgs e)
