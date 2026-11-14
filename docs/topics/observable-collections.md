@@ -7,7 +7,7 @@ A WPF `ItemsControl` or `ListBox` binds to an `ObservableCollection`. `Observabl
 Put the converter in the window resources and bind the set through it:
 
 ```xml
-<Window xmlns:fluorine="clr-namespace:Fluorine;assembly=Fluorine"
+<Window xmlns:fluorine="clr-namespace:Fluorine;assembly=Fluorine.Wpf"
         ...>
     <Window.Resources>
         <fluorine:ObservableCollectionConverter x:Key="ToObservableCollection"/>

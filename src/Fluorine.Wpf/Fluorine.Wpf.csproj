@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net48;net8.0-windows;net10.0-windows</TargetFrameworks>
+    <LangVersion>13</LangVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Fluorine</RootNamespace>
+    <AssemblyName>Fluorine.Wpf</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Fluorine.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Fluorine\Fluorine.csproj" />
+  </ItemGroup>
+</Project>

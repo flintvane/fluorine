@@ -341,7 +341,10 @@ namespace Fluorine
 
             thread.IsBackground = true;
             thread.Name = name;
+            // Only the Windows UI schedulers ask for STA; MTA works on every platform.
+#pragma warning disable CA1416
             thread.SetApartmentState(apartment);
+#pragma warning restore CA1416
             thread.Start();
             ready.Wait();
 

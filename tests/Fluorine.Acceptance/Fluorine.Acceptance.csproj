@@ -18,5 +18,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Fluorine\Fluorine.csproj" />
+    <ProjectReference Include="..\..\src\Fluorine.Wpf\Fluorine.Wpf.csproj" />
+    <ProjectReference Include="..\..\src\Fluorine.WinForms\Fluorine.WinForms.csproj" />
   </ItemGroup>
 </Project>

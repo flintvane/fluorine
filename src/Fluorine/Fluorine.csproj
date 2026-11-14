@@ -1,16 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0-windows;net10.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net10.0</TargetFrameworks>
     <LangVersion>13</LangVersion>
-    <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Fluorine</RootNamespace>
     <AssemblyName>Fluorine</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-      <_Parameter1>Fluorine.Tests</_Parameter1>
-    </AssemblyAttribute>
+    <InternalsVisibleTo Include="Fluorine.Wpf" />
+    <InternalsVisibleTo Include="Fluorine.WinForms" />
+    <InternalsVisibleTo Include="Fluorine.Tests" />
   </ItemGroup>
 </Project>
