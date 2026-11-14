@@ -23,7 +23,7 @@ The classes below are the standard realisation of a register. Other storage mode
 1.6 `Register<T>` has an empty constructor. It initializes the backing value with `default(T)` (3.1a).
 1.7 `Register<T>` has a constructor that takes an initial value. The value is stored without triggering anything.
 1.8 `Value` is a property. The getter calls `RecordRead()` and then returns the stored value. The setter performs a write as described in 3.1b.
-1.9 `Register.Name` is a settable property, for logs and debugging (15.4). There is no constructor that takes a name.
+1.9 `Register.Name` is a settable property, for logs and debugging (15.4).
 1.10 The name is always kept.
 1.11 Registers can be inherited. `Value`, `RecordRead()` and `TriggerReactions()` are not virtual.
 1.12 The backing value of the `Value` property is protected. It is only available to inheritors that want to specialize further.
@@ -45,7 +45,7 @@ The classes below are the standard realisation of a register. Other storage mode
 2.2 `Reactor()` creates a reactor on `Scheduler.Current`, captured at creation (11.2). When the calling thread has no scheduler, it throws `ReactiveException` (11.4, 15.2).
 2.3 `Reactor(Scheduler scheduler)` creates a reactor on the given scheduler. Passing null throws `ReactiveException` (15.2).
 2.4 A reactor created on a scheduler that has started its shutdown or has shut down is created without an error, and it behaves as a disposed reactor: `Add` creates nothing and returns null (2.9, 11.15).
-2.5 `Reactor.Name` is a settable property, for logs and debugging. There is no constructor that takes a name.
+2.5 `Reactor.Name` is a settable property, for logs and debugging.
 
 **Creating reactions**
 2.6 Reactions are only created through a reactor. `Reaction` has no public constructor.
