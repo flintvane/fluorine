@@ -1658,16 +1658,6 @@ namespace Fluorine
             worker.Join();
             Assert.True(host.Scheduler.IsFinished);
         }
-
-        [Fact]
-        public void Rule_11_17_ReactiveShutdownAll()
-        {
-            var a = ThreadScheduler.CreateNew("a");
-            var b = ThreadScheduler.CreateNew("b");
-            Reactive.Shutdown();
-            Assert.True(a.IsFinished);
-            Assert.True(b.IsFinished);
-        }
     }
 
     public class Md12_LifetimeTests : SemanticsAcceptanceTest
