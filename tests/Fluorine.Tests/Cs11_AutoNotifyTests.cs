@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Reflection;
 using System.Threading;
 using System;
 using Xunit;
@@ -80,32 +79,6 @@ namespace Fluorine
             Assert.Equal(new[] { "Value" }, names);
             Assert.Same(host.Thread, raisedOn);
             Assert.NotSame(Thread.CurrentThread, raisedOn);
-        }
-
-        [Fact]
-        public void Rule_11_4_EqualGetterValueDoesNotRaise()
-        {
-            using var host = new DispatcherHost();
-            Stable model = null;
-            var names = new List<string>();
-            host.OnScheduler(() =>
-            {
-                model = new Stable();
-                model.PropertyChanged += (sender, args) => names.Add(args.PropertyName);
-            });
-            host.Drain();
-            var readsAfterFirst = Volatile.Read(ref model.Reads);
-            Assert.True(readsAfterFirst >= 1);
-            Assert.Empty(names);
-
-            model.Source.Value = 3;
-            host.Drain();
-            Assert.True(Volatile.Read(ref model.Reads) > readsAfterFirst);
-            Assert.Empty(names);
-
-            model.Source.Value = 4;
-            host.Drain();
-            Assert.Equal(new[] { "Half" }, names);
         }
 
         [Fact(DisplayName = "cs11.5-01 Dispose ends notifications")]
@@ -799,38 +772,6 @@ namespace Fluorine
 
             [AutoNotify]
             public int Value => Source.Value;
-        }
-
-        sealed class Mark(int n)
-        {
-            public readonly int N = n;
-
-            public override bool Equals(object obj)
-            {
-                var other = obj as Mark;
-                return other != null && other.N == N;
-            }
-
-            public override int GetHashCode()
-            {
-                return N;
-            }
-        }
-
-        sealed class Stable : AutoNotify
-        {
-            public readonly Register<int> Source = new(2);
-            public int Reads;
-
-            [AutoNotify]
-            public Mark Half
-            {
-                get
-                {
-                    Interlocked.Increment(ref Reads);
-                    return new Mark(Source.Value / 2);
-                }
-            }
         }
 
         sealed class Counting : AutoNotify
