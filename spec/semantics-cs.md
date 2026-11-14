@@ -206,7 +206,7 @@ Enumeration order of `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` is 
 12.23 Both collections have a parameterless constructor, one taking a comparer, one taking initial contents, and one taking initial contents and a comparer. A null comparer means the default comparer; null initial contents throw `ArgumentNullException`.
 
 **Sorted collections**
-12.24 `ReactiveSortedSet<T>` and `ReactiveSortedDictionary<TKey, TValue>` follow 12.1, 12.4–12.15 and 12.23, with `IComparer<T>` or `IComparer<TKey>` in place of the equality comparer. Ordering replaces `Equals` and `GetHashCode`. There is no hash code. A comparison result must stay stable while the element or key is present. A null comparer means `Comparer<T>.Default` or `Comparer<TKey>.Default`.
+12.24 `ReactiveSortedSet<T>` and `ReactiveSortedDictionary<TKey, TValue>` follow 12.1, 12.4–12.15 and 12.23, with `IComparer<T>` or `IComparer<TKey>` in place of the equality comparer. Sorted dictionary values are compared as register values (12.2). Ordering replaces `Equals` and `GetHashCode`. There is no hash code. A comparison result must stay stable while the element or key is present. A null comparer means `Comparer<T>.Default` or `Comparer<TKey>.Default`.
 12.25 Enumeration of a sorted collection, of its `Version`, and of a sorted dictionary's `Keys` and `Values`, yields items in comparer order. `Diff` yields its changes in that same order.
 12.26 Null elements, values and keys are handled as in 12.3; a sorted set accepts a null element only when its comparer accepts it.
 12.27 `Add` on a sorted set leaves the stored instance in place when the comparer reports zero. `Diff` reports `Replaced` when two pictures hold different instances of a reference type at the same position (12.13).
