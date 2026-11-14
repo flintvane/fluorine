@@ -1,6 +1,6 @@
 [← Async code inside a reaction](async.md) · [Topics](../index.md) · [The Reactive attribute and the source generator →](reactive-attribute.md)
 
-# 19. Rules of thumb
+# 21. Rules of thumb
 
 A short checklist, with the reasons behind each rule.
 

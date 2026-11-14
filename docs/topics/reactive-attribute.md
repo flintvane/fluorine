@@ -1,6 +1,6 @@
 [← Rules of thumb](rules-of-thumb.md) · [Topics](../index.md) · [AutoNotify: notifying WPF →](autonotify.md)
 
-# 20. The `[Reactive]` attribute and the source generator
+# 22. The `[Reactive]` attribute and the source generator
 
 `[Reactive]` (`ReactiveAttribute`) marks two kinds of member.
 

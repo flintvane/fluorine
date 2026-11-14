@@ -48,6 +48,8 @@ nav:
       - "Signal registers and shadow registers": topics/signal-registers.md
       - "Reactive sets": topics/reactive-sets.md
       - "Reactive dictionaries": topics/reactive-dictionaries.md
+      - "Reactive sorted sets": topics/reactive-sorted-sets.md
+      - "Reactive sorted dictionaries": topics/reactive-sorted-dictionaries.md
       - "Derived values, self-writes and cycles": topics/derived-values.md
       - "Computed values": topics/computed.md
       - "Errors and logging": topics/errors-and-logging.md

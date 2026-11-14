@@ -23,13 +23,15 @@ Format, within each section: `N. [Title](topics/slug.md): description`
 11. [Signal registers and shadow registers](topics/signal-registers.md): A `Register` without a value, `TriggerReactions()`, and wrapping controls that hold their own data.
 12. [Reactive sets](topics/reactive-sets.md): `ReactiveSet<T>` for add, remove and membership; `Version` to enumerate a picture and `Diff` it against one you kept.
 13. [Reactive dictionaries](topics/reactive-dictionaries.md): `ReactiveDictionary<TKey, TValue>` for add, replace and remove; `Version` to enumerate a picture and `Diff` it against one you kept.
-14. [Derived values, self-writes and cycles](topics/derived-values.md): Reactions that write registers, reactions that follow a state, and reactions that create reactions.
-15. [Computed values](topics/computed.md): `Reactor.Computed` writes the result of a function into a register, which triggers only when the result changes.
-16. [Errors and logging](topics/errors-and-logging.md): Exceptions in reactions, `Reactive.UnhandledException`, `ReactiveException` and programming errors.
-17. [Shutting down](topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
-18. [Async code inside a reaction](topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
-19. [Rules of thumb](topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
-20. [The Reactive attribute and the source generator](topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
+14. [Reactive sorted sets](topics/reactive-sorted-sets.md): `ReactiveSortedSet<T>` for an ordered set; `Version` enumerates and `Diff` reports changes in comparer order.
+15. [Reactive sorted dictionaries](topics/reactive-sorted-dictionaries.md): `ReactiveSortedDictionary<TKey, TValue>` for an ordered map; `Version` enumerates and `Diff` reports changes in comparer order.
+16. [Derived values, self-writes and cycles](topics/derived-values.md): Reactions that write registers, reactions that follow a state, and reactions that create reactions.
+17. [Computed values](topics/computed.md): `Reactor.Computed` writes the result of a function into a register, which triggers only when the result changes.
+18. [Errors and logging](topics/errors-and-logging.md): Exceptions in reactions, `Reactive.UnhandledException`, `ReactiveException` and programming errors.
+19. [Shutting down](topics/shutdown.md): `Scheduler.Shutdown()` and `Reactive.Shutdown()`: drain, dispose, return.
+20. [Async code inside a reaction](topics/async.md): What part of an `async` lambda belongs to the run, and how to write one safely.
+21. [Rules of thumb](topics/rules-of-thumb.md): One reaction per thread, one entry and one exit, and a short checklist.
+22. [The Reactive attribute and the source generator](topics/reactive-attribute.md): `AddReactiveMethods` turns marked methods into reactions; the generator writes registers for partial properties.
 
 ## WPF
 

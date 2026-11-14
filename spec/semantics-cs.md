@@ -179,7 +179,7 @@ first change after a handler attaches (11.4).
 
 ## 12. Reactive collections
 
-Enumeration of these collections is not yet specified.
+Enumeration order of `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` is not specified. Sorted collections enumerate in comparer order (12.25).
 
 12.1 `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` derive from `Register`. `Value` returns a `Version`, an immutable picture of the current contents. Reading and writing a collection can be done from any thread, and creating one needs no scheduler (1.13).
 12.2 Set elements and dictionary keys are matched with the comparer of the collection (`Comparer`), using its `Equals` and `GetHashCode`. A hash code must stay stable while its element or key is present. Dictionary values are compared as register values (1.16, 1.17).
@@ -204,3 +204,10 @@ Enumeration of these collections is not yet specified.
 
 **Construction**
 12.23 Both collections have a parameterless constructor, one taking a comparer, one taking initial contents, and one taking initial contents and a comparer. A null comparer means the default comparer; null initial contents throw `ArgumentNullException`.
+
+**Sorted collections**
+12.24 `ReactiveSortedSet<T>` and `ReactiveSortedDictionary<TKey, TValue>` follow 12.1, 12.4–12.15 and 12.23, with `IComparer<T>` or `IComparer<TKey>` in place of the equality comparer. Ordering replaces `Equals` and `GetHashCode`. There is no hash code. A comparison result must stay stable while the element or key is present. A null comparer means `Comparer<T>.Default` or `Comparer<TKey>.Default`.
+12.25 Enumeration of a sorted collection, of its `Version`, and of a sorted dictionary's `Keys` and `Values`, yields items in comparer order. `Diff` yields its changes in that same order.
+12.26 A sorted set accepts null as an element when the comparer accepts it. A sorted dictionary rejects a null key with `ArgumentNullException`, on the dictionary and on a `Version`, and accepts a null value (12.3).
+12.27 `Add` on a sorted set leaves the stored instance in place when the comparer reports zero. `Diff` reports `Replaced` when two pictures hold different instances of a reference type at the same position (12.13). Dictionary values are compared as register values (1.16, 1.17). Replacing a value keeps the stored key instance (12.6).
+12.28 A version shares unchanged structure with the version it was built from and keeps no older version alive (12.15). When two pictures share structure, `Diff` walks only the parts that differ. Identical structure returns no changes. Two pictures with the same contents and no shared structure still yield an empty `Diff`.
