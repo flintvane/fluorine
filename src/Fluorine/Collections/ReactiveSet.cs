@@ -4,9 +4,10 @@ using System.Collections.Generic;
 
 namespace Fluorine
 {
+   
     /// <summary>
     /// A hash set published as immutable versions.
-    /// <see cref="Value"/> subscribes to every membership change.
+    /// <see cref="Values"/> subscribes to every membership change.
     /// <see cref="Contains"/> subscribes only to that element's presence.
     /// A version shares unchanged structure with the version it was built from
     /// and does not point back at it, so a version nobody holds can be collected.
@@ -49,7 +50,7 @@ namespace Fluorine
 
         public IEqualityComparer<T> Comparer => _comparer;
 
-        public Version Value
+        public Version Values
         {
             get
             {
@@ -173,8 +174,8 @@ namespace Fluorine
                     membership.TriggerReactions();
             }
         }
-
-        public IEnumerator<T> GetEnumerator() => Value.GetEnumerator();
+        
+        public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         internal int WatchedMemberships
@@ -274,19 +275,13 @@ namespace Fluorine
                 _comparer = comparer ?? EqualityComparer<T>.Default;
             }
 
-            internal static Version CreateEmpty(IEqualityComparer<T> comparer)
-            {
-                return new Version(null, 0, comparer);
-            }
+            internal static Version CreateEmpty(IEqualityComparer<T> comparer) 
+                => new(null, 0, comparer);
 
             public int Count { get; }
             
-            public bool Contains(T item)
-            {
-                if (_root == null)
-                    return false;
-                return _root.Contains(_comparer.GetHashCode(item), item, 0, _comparer);
-            }
+            public bool Contains(T item) 
+                => _root != null && _root.Contains(_comparer.GetHashCode(item), item, 0, _comparer);
 
             public SetChange<T>[] Diff(Version previous)
             {
@@ -297,7 +292,8 @@ namespace Fluorine
                 DiffNodes(older, _root, _comparer, changes);
                 return changes.Count == 0 ? [] : [.. changes];
             }
-            
+
+  
             public IEnumerator<T> GetEnumerator() => _root == null ? Empty() : _root.GetEnumerator();
 
             private IEnumerator<T> Empty()

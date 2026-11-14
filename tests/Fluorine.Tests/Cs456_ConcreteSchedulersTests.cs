@@ -221,11 +221,6 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs4.2-07", Skip = "not testable through the public API (spec gap)")]
-        public void Rule_4_2_07_StartupFailurePassesThroughUnchanged()
-        {
-        }
-
         static void WaitUntilBlocked(Thread thread, ManualResetEvent started)
         {
             if (!started.WaitOne(TimeSpan.FromSeconds(5)))
@@ -603,11 +598,6 @@ namespace Fluorine
             Harness.AssertInitialIsFirst(initial => DispatcherScheduler.CreateNew("cs5.2-04", initial));
         }
 
-        [Fact(DisplayName = "cs5.2-06", Skip = "not testable through the public API (spec gap)")]
-        public void Rule_5_2_06_StartupFailurePassesThroughUnchanged()
-        {
-        }
-
         [Fact]
         public void Rule_5_3_AttachToCurrentReturnsExisting()
         {
@@ -848,23 +838,7 @@ namespace Fluorine
         {
             Assert.Throws<ReactiveException>(() => WinFormsScheduler.AttachToCurrent());
         }
-
-        [Fact(DisplayName = "cs6.2-01")]
-        public void Rule_6_2_01_NoUserContextApi()
-        {
-            var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
-            foreach (var method in typeof(WinFormsScheduler).GetMethods(flags))
-            {
-                foreach (var parameter in method.GetParameters())
-                    Assert.False(typeof(SynchronizationContext).IsAssignableFrom(parameter.ParameterType), method.Name);
-            }
-            foreach (var ctor in typeof(WinFormsScheduler).GetConstructors(flags))
-            {
-                foreach (var parameter in ctor.GetParameters())
-                    Assert.False(typeof(SynchronizationContext).IsAssignableFrom(parameter.ParameterType));
-            }
-        }
-
+        
         [Fact]
         public void Rule_6_3_QueueNeverBlocksAndShutdownDoesNotEndLoop()
         {

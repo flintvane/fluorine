@@ -20,9 +20,9 @@ namespace Fluorine
             Assert.Equal(["Ada", "b"], set.ToArray());
             Assert.Same("Ada", set.Single(item => item.Length == 3));
 
-            var picture = set.Value;
+            var picture = set.Values;
             Assert.False(set.Add("ADA"));
-            Assert.Same(picture, set.Value);
+            Assert.Same(picture, set.Values);
             Assert.Equal(["Ada", "b"], picture.ToArray());
 
             Assert.True(set.Remove("aDa"));
@@ -67,7 +67,7 @@ namespace Fluorine
                 2
             };
             Assert.Equal([3, 2, 1], set.ToArray());
-            Assert.Equal(["Added:3", "Added:2", "Added:1"], Names(set.Value.Diff(null)).ToArray());
+            Assert.Equal(["Added:3", "Added:2", "Added:1"], Names(set.Values.Diff(null)).ToArray());
             set.CheckInvariants();
         }
 
@@ -75,31 +75,31 @@ namespace Fluorine
         public void ClearDropsEveryMemberInOrder()
         {
             var set = new ReactiveSortedSet<int>([2, 3, 1]);
-            var before = set.Value;
+            var before = set.Values;
             set.Clear();
             Assert.Equal(0, set.Count);
-            Assert.Same(set.Value, set.Value);
-            Assert.Equal(["Removed:1", "Removed:2", "Removed:3"], Names(set.Value.Diff(before)).ToArray());
-            var empty = set.Value;
+            Assert.Same(set.Values, set.Values);
+            Assert.Equal(["Removed:1", "Removed:2", "Removed:3"], Names(set.Values.Diff(before)).ToArray());
+            var empty = set.Values;
             set.Clear();
-            Assert.Same(empty, set.Value);
+            Assert.Same(empty, set.Values);
         }
 
         [Fact]
         public void DiffIsTheNetChangeInComparerOrder()
         {
             var set = new ReactiveSortedSet<int>();
-            var empty = set.Value;
+            var empty = set.Values;
             set.Add(2);
             set.Add(1);
-            var both = set.Value;
+            var both = set.Values;
             Assert.Equal(["Added:1", "Added:2"], Names(both.Diff(empty)).ToArray());
             Assert.Empty(both.Diff(both));
 
             set.Remove(1);
             set.Add(3);
-            Assert.Equal(["Removed:1", "Added:3"], Names(set.Value.Diff(both)).ToArray());
-            Assert.Equal(["Added:2", "Added:3"], Names(set.Value.Diff(null)).ToArray());
+            Assert.Equal(["Removed:1", "Added:3"], Names(set.Values.Diff(both)).ToArray());
+            Assert.Equal(["Added:2", "Added:3"], Names(set.Values.Diff(null)).ToArray());
         }
 
         [Fact]
@@ -114,16 +114,16 @@ namespace Fluorine
             }
 
             Assert.Equal([.. ascending], descending.ToArray());
-            Assert.Empty(ascending.Value.Diff(descending.Value));
-            Assert.Empty(descending.Value.Diff(ascending.Value));
-            Assert.False(ascending.Value == descending.Value);
+            Assert.Empty(ascending.Values.Diff(descending.Values));
+            Assert.Empty(descending.Values.Diff(ascending.Values));
+            Assert.False(ascending.Values == descending.Values);
         }
 
         [Fact]
         public void HeldPictureStaysPutAfterLaterWrites()
         {
             var set = new ReactiveSortedSet<int>([1, 2, 3]);
-            var before = set.Value;
+            var before = set.Values;
             set.Add(4);
             set.Remove(1);
             Assert.Equal([1, 2, 3], before.ToArray());
@@ -141,15 +141,15 @@ namespace Fluorine
             var second = new Entity(1, "Augusta");
             Assert.True(set.Add(first));
             Assert.True(set.Add(other));
-            var before = set.Value;
+            var before = set.Values;
             Assert.False(set.Add(second));
-            Assert.Same(before, set.Value);
+            Assert.Same(before, set.Values);
             Assert.Same(first, set.Single(item => item.Id == 1));
-            Assert.Empty(set.Value.Diff(before));
+            Assert.Empty(set.Values.Diff(before));
 
             Assert.True(set.Remove(first));
             Assert.True(set.Add(second));
-            var net = Assert.Single(set.Value.Diff(before));
+            var net = Assert.Single(set.Values.Diff(before));
             Assert.Equal(ChangeKind.Updated, net.Kind);
             Assert.Same(second, net.Item);
             Assert.Same(first, net.Previous);
@@ -162,10 +162,10 @@ namespace Fluorine
             var set = new ReactiveSortedSet<int>();
             for (var i = 0; i < 80; i++)
                 set.Add(i);
-            var before = set.Value;
+            var before = set.Values;
             set.CheckInvariants();
             Assert.True(set.Add(1000));
-            var after = set.Value;
+            var after = set.Values;
             set.CheckInvariants();
             var added = Assert.Single(after.Diff(before));
             Assert.Equal(ChangeKind.Added, added.Kind);
@@ -175,7 +175,7 @@ namespace Fluorine
 
             before = after;
             Assert.True(set.Remove(40));
-            after = set.Value;
+            after = set.Values;
             set.CheckInvariants();
             var removed = Assert.Single(after.Diff(before));
             Assert.Equal(ChangeKind.Removed, removed.Kind);
@@ -255,7 +255,7 @@ namespace Fluorine
                 var count = 0;
                 new Reactor(scheduler).Add(() =>
                 {
-                    count = set.Value.Count;
+                    count = set.Values.Count;
                     runs++;
                 });
                 scheduler.Pump();
@@ -408,7 +408,7 @@ namespace Fluorine
                 var applied = new List<string>();
                 new Reactor(scheduler).Add(() =>
                 {
-                    var current = set.Value;
+                    var current = set.Values;
                     if (!ready.Value)
                         return;
                     foreach (var change in current.Diff(seen))
@@ -451,7 +451,7 @@ namespace Fluorine
                 var runs = 0;
                 new Reactor(scheduler).Add(() =>
                 {
-                    set.Value.Count.ToString();
+                    set.Values.Count.ToString();
                     set.Contains(first);
                     runs++;
                 });
@@ -494,16 +494,16 @@ namespace Fluorine
 
                 Assert.Equal([.. mirror], set.ToArray());
                 foreach (var item in mirror)
-                    Assert.True(set.Value.Contains(item));
+                    Assert.True(set.Values.Contains(item));
                 set.CheckInvariants();
                 if (i == 1000)
                 {
-                    marked = set.Value;
+                    marked = set.Values;
                     markedMirror = new SortedSet<int>(mirror, comparer);
                 }
             }
 
-            var changes = set.Value.Diff(marked);
+            var changes = set.Values.Diff(marked);
             var added = changes.Where(change => change.Kind == ChangeKind.Added).Select(change => change.Item);
             var removed = changes.Where(change => change.Kind == ChangeKind.Removed).Select(change => change.Item);
             Assert.Equal(mirror.Where(item => !markedMirror.Contains(item)), added);

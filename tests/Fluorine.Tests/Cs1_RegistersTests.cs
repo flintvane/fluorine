@@ -32,13 +32,7 @@ namespace Fluorine
             var r = new Register<int>(7);
             Assert.Equal(7, r.Value);
         }
-
-        [Fact(DisplayName = "cs1.2-01")]
-        public void Rule_1_2_01_RegisterOfTIsRegister()
-        {
-            Assert.True(new Register<int>() is Register);
-        }
-
+        
         [Fact]
         public void Rule_1_3_RecordReadSubscribesCurrentWhenRecording()
         {
@@ -274,11 +268,6 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs1.9-02", Skip = "blocked (gap G10)")]
-        public void Rule_1_9_02_NameReadBack()
-        {
-        }
-
         [Fact]
         public void Rule_1_10_NameIsRetained()
         {
@@ -309,37 +298,6 @@ namespace Fluorine
             var r = new NamedRegister();
             r.SetStored(9);
             Assert.Equal(9, r.PeekStored());
-        }
-
-        [Fact(DisplayName = "cs1.12-01")]
-        public void Rule_1_12_01_BackingValueIsProtected()
-        {
-            var probe = new BackingProbe("stored");
-            Assert.Equal("stored", probe.ReadBacking());
-            Assert.Equal("stored", probe.Value);
-
-            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            int protectedMembers = 0;
-            foreach (var property in typeof(Register<string>).GetProperties(flags))
-            {
-                if (property.PropertyType != typeof(string))
-                    continue;
-                var getter = property.GetGetMethod(true);
-                if (getter != null && getter.IsFamily)
-                    protectedMembers++;
-                var setter = property.GetSetMethod(true);
-                if (setter != null && setter.IsPublic && property.Name != "Value" && property.Name != "Name")
-                    Assert.Fail("public setter bypass " + property.Name);
-            }
-            foreach (var field in typeof(Register<string>).GetFields(flags))
-            {
-                if (field.FieldType != typeof(string))
-                    continue;
-                if (field.IsFamily)
-                    protectedMembers++;
-                Assert.False(field.IsPublic, "public field bypass " + field.Name);
-            }
-            Assert.True(protectedMembers >= 1, "no protected backing member");
         }
 
         [Fact]

@@ -6,7 +6,7 @@ namespace Fluorine
 {
     /// <summary>
     /// A sorted set published as immutable versions.
-    /// <see cref="Value"/> subscribes to every membership change.
+    /// <see cref="Values"/> subscribes to every membership change.
     /// <see cref="Contains"/> subscribes only to that element's presence.
     /// A version shares unchanged blocks with the version it was built from
     /// and does not point back at it, so a version nobody holds can be collected.
@@ -51,7 +51,7 @@ namespace Fluorine
 
         public IComparer<T> Comparer => _comparer;
 
-        public Version Value
+        public Version Values
         {
             get
             {
@@ -184,7 +184,7 @@ namespace Fluorine
             }
         }
 
-        public IEnumerator<T> GetEnumerator() => Value.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -312,7 +312,7 @@ namespace Fluorine
             }
 
             internal int IndexOf(T item) => BlockTree<T>.IndexOf(_root, item, _comparer);
-
+            
             public SetChange<T>[] Diff(Version previous)
             {
                 var older = previous?._root;
@@ -322,6 +322,7 @@ namespace Fluorine
                 BlockTree<T>.Diff(older, _root, _comparer, new Sink(changes));
                 return changes.Count == 0 ? [] : [.. changes];
             }
+
 
             public IEnumerator<T> GetEnumerator() => new BlockTree<T>.Enumerator(_root);
 

@@ -850,7 +850,7 @@ namespace Fluorine
                                         mirrors[index].Remove(id);
                                 }
                                 var unusedCount = sc.Count;
-                                var unusedValue = sc.Value;
+                                var unusedValue = sc.Values;
                                 var unusedContains = sc.Contains(key);
                             }
                             else
@@ -964,7 +964,7 @@ namespace Fluorine
                 {
                     if (set)
                     {
-                        var v = sc.Value;
+                        var v = sc.Values;
                         int count = v.Count;
                         for (int i = 0; i < 10; i++)
                         {
@@ -1066,11 +1066,11 @@ namespace Fluorine
             var c = new ReactiveSet<K>();
             for (int i = 0; i < 100; i++)
                 c.Add(new K(i));
-            var v0 = c.Value;
+            var v0 = c.Values;
             var wr = new WeakReference(v0);
             c.Add(new K(100));
             c.Remove(new K(0));
-            v1 = c.Value;
+            v1 = c.Values;
             return wr;
         }
 

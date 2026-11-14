@@ -14,7 +14,7 @@ class ObservableReactiveSortedSet<T>(ReactiveSortedSet<T> set) : ObservableReact
 
     protected override void Refresh()
     {
-        var current = set.Value;
+        var current = set.Values;
         var changes = current.Diff(_applied);
         Write(() =>
         {

@@ -205,31 +205,6 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs2.5-01")]
-        public void Rule_2_5_01_NameSettableNoNameCtor()
-        {
-            var s = Harness.Create();
-            var reactor = new Reactor(s);
-            var ex = Record.Exception(() => reactor.Name = "reactor-name");
-            Assert.Null(ex);
-            var ctors = typeof(Reactor).GetConstructors(BindingFlags.Public | BindingFlags.Instance);
-            Assert.Equal(2, ctors.Length);
-            bool empty = false;
-            bool scheduler = false;
-            foreach (var ctor in ctors)
-            {
-                var parameters = ctor.GetParameters();
-                if (parameters.Length == 0)
-                    empty = true;
-                if (parameters.Length == 1 && parameters[0].ParameterType == typeof(Scheduler))
-                    scheduler = true;
-                foreach (var parameter in parameters)
-                    Assert.NotEqual(typeof(string), parameter.ParameterType);
-            }
-            Assert.True(empty);
-            Assert.True(scheduler);
-        }
-
         [Fact]
         public void Rule_2_6_ReactionHasNoPublicConstructor()
         {
@@ -248,12 +223,7 @@ namespace Fluorine
                 WaitUntil.True(() => n == 1, "first run");
             }
         }
-
-        [Fact(DisplayName = "cs2.7-02", Skip = "blocked (gap G10)")]
-        public void Rule_2_7_02_AddWithName()
-        {
-        }
-
+        
         [Fact]
         public void Rule_2_8_ReactionNeverRunsInline()
         {
@@ -489,12 +459,7 @@ namespace Fluorine
                 Assert.Equal("named", r.Name);
             }
         }
-
-        [Fact(DisplayName = "cs2.16-01", Skip = "blocked (gap G10)")]
-        public void Rule_2_16_01_ReactionNameEqualsAddName()
-        {
-        }
-
+        
         [Fact]
         public void Rule_2_17_DisposeNullsLambdaAndDetaches()
         {

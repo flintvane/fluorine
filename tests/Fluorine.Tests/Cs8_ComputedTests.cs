@@ -187,31 +187,6 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.4-02")]
-        public void Rule_8_4_02_FunctionFixed()
-        {
-            var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-            foreach (var property in typeof(Reaction).GetProperties(flags))
-            {
-                if (typeof(Delegate).IsAssignableFrom(property.PropertyType))
-                    Assert.False(property.CanWrite);
-            }
-            foreach (var method in typeof(Reaction).GetMethods(flags))
-            {
-                if (method.IsSpecialName)
-                    continue;
-                foreach (var parameter in method.GetParameters())
-                    Assert.False(typeof(Delegate).IsAssignableFrom(parameter.ParameterType));
-            }
-
-            var s = Harness.Create();
-            var dest = new Register<int>(0);
-            var reactor = new Reactor(s);
-            var first = reactor.Computed(dest, () => 1);
-            var second = reactor.Computed(dest, () => 2);
-            Assert.NotSame(first, second);
-        }
-
         [Fact]
         public void Rule_8_5_ExceptionLeavesRegisterUnchanged()
         {

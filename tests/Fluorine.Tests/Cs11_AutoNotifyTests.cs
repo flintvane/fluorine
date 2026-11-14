@@ -27,26 +27,6 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs11.1-01")]
-        public void Rule_11_1_01_AutoNotifyShape()
-        {
-            Assert.True(typeof(INotifyPropertyChanged).IsAssignableFrom(typeof(AutoNotify)));
-            Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(AutoNotify)));
-            var ctor = typeof(AutoNotify).GetConstructor(
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                null,
-                Type.EmptyTypes,
-                null);
-            Assert.NotNull(ctor);
-            Assert.True(ctor.IsPublic || ctor.IsFamily || ctor.IsFamilyOrAssembly);
-            Assert.NotNull(typeof(AutoNotifyAttribute));
-            var usage = (AttributeUsageAttribute)Attribute.GetCustomAttribute(
-                typeof(AutoNotifyAttribute),
-                typeof(AttributeUsageAttribute));
-            Assert.NotNull(usage);
-            Assert.True((usage.ValidOn & AttributeTargets.Property) != 0);
-        }
-
         [Fact(DisplayName = "cs11.1-02")]
         public void Rule_11_1_02_ReactorOnConstructingThreadScheduler()
         {

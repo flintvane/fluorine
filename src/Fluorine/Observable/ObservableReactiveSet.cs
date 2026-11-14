@@ -10,7 +10,7 @@ class ObservableReactiveSet<T>(ReactiveSet<T> set) : ObservableReactiveCollectio
 
     protected override void Refresh()
     {
-        var current = set.Value;
+        var current = set.Values;
         Write(() =>
         {
             foreach (var change in current.Diff(_applied))

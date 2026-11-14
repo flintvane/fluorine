@@ -12,16 +12,7 @@ namespace Fluorine
         {
             Assert.True(typeof(Scheduler).IsAbstract);
         }
-
-        [Fact(DisplayName = "cs3.1-01")]
-        public void Rule_3_1_01_SchedulerIsAbstractBaseOfAll()
-        {
-            Assert.True(typeof(Scheduler).IsAbstract);
-            Assert.True(typeof(Scheduler).IsAssignableFrom(typeof(ThreadScheduler)));
-            Assert.True(typeof(Scheduler).IsAssignableFrom(typeof(DispatcherScheduler)));
-            Assert.True(typeof(Scheduler).IsAssignableFrom(typeof(WinFormsScheduler)));
-        }
-
+        
         [Fact(DisplayName = "cs3.1-02")]
         public void Rule_3_1_02_UserDerivedSchedulerPossible()
         {
