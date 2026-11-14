@@ -13,7 +13,7 @@ namespace Fluorine
         public static bool IsRecording => _tCurrent != null && _tPause == 0;
 
         readonly Reactor _reactor;
-        readonly Dictionary<Register, int> _deps = new Dictionary<Register, int>();
+        readonly Dictionary<Register, int> _deps = new();
         Action _lambda;
         int _queued;
         int _executionCount;

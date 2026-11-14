@@ -40,11 +40,11 @@ namespace Fluorine
     {
         delegate bool TryNumber<T>(string text, NumberStyles styles, IFormatProvider provider, out T value);
 
-        public static TextConverter<string> String { get; } = new TextConverter<string>(
+        public static TextConverter<string> String { get; } = new(
             value => value ?? "",
             ParseString);
 
-        public static TextConverter<bool> Boolean { get; } = new TextConverter<bool>(
+        public static TextConverter<bool> Boolean { get; } = new(
             value => value.ToString(),
             ParseBoolean);
 

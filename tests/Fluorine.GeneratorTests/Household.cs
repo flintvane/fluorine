@@ -25,7 +25,7 @@ namespace Fluorine.GeneratorTests
 
     public sealed class Plain : AutoNotify
     {
-        public readonly Register<int> Source = new Register<int>(1);
+        public readonly Register<int> Source = new(1);
 
         [AutoNotify]
         public int Value => Source.Value;

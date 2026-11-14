@@ -12,12 +12,12 @@ namespace Fluorine
 
         [ThreadStatic] static int _tDrainDepth;
 
-        static readonly object StaticLock = new object();
-        static readonly Dictionary<Thread, Scheduler> ByThread = new Dictionary<Thread, Scheduler>();
+        static readonly object StaticLock = new();
+        static readonly Dictionary<Thread, Scheduler> ByThread = new();
         static readonly List<Scheduler> All = [];
 
         readonly HashSet<Reactor> _reactors = [];
-        readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
+        readonly ManualResetEventSlim _finished = new(false);
 
         const int StateRunning = 0;
         const int StateShuttingDown = 1;

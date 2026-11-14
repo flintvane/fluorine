@@ -14,8 +14,7 @@ namespace Fluorine
 
     public class AutoNotify : Reactor, INotifyPropertyChanged
     {
-        static readonly Dictionary<MethodInfo, Func<object, object>> Getters =
-            new Dictionary<MethodInfo, Func<object, object>>();
+        static readonly Dictionary<MethodInfo, Func<object, object>> Getters = new();
 
         PropertyChangedEventHandler _propertyChanged;
         int _wired;

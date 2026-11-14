@@ -256,7 +256,7 @@ namespace Fluorine.Acceptance
     {
         readonly TextWriter _out;
         readonly TextWriter _error;
-        readonly StringWriter _writer = new StringWriter();
+        readonly StringWriter _writer = new();
 
         public ConsoleCapture()
         {
@@ -301,7 +301,7 @@ namespace Fluorine.Acceptance
     /// </summary>
     public sealed class ProbeScheduler : Scheduler
     {
-        readonly Queue<Action> _queue = new Queue<Action>();
+        readonly Queue<Action> _queue = new();
         int _scheduleCalls;
 
         public int ScheduleCalls
@@ -351,7 +351,7 @@ namespace Fluorine.Acceptance
     /// </summary>
     public sealed class OnlyScheduleScheduler : Scheduler
     {
-        readonly Queue<Action> _queue = new Queue<Action>();
+        readonly Queue<Action> _queue = new();
 
         protected override void Schedule(Action action)
         {

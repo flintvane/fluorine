@@ -467,7 +467,7 @@ namespace Fluorine.Acceptance
 
         sealed class Handler
         {
-            readonly List<string> _names = new List<string>();
+            readonly List<string> _names = new();
 
             public int Count;
             public object Sender;
@@ -645,7 +645,7 @@ namespace Fluorine.Acceptance
         sealed class CtorDone : AutoNotify
         {
             public bool Done;
-            public readonly List<bool> Recorded = new List<bool>();
+            public readonly List<bool> Recorded = new();
 
             public CtorDone()
             {

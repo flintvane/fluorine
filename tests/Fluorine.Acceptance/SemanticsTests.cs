@@ -1373,7 +1373,7 @@ namespace Fluorine.Acceptance
 
         sealed class BombScheduler : Scheduler
         {
-            readonly Queue<Action> _queue = new Queue<Action>();
+            readonly Queue<Action> _queue = new();
 
             public Exception Bomb;
 

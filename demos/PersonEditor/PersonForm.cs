@@ -32,14 +32,14 @@ namespace PersonDemo
     public sealed class PersonForm : Form
     {
         readonly Person _person;
-        readonly TextBox _firstName = new TextBox();
-        readonly TextBox _lastName = new TextBox();
-        readonly TextBox _age = new TextBox();
-        readonly Label _status = new Label();
-        readonly ListBox _tags = new ListBox();
-        readonly TextBox _tagText = new TextBox();
-        readonly Button _addTag = new Button();
-        readonly Button _removeTag = new Button();
+        readonly TextBox _firstName = new();
+        readonly TextBox _lastName = new();
+        readonly TextBox _age = new();
+        readonly Label _status = new();
+        readonly ListBox _tags = new();
+        readonly TextBox _tagText = new();
+        readonly Button _addTag = new();
+        readonly Button _removeTag = new();
         FormsReactor _forms;
 
         public PersonForm(Person person)

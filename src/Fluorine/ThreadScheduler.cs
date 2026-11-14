@@ -6,10 +6,9 @@ namespace Fluorine
 {
     public sealed class ThreadScheduler : Scheduler
     {
-        readonly Queue<Action> _queue = new Queue<Action>();
+        readonly Queue<Action> _queue = new();
 
-        ThreadScheduler(bool announceImmediately)
-            : base(announceImmediately)
+        ThreadScheduler(bool announceImmediately) : base(announceImmediately)
         {
         }
 

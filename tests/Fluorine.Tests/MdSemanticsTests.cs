@@ -190,7 +190,7 @@ namespace Fluorine.Tests
 
         sealed class ThrowingScheduler : Scheduler
         {
-            readonly System.Collections.Generic.Queue<Action> _queue = new System.Collections.Generic.Queue<Action>();
+            readonly System.Collections.Generic.Queue<Action> _queue = new();
 
             public Exception Bomb;
 

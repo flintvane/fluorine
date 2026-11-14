@@ -469,7 +469,7 @@ namespace Fluorine.Tests
         sealed class CtorOrder : AutoNotify
         {
             public readonly List<string> Log = [];
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
 
             public CtorOrder()
             {
@@ -491,7 +491,7 @@ namespace Fluorine.Tests
 
         sealed class Counter : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
 
             [AutoNotify]
             public int Value => Source.Value;
@@ -515,7 +515,7 @@ namespace Fluorine.Tests
 
         sealed class Stable : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(2);
+            public readonly Register<int> Source = new(2);
             public int Reads;
 
             [AutoNotify]
@@ -531,7 +531,7 @@ namespace Fluorine.Tests
 
         sealed class Counting : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
             public int Reads;
 
             [AutoNotify]
@@ -547,9 +547,9 @@ namespace Fluorine.Tests
 
         sealed class Pair : AutoNotify
         {
-            public readonly Register<int> Left = new Register<int>(1);
-            public readonly Register<string> Right = new Register<string>("a");
-            public readonly Register<int> Hidden = new Register<int>(1);
+            public readonly Register<int> Left = new(1);
+            public readonly Register<string> Right = new("a");
+            public readonly Register<int> Hidden = new(1);
 
             [AutoNotify]
             public int Number => Left.Value;
@@ -563,7 +563,7 @@ namespace Fluorine.Tests
 
         abstract class BaseVm : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
             public int BaseReads;
 
             [AutoNotify]
@@ -602,7 +602,7 @@ namespace Fluorine.Tests
 
         sealed class MethodModel : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
             public readonly List<int> Seen = [];
             public int SecretRuns;
             public int WithArgRuns;
@@ -656,7 +656,7 @@ namespace Fluorine.Tests
 
         class BaseMethods : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
             public readonly List<string> Log = [];
 
             [Reactive]
@@ -694,7 +694,7 @@ namespace Fluorine.Tests
 
         abstract class AbstractMethods : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
             public readonly List<string> Log = [];
 
             [Reactive]
@@ -725,7 +725,7 @@ namespace Fluorine.Tests
 
         sealed class PlainReactive
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
             public readonly List<int> Seen = [];
 
             [Reactive]
@@ -743,7 +743,7 @@ namespace Fluorine.Tests
 
         sealed class Mixed : AutoNotify
         {
-            public readonly Register<int> Source = new Register<int>(1);
+            public readonly Register<int> Source = new(1);
             public int Runs;
 
             [AutoNotify]

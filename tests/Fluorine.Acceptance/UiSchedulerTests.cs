@@ -606,7 +606,7 @@ namespace Fluorine.Acceptance
         public Thread Thread;
         public Dispatcher Dispatcher;
         public DispatcherScheduler Scheduler;
-        readonly ManualResetEvent _ready = new ManualResetEvent(false);
+        readonly ManualResetEvent _ready = new(false);
         Exception _error;
 
         public static DispatcherLoop Start()
@@ -668,7 +668,7 @@ namespace Fluorine.Acceptance
         public Thread Thread;
         public Form Form;
         public WinFormsScheduler Scheduler;
-        readonly ManualResetEvent _ready = new ManualResetEvent(false);
+        readonly ManualResetEvent _ready = new(false);
         Exception _error;
 
         public static WinFormsLoop Start()

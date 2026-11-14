@@ -789,7 +789,7 @@ namespace Fluorine
 
         sealed class ReferenceEqual<TNode> : IEqualityComparer<TNode> where TNode : class
         {
-            public static readonly ReferenceEqual<TNode> Instance = new ReferenceEqual<TNode>();
+            public static readonly ReferenceEqual<TNode> Instance = new();
 
             public bool Equals(TNode x, TNode y)
             {

@@ -506,7 +506,7 @@ namespace Fluorine.Generators
             return sb.ToString();
         }
 
-        static readonly SymbolDisplayFormat TypeFormat = new SymbolDisplayFormat(
+        static readonly SymbolDisplayFormat TypeFormat = new(
             globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
@@ -514,7 +514,7 @@ namespace Fluorine.Generators
                 | SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier
                 | SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers);
 
-        static readonly DiagnosticDescriptor MustBePartial = new DiagnosticDescriptor(
+        static readonly DiagnosticDescriptor MustBePartial = new(
             Ids.Partial,
             "Reactive property must be partial",
             "Property '{0}' is marked [Reactive]. It must {1}, so Fluorine can generate its register and accessors.",
@@ -522,7 +522,7 @@ namespace Fluorine.Generators
             DiagnosticSeverity.Error,
             true);
 
-        static readonly DiagnosticDescriptor TypeMustBePartial = new DiagnosticDescriptor(
+        static readonly DiagnosticDescriptor TypeMustBePartial = new(
             Ids.Type,
             "Reactive type must be partial",
             "Property '{0}' is marked [Reactive]. Its type must {1}, so Fluorine can generate the register beside it.",
@@ -530,7 +530,7 @@ namespace Fluorine.Generators
             DiagnosticSeverity.Error,
             true);
 
-        static readonly DiagnosticDescriptor MustBeInstance = new DiagnosticDescriptor(
+        static readonly DiagnosticDescriptor MustBeInstance = new(
             Ids.Static,
             "Reactive property must be an instance property",
             "Property '{0}' is marked [Reactive]. It must {1}. AutoNotify does not watch static properties.",
@@ -538,7 +538,7 @@ namespace Fluorine.Generators
             DiagnosticSeverity.Error,
             true);
 
-        static readonly DiagnosticDescriptor MustHaveAccessors = new DiagnosticDescriptor(
+        static readonly DiagnosticDescriptor MustHaveAccessors = new(
             Ids.Shape,
             "Reactive property must be a get/set auto-property",
             "Property '{0}' is marked [Reactive]. It must {1}.",

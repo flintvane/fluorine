@@ -9,10 +9,10 @@ namespace Fluorine.Acceptance
 {
     public sealed class Cs12CollectionsTests : AcceptanceTest
     {
-        static readonly K k1 = new K(1);
-        static readonly K k1p = new K(1);
-        static readonly K k2 = new K(2);
-        static readonly K k3 = new K(3);
+        static readonly K k1 = new(1);
+        static readonly K k1p = new(1);
+        static readonly K k2 = new(2);
+        static readonly K k3 = new(3);
 
         [Fact(DisplayName = "cs12.1-01")]
         public void cs12_1_01()

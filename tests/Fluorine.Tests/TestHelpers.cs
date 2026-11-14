@@ -81,7 +81,7 @@ namespace Fluorine.Tests
 
     sealed class ManualScheduler : Scheduler
     {
-        readonly Queue<Action> _queue = new Queue<Action>();
+        readonly Queue<Action> _queue = new();
 
         protected override void Schedule(Action action)
         {
@@ -119,8 +119,8 @@ namespace Fluorine.Tests
 
     sealed class WinFormsHost : IDisposable
     {
-        readonly ManualResetEventSlim _ready = new ManualResetEventSlim(false);
-        readonly ManualResetEventSlim _exited = new ManualResetEventSlim(false);
+        readonly ManualResetEventSlim _ready = new(false);
+        readonly ManualResetEventSlim _exited = new(false);
         private Form _form;
         private Exception _startError;
 
