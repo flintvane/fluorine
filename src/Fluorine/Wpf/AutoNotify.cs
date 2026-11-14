@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace Fluorine
 {
-    [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Property)]
     public sealed class AutoNotifyAttribute : Attribute
     {
     }

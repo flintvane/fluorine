@@ -18,7 +18,7 @@ namespace Fluorine
     public sealed class ReactiveDictionary<TKey, TValue> : Register, IEnumerable<KeyValuePair<TKey, TValue>>
     {
         const string MissingKeyMessage = "The given key was not present in the dictionary.";
-        static readonly bool KeyCanBeNull = (object)default(TKey) == null;
+        static readonly bool KeyCanBeNull = default(TKey) == null;
 
         readonly IEqualityComparer<TKey> _comparer;
         readonly Dictionary<TKey, Slot> _slots;
@@ -260,13 +260,13 @@ namespace Fluorine
 
         static void RequireKey(TKey key)
         {
-            if (KeyCanBeNull && (object)key == null)
+            if (KeyCanBeNull && key == null)
                 throw new ArgumentNullException(nameof(key));
         }
 
         static bool ValuesEqual(TValue left, TValue right)
         {
-            return object.Equals(left, right);
+            return Equals(left, right);
         }
 
         bool Still(Version current)

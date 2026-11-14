@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Fluorine
@@ -190,7 +191,7 @@ namespace Fluorine
 
         void Unhook()
         {
-            if (System.Threading.Interlocked.Exchange(ref _unhooked, 1) != 0)
+            if (Interlocked.Exchange(ref _unhooked, 1) != 0)
                 return;
             Action[] copy;
             lock (_unhooks)

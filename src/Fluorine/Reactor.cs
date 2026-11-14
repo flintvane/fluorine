@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 
 namespace Fluorine
 {
@@ -180,7 +181,7 @@ namespace Fluorine
 
         void DisposeCore(bool fromShutdown)
         {
-            if (System.Threading.Interlocked.Exchange(ref _disposed, 1) != 0)
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
             {
                 if (!fromShutdown)
                     return;

@@ -25,8 +25,7 @@ namespace Fluorine
         Version _version;
         Membership _nullMembership;
 
-        public ReactiveSortedSet()
-            : this((IComparer<T>)null)
+        public ReactiveSortedSet(): this(null)
         {
         }
 

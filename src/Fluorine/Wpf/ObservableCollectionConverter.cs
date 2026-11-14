@@ -16,7 +16,6 @@ namespace Fluorine
                 Type properType = typeof(ObservableReactiveCollection<>).MakeGenericType(t);
                 return Activator.CreateInstance(properType, value);
             }
-
             throw new InvalidOperationException($"Cannot cast {type} to an observable collection");
         }
 

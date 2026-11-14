@@ -20,7 +20,7 @@ namespace Fluorine
     public sealed class ReactiveSortedDictionary<TKey, TValue> : Register, IEnumerable<KeyValuePair<TKey, TValue>>
     {
         const string MissingKeyMessage = "The given key was not present in the dictionary.";
-        static readonly bool KeyCanBeNull = (object)default(TKey) == null;
+        static readonly bool KeyCanBeNull = default(TKey) == null;
 
         readonly IComparer<TKey> _keys;
         readonly KeyOrder _order;
@@ -273,7 +273,7 @@ namespace Fluorine
 
         static void RequireKey(TKey key)
         {
-            if (KeyCanBeNull && (object)key == null)
+            if (KeyCanBeNull && key == null)
                 throw new ArgumentNullException(nameof(key));
         }
 
@@ -471,7 +471,7 @@ namespace Fluorine
         {
             public bool Replace(Entry existing, Entry incoming, out Entry stored)
             {
-                if (object.Equals(existing.Value, incoming.Value))
+                if (Equals(existing.Value, incoming.Value))
                 {
                     stored = existing;
                     return false;
@@ -609,7 +609,7 @@ namespace Fluorine
 
                 public void Matched(Entry older, Entry newer)
                 {
-                    if (!object.Equals(older.Value, newer.Value))
+                    if (!Equals(older.Value, newer.Value))
                         changes.Add(new Change(ChangeKind.Updated, older.Key, newer.Value, older.Value));
                 }
             }
