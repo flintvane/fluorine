@@ -13,7 +13,7 @@ namespace Fluorine
             Assert.True(typeof(Scheduler).IsAbstract);
         }
         
-        [Fact(DisplayName = "cs3.1-02")]
+        [Fact(DisplayName = "cs3.1-02 Custom Scheduler subclass works")]
         public void Rule_3_1_02_UserDerivedSchedulerPossible()
         {
             var scheduler = new OnlyScheduleScheduler();
@@ -49,7 +49,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.2-01")]
+        [Fact(DisplayName = "cs3.2-01 Queue(Reaction) never inline or throws")]
         public void Rule_3_2_01_QueueReactionNeverInlineNeverThrows()
         {
             var s = Harness.Create();
@@ -97,7 +97,7 @@ namespace Fluorine
             Assert.True(probeRan);
         }
 
-        [Fact(DisplayName = "cs3.2-02")]
+        [Fact(DisplayName = "cs3.2-02 Queue(Reaction) after shutdown: silent")]
         public void Rule_3_2_02_QueueReactionAfterShutdownSilent()
         {
             using (var log = new Log())
@@ -115,7 +115,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.3-02")]
+        [Fact(DisplayName = "cs3.3-02 Actions and runs share one FIFO")]
         public void Rule_3_3_02_ActionsAndRunsShareFifo()
         {
             var s = Harness.Create();
@@ -145,7 +145,7 @@ namespace Fluorine
             Assert.Equal(["r1", "a1", "r2", "a2"], order.Snapshot());
         }
 
-        [Fact(DisplayName = "cs3.3-03")]
+        [Fact(DisplayName = "cs3.3-03 Queued action records no reads")]
         public void Rule_3_3_03_ActionRecordsNoReads()
         {
             var s = Harness.Create();
@@ -168,7 +168,7 @@ namespace Fluorine
             Assert.Equal(1, reads);
         }
 
-        [Fact(DisplayName = "cs3.3-04")]
+        [Fact(DisplayName = "cs3.3-04 Action exception logged, loop survives")]
         public void Rule_3_3_04_ActionExceptionLoggedUnwrappedLoopSurvives()
         {
             using (var log = new Log())
@@ -187,7 +187,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.3-05")]
+        [Fact(DisplayName = "cs3.3-05 Queue(Action) never runs inline")]
         public void Rule_3_3_05_QueueActionNeverInline()
         {
             var s = Harness.Create();
@@ -201,7 +201,7 @@ namespace Fluorine
             Assert.True(ran);
         }
 
-        [Fact(DisplayName = "cs3.3-06")]
+        [Fact(DisplayName = "cs3.3-06 Queue(null action) is a silent no-op")]
         public void Rule_3_3_06_QueueNullAction()
         {
             using (var log = new Log())
@@ -214,7 +214,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.3-07")]
+        [Fact(DisplayName = "cs3.3-07 Actions queued before shutdown run")]
         public void Rule_3_3_07_ActionsQueuedBeforeShutdownRun()
         {
             var s = Harness.Create();
@@ -234,7 +234,7 @@ namespace Fluorine
             Assert.Equal(3, n);
         }
 
-        [Fact(DisplayName = "cs3.3-08")]
+        [Fact(DisplayName = "cs3.3-08 Action queued during drain never runs")]
         public void Rule_3_3_08_ActionQueuedAfterShutdownBeganIgnored()
         {
             using (var log = new Log())
@@ -262,7 +262,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.4-01")]
+        [Fact(DisplayName = "cs3.4-01 Run/Schedule are protected, not public")]
         public void Rule_3_4_01_RunPathVisibility()
         {
             Assert.Null(typeof(Reaction).GetMethod("Run", BindingFlags.Public | BindingFlags.Instance));
@@ -289,7 +289,7 @@ namespace Fluorine
             Assert.False(run.IsPublic);
         }
 
-        [Fact(DisplayName = "cs3.4-02")]
+        [Fact(DisplayName = "cs3.4-02 Queue hands work to Schedule")]
         public void Rule_3_4_02_QueueHandsWorkToSchedule()
         {
             var ts = new ProbeScheduler();
@@ -314,7 +314,7 @@ namespace Fluorine
             Assert.Equal(2, runs);
         }
 
-        [Fact(DisplayName = "cs3.4-03")]
+        [Fact(DisplayName = "cs3.4-03 Run(Reaction) is synchronous, records")]
         public void Rule_3_4_03_RunReactionIsSynchronousAndRecords()
         {
             var ts = new ProbeScheduler();
@@ -364,7 +364,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.5-01")]
+        [Fact(DisplayName = "cs3.5-01 Dependencies rediscovered each run")]
         public void Rule_3_5_01_DependenciesRediscoveredEachRun()
         {
             var s = Harness.Create();
@@ -395,7 +395,7 @@ namespace Fluorine
             Assert.True(runs > afterReattach, "b was not reattached");
         }
 
-        [Fact(DisplayName = "cs3.5-03")]
+        [Fact(DisplayName = "cs3.5-03 Throw before reads: only Trigger reruns")]
         public void Rule_3_5_03_ThrowBeforeAnyReadNoRerun()
         {
             var s = Harness.Create();
@@ -416,7 +416,7 @@ namespace Fluorine
             Assert.Equal(before + 1, runs);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs3.6-01 Scheduler.Current is S on its own thread")]
         public void Rule_3_6_CurrentIsThreadStaticAndClearedAfterShutdown()
         {
             Thread owner = null;
@@ -432,7 +432,7 @@ namespace Fluorine
             Assert.Null(Scheduler.Current);
         }
 
-        [Fact(DisplayName = "cs3.6-03")]
+        [Fact(DisplayName = "cs3.6-03 Scheduler.Current still set in drain")]
         public void Rule_3_6_03_StillInstalledDuringDrain()
         {
             var s = Harness.Create();
@@ -456,7 +456,7 @@ namespace Fluorine
             Assert.Null(typeof(Scheduler).GetMethod("Run", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
         }
 
-        [Fact(DisplayName = "cs3.8-01")]
+        [Fact(DisplayName = "cs3.8-01 Shutdown drains queued runs")]
         public void Rule_3_8_01_ShutdownDrainsQueuedRuns()
         {
             var s = Harness.Create();
@@ -488,7 +488,7 @@ namespace Fluorine
             Assert.Equal(3, extra);
         }
 
-        [Fact(DisplayName = "cs3.8-02")]
+        [Fact(DisplayName = "cs3.8-02 Shutdown disposes the reactors")]
         public void Rule_3_8_02_ShutdownDisposesReactors()
         {
             var s = Harness.Create();
@@ -508,7 +508,7 @@ namespace Fluorine
             Assert.Null(reactor.Add(() => runs++));
         }
 
-        [Fact(DisplayName = "cs3.8-03")]
+        [Fact(DisplayName = "cs3.8-03 Runs queued during drain are dropped")]
         public void Rule_3_8_03_RunsQueuedDuringDrainDropped()
         {
             var s = Harness.Create();
@@ -544,7 +544,7 @@ namespace Fluorine
             Assert.Equal(1, r2);
         }
 
-        [Fact(DisplayName = "cs3.8-05")]
+        [Fact(DisplayName = "cs3.8-05 Shutdown works from any thread")]
         public void Rule_3_8_05_ShutdownFromAnyThread()
         {
             var fromTest = Harness.Create();
@@ -580,7 +580,7 @@ namespace Fluorine
             Assert.False(ran);
         }
 
-        [Fact(DisplayName = "cs3.8-06")]
+        [Fact(DisplayName = "cs3.8-06 Shutdown inside reaction throws")]
         public void Rule_3_8_06_ShutdownInsideReactionThrowsNotLogged()
         {
             using (var log = new Log())
@@ -608,7 +608,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.8-07")]
+        [Fact(DisplayName = "cs3.8-07 Shutdown inside paused reaction throws")]
         public void Rule_3_8_07_ShutdownInsidePausedReactionThrows()
         {
             using (var log = new Log())
@@ -639,7 +639,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.8-08")]
+        [Fact(DisplayName = "cs3.8-08 Shutdown of other sched in run throws")]
         public void Rule_3_8_08_ShutdownInsideReactionOfOtherScheduler()
         {
             using (var log = new Log())
@@ -668,7 +668,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.8-10")]
+        [Fact(DisplayName = "cs3.8-10 Second Shutdown waits for the first")]
         public void Rule_3_8_10_SecondShutdownWaits()
         {
             var s = Harness.Create();
@@ -700,7 +700,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.8-11")]
+        [Fact(DisplayName = "cs3.8-11 Shutdown after finish returns at once")]
         public void Rule_3_8_11_ShutdownAfterFinishedReturns()
         {
             using (var log = new Log())
@@ -735,7 +735,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.8-12")]
+        [Fact(DisplayName = "cs3.8-12 Reaction added during drain never runs")]
         public void Rule_3_8_12_FirstRunCreatedDuringShutdownRefused()
         {
             var s = Harness.Create();
@@ -778,7 +778,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.10-01")]
+        [Fact(DisplayName = "cs3.10-01 One scheduler hosts many reactors")]
         public void Rule_3_10_01_OneSchedulerManyReactors()
         {
             var s = Harness.Create();
@@ -804,7 +804,7 @@ namespace Fluorine
             Assert.Equal(0, bad);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs4.2-03 CreateNew(name) without action works")]
         public void Rule_3_11_ReactiveShutdownInformsAllThenWaits()
         {
             var a = ThreadScheduler.CreateNew("a");
@@ -814,7 +814,7 @@ namespace Fluorine
             Assert.True(b.IsFinished);
         }
 
-        [Fact(DisplayName = "cs3.11-01")]
+        [Fact(DisplayName = "cs3.11-01 Reactive.Shutdown ends all schedulers")]
         public void Rule_3_11_01_ReactiveShutdownShutsAll()
         {
             var schedulers = new[] { Harness.Create(), Harness.Create(), Harness.Create() };
@@ -861,7 +861,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.11-02")]
+        [Fact(DisplayName = "cs3.11-02 Reactive.Shutdown informs all at once")]
         public void Rule_3_11_02_ReactiveShutdownInformsWithoutWaitingBetween()
         {
             var s1 = Harness.Create();
@@ -918,7 +918,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.11-03")]
+        [Fact(DisplayName = "cs3.11-03 Reactive.Shutdown in reaction throws")]
         public void Rule_3_11_03_ReactiveShutdownInsideReactionThrows()
         {
             using (var log = new Log())
@@ -946,7 +946,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.11-04")]
+        [Fact(DisplayName = "cs3.11-04 Finished scheduler skipped by shutdown")]
         public void Rule_3_11_04_FinishedSchedulerRemoved()
         {
             var s = Harness.Create();
@@ -989,7 +989,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.12-01")]
+        [Fact(DisplayName = "cs3.12-01 Blocked scheduler doesn't block others")]
         public void Rule_3_12_01_BlockedSchedulerDoesNotBlockOther()
         {
             var s1 = Harness.Create();
@@ -1026,7 +1026,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.12-02")]
+        [Fact(DisplayName = "cs3.12-02 Cross-scheduler triggers: no deadlock")]
         public void Rule_3_12_02_CrossSchedulerTriggeringNoDeadlock()
         {
             var s1 = Harness.Create();
@@ -1059,7 +1059,7 @@ namespace Fluorine
             Assert.True(Volatile.Read(ref steps) >= Harness.Stress);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs3.13-01 ForThread finds S; other attach throws")]
         public void Rule_3_13_ForThreadAndAttachOtherTypeThrows()
         {
             using (var host = new ThreadHost())
@@ -1094,7 +1094,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs3.13-02")]
+        [Fact(DisplayName = "cs3.13-02 ForThread null on thread w/o scheduler")]
         public void Rule_3_13_02_ForThreadNullWithoutScheduler()
         {
             Scheduler seen = null;
@@ -1116,7 +1116,7 @@ namespace Fluorine
             Assert.Null(Scheduler.ForThread(thread));
         }
 
-        [Fact(DisplayName = "cs3.13-06")]
+        [Fact(DisplayName = "cs3.13-06 CreateNew thread gets one scheduler")]
         public void Rule_3_13_06_CreateNewCannotAddSecondScheduler()
         {
             var threadScheduler = ThreadScheduler.CreateNew("cs3.13-06-thread");
@@ -1158,7 +1158,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs3.16-01 Nested Run(Reaction) throws to caller")]
         public void Rule_3_16_NestedRunThrowsToCaller()
         {
             var scheduler = new ManualScheduler();

@@ -27,7 +27,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs11.1-02")]
+        [Fact(DisplayName = "cs11.1-02 AutoNotify reactor on constructing sched")]
         public void Rule_11_1_02_ReactorOnConstructingThreadScheduler()
         {
             var s1 = Harness.Create();
@@ -46,7 +46,7 @@ namespace Fluorine
             Assert.Equal(Harness.ThreadOf(s2), h.Thread);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs11.4-02 First run after derived constructor")]
         public void Rule_11_4_ChangeBeforeFirstRunStillNotifies()
         {
             using (var host = new DispatcherHost())
@@ -58,7 +58,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs11.4-01 No event for initial value; change fires")]
         public void Rule_11_4_ChangedValueRaisesOnSchedulerThread()
         {
             using (var host = new DispatcherHost())
@@ -114,7 +114,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs11.5-01 Dispose ends notifications")]
         public void Rule_11_5_DisposeStopsNotifications()
         {
             using (var host = new DispatcherHost())
@@ -157,7 +157,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs11.3-02 Each marked property notifies alone")]
         public void Rule_11_3_MarkedPropertiesNotifyIndependently()
         {
             using (var host = new DispatcherHost())
@@ -186,7 +186,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs11.2-02 Override keeps the AutoNotify mark")]
         public void Rule_11_2_OverrideKeepsAttributeAndUsesDerivedGetter()
         {
             using (var host = new DispatcherHost())
@@ -213,7 +213,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs11.2-01")]
+        [Fact(DisplayName = "cs11.2-01 Derived class inherits property mark")]
         public void Rule_11_2_01_MarkInheritedByDerivedClass()
         {
             var s = Harness.Create();
@@ -230,7 +230,7 @@ namespace Fluorine
             Assert.Equal("X", h.Name);
         }
 
-        [Fact(DisplayName = "cs11.2-03")]
+        [Fact(DisplayName = "cs11.2-03 `new` property without mark: no event")]
         public void Rule_11_2_03_NewWithoutAttributeIsNotMarked()
         {
             using (var log = new Log())
@@ -251,7 +251,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs11.2-04")]
+        [Fact(DisplayName = "cs11.2-04 `new` property with mark notifies")]
         public void Rule_11_2_04_NewWithAttributeIsMarked()
         {
             var s = Harness.Create();
@@ -269,7 +269,7 @@ namespace Fluorine
             Assert.Equal("X", h.Name);
         }
 
-        [Fact(DisplayName = "cs11.2-05")]
+        [Fact(DisplayName = "cs11.2-05 Unmarked property never notifies")]
         public void Rule_11_2_05_UnmarkedPropertyNeverNotifies()
         {
             using (var log = new Log())
@@ -290,7 +290,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs11.3-01")]
+        [Fact(DisplayName = "cs11.3-01 Event on scheduler thread, right name")]
         public void Rule_11_3_01_EventRaisedOnSchedulerThreadWithPropertyName()
         {
             var s = Harness.Create();
@@ -309,7 +309,7 @@ namespace Fluorine
             Assert.Equal(Harness.ThreadOf(s), h.Thread);
         }
 
-        [Fact(DisplayName = "cs11.3-03")]
+        [Fact(DisplayName = "cs11.3-03 Throwing getter/handler logged unwrapped")]
         public void Rule_11_3_03_ThrowingGetterOrHandlerIsReactionUserCode()
         {
             using (var log = new Log())
@@ -354,7 +354,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs11.4-03")]
+        [Fact(DisplayName = "cs11.4-03 Later change notifies exactly once")]
         public void Rule_11_4_03_LaterChangeNotifiesOnce()
         {
             var s = Harness.Create();
@@ -377,7 +377,7 @@ namespace Fluorine
             Assert.Equal(1, seen);
         }
 
-        [Fact(DisplayName = "cs11.4-04")]
+        [Fact(DisplayName = "cs11.4-04 Equal value on rerun raises no event")]
         public void Rule_11_4_04_RerunWithEqualValueRaisesNothing()
         {
             var s = Harness.Create();
@@ -399,7 +399,7 @@ namespace Fluorine
             Assert.Equal(2, h.Count);
         }
 
-        [Fact(DisplayName = "cs11.4-05")]
+        [Fact(DisplayName = "cs11.4-05 Change before first run is notified")]
         public void Rule_11_4_05_ChangeBeforeFirstQueuedRunIsNotified()
         {
             var s = Harness.Create();
@@ -448,7 +448,7 @@ namespace Fluorine
             Assert.Equal(1, seenB);
         }
 
-        [Fact(DisplayName = "cs11.4-06")]
+        [Fact(DisplayName = "cs11.4-06 Compares with last stored value")]
         public void Rule_11_4_06_ComparesWithLastStoredValue()
         {
             var s = Harness.Create();
@@ -484,7 +484,7 @@ namespace Fluorine
             Assert.Equal(0, hB.Count);
         }
 
-        [Fact(DisplayName = "cs11.5-02")]
+        [Fact(DisplayName = "cs11.5-02 Dispose before first run: no events")]
         public void Rule_11_5_02_DisposeBeforeFirstQueuedRun()
         {
             using (var log = new Log())
@@ -508,7 +508,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs11.6-01")]
+        [Fact(DisplayName = "cs11.6-01 Late handler gets first later change")]
         public void Rule_11_6_01_FirstChangeAfterLateHandlerIsNotified()
         {
             var s = Harness.Create();

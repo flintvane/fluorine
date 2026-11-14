@@ -7,7 +7,7 @@ namespace Fluorine
 {
     public class Cs8_ComputedTests : AcceptanceTest
     {
-        [Fact]
+        [Fact(DisplayName = "cs8.1-04 Computed writes result, follows input")]
         public void Rule_8_1_ComputedAddsReactionThatWritesTheRegister()
         {
             using (var host = new ThreadHost())
@@ -22,7 +22,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.1-06")]
+        [Fact(DisplayName = "cs8.1-06 Computed is an ordinary reaction")]
         public void Rule_8_1_06_ComputedReactionIsOrdinaryReaction()
         {
             var s = Harness.Create();
@@ -64,7 +64,7 @@ namespace Fluorine
             Assert.Equal(1, Volatile.Read(ref runs2));
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs8.2-01 Equal result doesn't trigger downstream")]
         public void Rule_8_2_EqualResultDoesNotTriggerDownstream()
         {
             using (var host = new ThreadHost())
@@ -89,7 +89,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.2-02")]
+        [Fact(DisplayName = "cs8.2-02 Computed register stays user-writable")]
         public void Rule_8_2_02_RegisterStaysCallerOwnedAndWritable()
         {
             var s = Harness.Create();
@@ -105,7 +105,7 @@ namespace Fluorine
             Assert.Equal(40, dest.Value);
         }
 
-        [Fact(DisplayName = "cs8.2-03")]
+        [Fact(DisplayName = "cs8.2-03 Computed equality is object.Equals")]
         public void Rule_8_2_03_EqualityIsObjectEquals()
         {
             var s = Harness.Create();
@@ -148,7 +148,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.3-01")]
+        [Fact(DisplayName = "cs8.3-01 Computed first run queued, not inline")]
         public void Rule_8_3_01_FirstRunQueuedNotInline()
         {
             var s = Harness.Create();
@@ -168,7 +168,7 @@ namespace Fluorine
             Assert.Equal(1, dest.Value);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs8.4-01 Null function writes default(T)")]
         public void Rule_8_4_NullFunctionWritesDefaultAndFunctionIsFixed()
         {
             using (var host = new ThreadHost())
@@ -213,7 +213,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.5-01")]
+        [Fact(DisplayName = "cs8.5-01 Throwing function: logged, dest kept")]
         public void Rule_8_5_01_ThrowingFunctionLoggedRegisterUnchanged()
         {
             using (var log = new Log())
@@ -248,7 +248,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.5-02")]
+        [Fact(DisplayName = "cs8.5-02 Throwing function stays subscribed")]
         public void Rule_8_5_02_ThrowingFunctionStaysSubscribed()
         {
             using (var log = new Log())
@@ -273,7 +273,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs8.6-01 disposeOld disposes replaced value once")]
         public void Rule_8_6_DisposeOldAfterStoreAndTrigger()
         {
             using (var host = new ThreadHost())
@@ -292,7 +292,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.6-02")]
+        [Fact(DisplayName = "cs8.6-02 Old value disposed after store+trigger")]
         public void Rule_8_6_02_DisposeAfterStoreAndTrigger()
         {
             var s = Harness.Create();
@@ -324,7 +324,7 @@ namespace Fluorine
             Assert.True(first.DownstreamAtDispose > baseline);
         }
 
-        [Fact(DisplayName = "cs8.6-03")]
+        [Fact(DisplayName = "cs8.6-03 No dispose if equal, off, or not IDisp.")]
         public void Rule_8_6_03_NoDisposeWhenUnchangedFalseOrNotDisposable()
         {
             var s = Harness.Create();
@@ -363,7 +363,7 @@ namespace Fluorine
             Assert.Equal(2, plain.Value);
         }
 
-        [Fact(DisplayName = "cs8.6-04")]
+        [Fact(DisplayName = "cs8.6-04 Throwing Dispose of old value is logged")]
         public void Rule_8_6_04_ThrowingDisposeOfOldValueIsUserCode()
         {
             using (var log = new Log())
@@ -407,7 +407,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.7-01")]
+        [Fact(DisplayName = "cs8.7-01 Computed on disposed reactor is null")]
         public void Rule_8_7_01_ComputedOnDisposedReactorReturnsNull()
         {
             using (var log = new Log())
@@ -444,7 +444,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs8.7-02")]
+        [Fact(DisplayName = "cs8.7-02 Stopped computation keeps last value")]
         public void Rule_8_7_02_StoppingKeepsLastValue()
         {
             var s = Harness.Create();

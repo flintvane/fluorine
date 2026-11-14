@@ -49,7 +49,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "s5.4-01")]
+        [Fact(DisplayName = "s5.4-01 Derived value correct after its turn")]
         public void Sem_5_4_01_DerivedValueCorrectAfterItsTurn()
         {
             var s = Harness.Create();
@@ -135,7 +135,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.22-02 IsRecording false in a queued action")]
         public void Rule_11_3_UserWorkIsNotAReaction()
         {
             using (var host = new ThreadHost())
@@ -236,7 +236,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.11-01 Reactor dispose stops all its reactions")]
         public void Rule_12_3_ReactorDisposeDisposesAll()
         {
             using (var host = new ThreadHost())
@@ -255,7 +255,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.3-01 Reactor(S) runs reactions on S")]
         public void Rule_12_4_ReactorAssociatedWithOneScheduler()
         {
             using (var a = new ThreadHost())
@@ -291,7 +291,7 @@ namespace Fluorine
             Assert.Null(typeof(Reaction).GetProperty("Lambda"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs2.14-01 Lambda called directly records nothing")]
         public void Rule_12_11_SameCodeAsOrdinaryCallRecordsNothing()
         {
             var r = new Register<int>(0);
@@ -311,7 +311,7 @@ namespace Fluorine
 
     public class Md13_MoreTests
     {
-        [Fact]
+        [Fact(DisplayName = "cs1.5-01 TriggerReactions from 8 threads at once")]
         public void Rule_13_2_RegisterCriticalSectionSerializesSubscribeAndTrigger()
         {
             using (var host = new ThreadHost())
@@ -403,7 +403,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs3.8-04 Waiting reaction never reruns after stop")]
         public void Rule_8_2_ShutdownDetachesWithoutQueuedRun()
         {
             var host = new ThreadHost();
@@ -444,7 +444,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs9.1-01")]
+        [Fact(DisplayName = "cs9.1-01 Async: only reads before await count")]
         public void Rule_9_1_01_ReadsBeforeFirstAwaitRecorded()
         {
             var s = Harness.Create();
@@ -471,7 +471,7 @@ namespace Fluorine
             Assert.Equal(2, Volatile.Read(ref runs));
         }
 
-        [Fact(DisplayName = "cs9.1-02")]
+        [Fact(DisplayName = "cs9.1-02 Async: no Current after await")]
         public void Rule_9_1_02_ContinuationHasNoCurrent()
         {
             var s = Harness.Create();
@@ -493,7 +493,7 @@ namespace Fluorine
             Assert.Null(after);
         }
 
-        [Fact(DisplayName = "cs9.1-03")]
+        [Fact(DisplayName = "cs9.1-03 Async: throw after await not logged")]
         public void Rule_9_1_03_ExceptionAfterAwaitNotHandledByReaction()
         {
             using (var log = new Log())
@@ -523,7 +523,7 @@ namespace Fluorine
             }
         }
 
-        [Fact(DisplayName = "cs9.2-01")]
+        [Fact(DisplayName = "cs9.2-01 Dispose during shutdown: never reruns")]
         public void Rule_9_2_01_ShutdownDetachesWithoutQueuedRun()
         {
             using (var log = new Log())
@@ -576,7 +576,7 @@ namespace Fluorine
 
     public class Cs10_ErrorsTests : AcceptanceTest
     {
-        [Fact(DisplayName = "cs10.1-01")]
+        [Fact(DisplayName = "cs10.1-01 Every cs10.1 usage error has a test")]
         public void Rule_10_1_01_CaseListCoverage()
         {
             var names = new HashSet<string>();
@@ -588,7 +588,7 @@ namespace Fluorine
                     if (facts.Length == 0)
                         continue;
                     var fact = (FactAttribute)facts[0];
-                    names.Add(fact.DisplayName ?? method.Name);
+                    names.Add(fact.DisplayName == null ? method.Name : fact.DisplayName.Split(' ')[0]);
                 }
             }
 
@@ -596,11 +596,11 @@ namespace Fluorine
             [
                 "cs2.2-02", "s15.2-01",
                 "cs2.3-02",
-                "Rule_2_20_ContinueRecordingAtZeroThrows", // cs2.20-02: acceptance copy dropped, covered by this Fluorine.Tests test
+                "cs2.20-02",
                 "cs3.8-06", "cs3.8-07", "cs3.8-08",
                 "cs3.11-03",
                 "cs3.13-04", "cs3.13-05", "cs10.1-02",
-                "Rule_3_16_NestedRunThrowsToCaller", // cs3.16-01: acceptance copy dropped, covered by this Fluorine.Tests test
+                "cs3.16-01",
                 "cs4.2-05", "cs5.2-03",
                 "cs6.1-03"
             ];
@@ -608,7 +608,7 @@ namespace Fluorine
                 Assert.True(names.Contains(id), "cs10.1 case list missing " + id);
         }
 
-        [Fact(DisplayName = "cs10.1-02")]
+        [Fact(DisplayName = "cs10.1-02 Other-type attach after CreateNew throws")]
         public void Rule_10_1_02_AttachToCurrentOfOtherTypeAfterCreateNewThrows()
         {
             using (var log = new Log())
