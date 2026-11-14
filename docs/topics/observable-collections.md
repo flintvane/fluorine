@@ -44,6 +44,6 @@ The collection is written only by that reaction. An outside write, such as `Add`
 
 ---
 
-*`ObservableCollectionConverter` is described here from the C# library. The collection is kept in step through a reaction on the constructing thread's scheduler (cs 2, cs 5, cs 12.13). (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
+*`ObservableCollectionConverter` is described here from the C# library. The collection is kept in step through a reaction on the constructing thread's scheduler.*
 
 [← AutoNotify: notifying WPF](autonotify.md) · [Topics](../index.md) · [Binding a model to WinForms →](winforms-binding.md)

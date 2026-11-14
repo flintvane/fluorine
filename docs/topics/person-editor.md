@@ -4,7 +4,7 @@
 
 `demos/PersonEditor` opens the same `Person` in a WinForms window and a WPF window. Typing in either window updates the other. The model has no reference to either UI framework.
 
-The demo targets .NET Framework 4.8, with WPF and WinForms, and uses C# 13. `[Reactive]` partial properties are written by the Fluorine source generator. `Person.Tags` is a `ReactiveSet<string>`: the WPF window shows it through `ObservableCollectionConverter`, and the WinForms window fills a `ListBox` from `TagValues`.
+The demo targets .NET Framework 4.8, with WPF and WinForms, and uses C# 13. `[Reactive]` partial properties are written by the Fluorine source generator. `Person.Tags` is a `ReactiveSet<string>`: the WPF window shows it through `ObservableCollectionConverter`, and the WinForms window fills a `ListBox` by enumerating the set.
 
 ## Building and running
 
@@ -40,15 +40,14 @@ public partial class Person : AutoNotify
     [Reactive]
     public partial string AgeStatus { get; set; }
 
-    public ReactiveSet<string> Tags { get; } = new ReactiveSet<string>();
-    public ReactiveSet<string>.Version TagValues => Tags.Value;
+    public ReactiveSet<string> Tags { get; } = [];
 
     private string DescribeAge()
         => Age >= 1 ? null : "Age must be a positive integer.";
 }
 ```
 
-`Tags` is a get-only property so a WPF binding can reach the set. `TagValues` is the picture a reaction enumerates or diffs ([Reactive sets](reactive-sets.md)).
+`Tags` is a get-only property so a WPF binding can reach the set. Enumerating it in a reaction subscribes to the whole set ([Reactive sets](reactive-sets.md)).
 
 The first run of `Computed` is queued, so it happens after the constructor returns ([Computed values](computed.md)).
 
@@ -113,7 +112,7 @@ protected override void OnLoad(EventArgs e)
     _forms.BindText(_status, () => _person.AgeStatus);
     _forms.Add(() =>
     {
-        var current = _person.TagValues;
+        var current = _person.Tags.ToList();
         Reaction.Pause(() =>
         {
             _tags.Items.Clear();
@@ -124,7 +123,7 @@ protected override void OnLoad(EventArgs e)
 }
 ```
 
-Each `BindText` adds a reaction that reads a `Person` property and so subscribes to that register. The tags reaction reads `TagValues`, then fills the `ListBox` inside `Reaction.Pause` so the list assignments do not join the subscriptions. A write in either window queues the other window's reaction on that window's own scheduler. Add and Remove buttons call `Tags.Add` and `Tags.Remove` on the same set.
+Each `BindText` adds a reaction that reads a `Person` property and so subscribes to that register. The tags reaction enumerates `Tags` into a list, then fills the `ListBox` inside `Reaction.Pause` so the list assignments do not join the subscriptions. A write in either window queues the other window's reaction on that window's own scheduler. Add and Remove buttons call `Tags.Add` and `Tags.Remove` on the same set.
 
 Age uses `TextConverters.Int32`. `"07"` becomes `7` and the box is rewritten as `"7"`. `"1-"` does not parse, so `Age` is left alone and the typed text stays until a later model change replaces it. `AgeStatus` is one way: the computed reaction on the `Person` is the only writer.
 

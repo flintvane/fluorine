@@ -4,7 +4,7 @@
 
 `ReactiveSortedDictionary<TKey, TValue>` is a mutable dictionary that publishes immutable pictures of its entries, kept in key order. Use the dictionary to add, replace, remove and look up keys. Use a `Version` to enumerate what is there now, keep that picture across reaction runs, and compare it with a later picture.
 
-It follows the same rules as a [reactive dictionary](reactive-dictionaries.md). The difference is the order. Keys use `IComparer<TKey>` instead of an equality comparer, and enumeration and `Diff` both run in that order. A picture shares the blocks that did not change with the picture it was built from. A block holds up to five entries.
+It follows the same rules as a [reactive dictionary](reactive-dictionaries.md). The difference is the order. Keys use `IComparer<TKey>` instead of an equality comparer, and enumeration and `Diff` both run in that order. A picture shares unchanged structure with the picture it was built from.
 
 A common way to expose both is a field for the dictionary and a property for the current picture:
 
@@ -32,9 +32,9 @@ var mixed = new ReactiveSortedDictionary<string, int>(
 ```
 
 - `new ReactiveSortedDictionary<TKey, TValue>()` starts empty and uses `Comparer<TKey>.Default`.
-- The constructor that takes pairs stores those entries. A null sequence throws `ArgumentNullException`. A null key throws `ArgumentNullException`. A repeated key keeps the first value.
+- The constructor that takes pairs stores those entries. A null sequence throws `ArgumentNullException`. A null key throws `ArgumentNullException`.
 - `Comparer` returns the comparer the dictionary was created with. A null comparer means the default.
-- Keys use that comparer. Compare returning zero means the same key. The result of comparing two keys must stay stable while either is present.
+- Keys use that comparer. Compare returning zero means the same key. A comparison result must stay stable while the key is present.
 - Values use `object.Equals`, the same comparison a register uses ([Equality](equality.md)). Implementing `IEquatable<TValue>` alone does not count. An equal value is left as it was: the stored instance stays, and nothing is published.
 - A null key is rejected. A null value is a valid entry when `TValue` can be null.
 
@@ -109,7 +109,7 @@ Outside a reaction, or inside `Reaction.Pause`, a read just reports the current 
 
 ## Pictures: `Version`
 
-Each successful change publishes a new `Version`. Unchanged blocks are shared with the picture it was built from. A version does not point back at the older one, so a picture nobody holds can be collected. The public surface of a picture is:
+Each successful change publishes a new `Version`. Unchanged structure is shared with the picture it was built from. A version does not point back at the older one, so a picture nobody holds can be collected. The public surface of a picture is:
 
 ```csharp
 public sealed class Version : IEnumerable<KeyValuePair<TKey, TValue>>
@@ -118,6 +118,8 @@ public sealed class Version : IEnumerable<KeyValuePair<TKey, TValue>>
     public bool ContainsKey(TKey key);
     public bool TryGetValue(TKey key, out TValue value);
     public TValue this[TKey key] { get; }
+    public IEnumerable<TKey> Keys { get; }
+    public IEnumerable<TValue> Values { get; }
     public Change[] Diff(Version previous);
 }
 ```
@@ -158,12 +160,10 @@ public readonly struct Change
 
 `Value` is the value in the newer picture for `Added` and `Updated`, and the value that left for `Removed`. `PreviousValue` is the value that was replaced for `Updated`, and `default(TValue)` for `Added` and `Removed`. For `Updated` and `Removed`, `Key` is the instance from the picture you kept.
 
-When the two pictures come from the same dictionary, they share the blocks that did not change. `Diff` returns immediately when the structure is identical, and otherwise walks only the blocks that differ. Two pictures built separately with the same comparer, with the same entries in a different shape, still yield an empty `Diff`. `Diff` compares with this picture's comparer, so both pictures need to be ordered by it.
-
 There is no separate "key appeared", "key disappeared" or "value changed" event. Those are `ContainsKey` or `TryGetValue` changing, or `ChangeKind.Added`, `ChangeKind.Removed` and `ChangeKind.Updated` from `Diff`.
 
 ---
 
-*Key and value reads follow register recording (§7.1, cs 12.8–12.11); versions and `Diff` follow cs 12.12–12.15 and cs 12.24–12.28. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
+*Key and value reads follow register recording (§7.1, cs 12.8–12.11); versions and `Diff` follow cs 12.12–12.15 and cs 12.24–12.27; construction follows cs 12.23. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Reactive sorted sets](reactive-sorted-sets.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)

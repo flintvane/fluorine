@@ -4,7 +4,7 @@
 
 `ReactiveSortedSet<T>` is a mutable set that publishes immutable pictures of its members, kept in comparer order. Use the set to add, remove and test membership. Use a `Version` to enumerate what is there now, keep that picture across reaction runs, and compare it with a later picture.
 
-It follows the same rules as a [reactive set](reactive-sets.md). The difference is the order. Membership uses `IComparer<T>` instead of an equality comparer, and enumeration and `Diff` both run in that order. A picture shares the blocks that did not change with the picture it was built from. A block holds up to five elements.
+It follows the same rules as a [reactive set](reactive-sets.md). The difference is the order. Membership uses `IComparer<T>` instead of an equality comparer, and enumeration and `Diff` both run in that order. A picture shares unchanged structure with the picture it was built from.
 
 A common way to expose both is a field for the set and a property for the current picture:
 
@@ -28,9 +28,9 @@ var mixed = new ReactiveSortedSet<string>(
 ```
 
 - `new ReactiveSortedSet<T>()` starts empty and uses `Comparer<T>.Default`.
-- The constructor that takes `IEnumerable<T>` stores those items. A null sequence throws `ArgumentNullException`. A repeated element keeps the first instance.
+- The constructor that takes `IEnumerable<T>` stores those items. A null sequence throws `ArgumentNullException`.
 - `Comparer` returns the comparer the set was created with. A null comparer means the default.
-- Membership uses that comparer. Compare returning zero means the same element. The result of comparing two elements must stay stable while either is in the set.
+- Membership uses that comparer. Compare returning zero means the same element. A comparison result must stay stable while the element is in the set.
 - A null element is a valid member when `T` can be null and the comparer accepts it. `Comparer<string>.Default` sorts null before every string.
 
 The constructors store the items without triggering reactions. `Add` later returns `false` for an item the comparer already considers present; `Remove` returns `false` for an item that is not. An add that finds a match leaves the stored instance in place.
@@ -45,7 +45,7 @@ names.Clear();             // drops every member; a second Clear does nothing
 
 `Add`, `Remove` and `Clear` can be called from any thread. An add or remove that does not change membership triggers nothing.
 
-Enumerating the set yields members from low to high under the comparer. With `Comparer<int>.Default`, `1` comes before `2`. With `StringComparer.OrdinalIgnoreCase`, `"Ada"` comes before `"Byron"`, and a second `"ada"` is not stored.
+Enumerating the set yields members from low to high under the comparer. With `Comparer<int>.Default`, `1` comes before `2`. With `StringComparer.OrdinalIgnoreCase`, `"Ada"` comes before `"Byron"`.
 
 ## Two kinds of dependency
 
@@ -79,7 +79,7 @@ reactor.Add(() =>
 
 ## Pictures: `Version`
 
-Each successful change publishes a new `Version`. Unchanged blocks are shared with the picture it was built from. A version does not point back at the older one, so a picture nobody holds can be collected. The public surface of a picture is:
+Each successful change publishes a new `Version`. Unchanged structure is shared with the picture it was built from. A version does not point back at the older one, so a picture nobody holds can be collected. The public surface of a picture is:
 
 ```csharp
 public sealed class Version : IEnumerable<T>
@@ -123,12 +123,10 @@ public readonly struct Change
 }
 ```
 
-`Item` is the added instance, the removed instance, or the instance now stored for `Replaced`. `Previous` is the instance that was stored for `Replaced`, and `default(T)` for `Added` and `Removed`. `Replaced` is reported when both pictures hold an equal element as different instances of a reference type: `Item` is the instance in the newer picture, `Previous` the one in the picture you kept. Value types have no instance to tell apart, so an equal value is not `Replaced`.
-
-When the two pictures come from the same set, they share the blocks that did not change. `Diff` returns immediately when the structure is identical, and otherwise walks only the blocks that differ. Two pictures built separately with the same comparer, with the same members in a different shape, still yield an empty `Diff`. `Diff` compares with this picture's comparer, so both pictures need to be ordered by it.
+`Item` is the added instance, the removed instance, or the instance now stored for `Replaced`. `Previous` is the instance that was stored for `Replaced`, and `default(T)` for `Added` and `Removed`. `Replaced` is reported when both pictures hold an equal element as different instances of a reference type: `Item` is the instance in the newer picture, `Previous` the one in the picture you kept.
 
 ---
 
-*Membership reads follow register recording (§7.1, cs 12.8–12.11); versions and `Diff` follow cs 12.12–12.15 and cs 12.24–12.28. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
+*Membership reads follow register recording (§7.1, cs 12.8–12.11); versions and `Diff` follow cs 12.12–12.15 and cs 12.24–12.27; construction follows cs 12.23. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
 [← Reactive dictionaries](reactive-dictionaries.md) · [Topics](../index.md) · [Reactive sorted dictionaries →](reactive-sorted-dictionaries.md)

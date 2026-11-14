@@ -68,6 +68,8 @@ title.Name = "page title";
 
 `ReactiveDictionary<TKey, TValue>` is a dictionary built on that base: add, replace and remove entries, react to one key or to the whole picture, and keep an immutable picture to compare later ([Reactive dictionaries](reactive-dictionaries.md)).
 
+`ReactiveSortedSet<T>` and `ReactiveSortedDictionary<TKey, TValue>` are the same idea, kept in comparer order ([Reactive sorted sets](reactive-sorted-sets.md), [Reactive sorted dictionaries](reactive-sorted-dictionaries.md)).
+
 ---
 
 *Spec references: §3.1a, §7, §12.8; cs 1.1-1.15. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
