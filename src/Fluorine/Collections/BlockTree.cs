@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -156,6 +156,37 @@ namespace Fluorine
 
             stored = default;
             return false;
+        }
+
+        // Position of the element in comparer order, or -1 when absent. Each
+        // branch knows the size of its children, so skipping a child adds its
+        // count instead of walking it: O(log n).
+        internal static int IndexOf(Node root, T probe, IComparer<T> comparer)
+        {
+            var index = 0;
+            var node = root;
+            while (node is Branch branch)
+            {
+                var child = FindChild(branch, probe, comparer);
+                for (var i = 0; i < child; i++)
+                    index += branch.Children[i].Count;
+                node = branch.Children[child];
+            }
+
+            if (node is Leaf leaf)
+            {
+                var items = leaf.Items;
+                for (var i = 0; i < items.Length; i++)
+                {
+                    var cmp = comparer.Compare(probe, items[i]);
+                    if (cmp == 0)
+                        return index + i;
+                    if (cmp < 0)
+                        break;
+                }
+            }
+
+            return -1;
         }
 
         internal static void Diff<TSink>(Node older, Node newer, IComparer<T> comparer, TSink sink)

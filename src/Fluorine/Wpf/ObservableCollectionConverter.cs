@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -14,6 +14,12 @@ namespace Fluorine
             {
                 Type t = type.GetGenericArguments()[0];
                 Type properType = typeof(ObservableReactiveCollection<>).MakeGenericType(t);
+                return Activator.CreateInstance(properType, value);
+            }
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ReactiveSortedSet<>))
+            {
+                Type t = type.GetGenericArguments()[0];
+                Type properType = typeof(ObservableReactiveSortedCollection<>).MakeGenericType(t);
                 return Activator.CreateInstance(properType, value);
             }
             throw new InvalidOperationException($"Cannot cast {type} to an observable collection");

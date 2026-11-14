@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -310,6 +310,8 @@ namespace Fluorine
             {
                 return BlockTree<T>.TryGet(_root, item, _comparer, out _);
             }
+
+            internal int IndexOf(T item) => BlockTree<T>.IndexOf(_root, item, _comparer);
 
             public Change[] Diff(Version previous)
             {
