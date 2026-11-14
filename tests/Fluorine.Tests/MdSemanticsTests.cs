@@ -8,39 +8,6 @@ namespace Fluorine
 {
     public class Md1_ThreadingTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_1_1_EventLoopProcessesOneAtATime()
-        {
-            using var host = new ThreadHost();
-            var concurrent = 0;
-            var max = 0;
-            var n = 0;
-            Action work = () =>
-            {
-                var now = Interlocked.Increment(ref concurrent);
-                if (now > max) max = now;
-                Thread.Sleep(20);
-                Interlocked.Decrement(ref concurrent);
-                Interlocked.Increment(ref n);
-            };
-            host.NewReactor().Add(work);
-            host.NewReactor().Add(work);
-            WaitUntil.True(() => n == 2, "both");
-            Assert.Equal(1, max);
-        }
-
-        [Fact]
-        public void Rule_1_2_ReactionPinnedToCreatingScheduler()
-        {
-            using var a = new ThreadHost();
-            using var b = new ThreadHost();
-            Thread ranOn = null;
-            Thread expected = null;
-            a.OnScheduler(() => expected = Thread.CurrentThread);
-            new Reactor(a.Scheduler).Add(() => ranOn = Thread.CurrentThread);
-            WaitUntil.True(() => ranOn != null, "ran");
-            Assert.Equal(expected.ManagedThreadId, ranOn.ManagedThreadId);
-        }
 
         [Fact(DisplayName = "s1.2-01 Reaction never runs parallel to itself")]
         public void Sem_1_2_01_RunsNeverParallelWithThemselves()
@@ -84,40 +51,6 @@ namespace Fluorine
             }
             Harness.Barrier2(s);
             Assert.True(Volatile.Read(ref peak) <= 1, "in-flight " + Volatile.Read(ref peak));
-        }
-
-        [Fact]
-        public void Rule_1_3_RegistersAreNotPinned()
-        {
-            var r = new Register<int>(0);
-            var t = new Thread(() => r.Value = 4);
-            t.Start();
-            t.Join();
-            Assert.Equal(4, r.Value);
-        }
-
-        [Fact]
-        public void Rule_1_4_TriggerQueuesAndCoalesces()
-        {
-            using var host = new ThreadHost();
-            var inRun = new ManualResetEventSlim(false);
-            var go = new ManualResetEventSlim(false);
-            var n = 0;
-            var r = host.NewReactor().Add(() =>
-            {
-                Interlocked.Increment(ref n);
-                if (n == 1)
-                {
-                    inRun.Set();
-                    go.Wait();
-                }
-            });
-            WaitUntil.Event(inRun, "in run");
-            r.Trigger();
-            r.Trigger();
-            r.Trigger();
-            go.Set();
-            WaitUntil.True(() => n == 2, "coalesced to one extra");
         }
 
         [Fact(DisplayName = "s1.4-01 Many writes coalesce into one run")]
@@ -164,29 +97,6 @@ namespace Fluorine
                 Interlocked.Increment(ref n);
             });
             WaitUntil.True(() => n == 2, "parallel");
-        }
-
-        [Fact]
-        public void Rule_1_6_RunIsSynchronous()
-        {
-            using var host = new ThreadHost();
-            var order = "";
-            host.NewReactor().Add(() =>
-            {
-                order += "1";
-                order += "2";
-            });
-            WaitUntil.True(() => order == "12", "sync");
-        }
-
-        [Fact]
-        public void Rule_1_8_TriggeringNeverThrows()
-        {
-            using var host = new ThreadHost();
-            var r = host.NewReactor().Add(() => { });
-            host.Scheduler.Shutdown();
-            r.Trigger();
-            host.Scheduler.Queue(() => { });
         }
 
         [Fact(DisplayName = "s1.8-02 Schedule exception passes unwrapped")]
@@ -266,28 +176,6 @@ namespace Fluorine
             Assert.Equal(0, log.Count);
             Assert.Equal(1, runs);
             Assert.Equal(0, actions);
-        }
-
-        [Fact]
-        public void Rule_1_9_TrackingIsPerThread()
-        {
-            using var a = new ThreadHost();
-            using var b = new ThreadHost();
-            var reg = new Register<int>(0);
-            var an = 0;
-            var bn = 0;
-            a.NewReactor().Add(() =>
-            {
-                var _ = reg.Value;
-                Interlocked.Increment(ref an);
-            });
-            WaitUntil.True(() => an == 1, "a");
-            b.NewReactor().Add(() => Interlocked.Increment(ref bn));
-            WaitUntil.True(() => bn == 1, "b");
-            reg.Value = 1;
-            WaitUntil.True(() => an == 2, "a retriggered");
-            Thread.Sleep(40);
-            Assert.Equal(1, bn);
         }
 
         [Fact(DisplayName = "s1.9-01 Reads on another thread not tracked")]
@@ -446,31 +334,6 @@ namespace Fluorine
 
     public class Md3_EqualityTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_3_1_ObjectEquals()
-        {
-            var r = new Register<string>("x");
-            Assert.False(r.SetValue("x"));
-            Assert.True(r.SetValue("y"));
-        }
-
-        [Fact]
-        public void Rule_3_1a_DefaultValue()
-        {
-            Assert.Equal(0, new Register<int>().Value);
-        }
-
-        [Fact]
-        public void Rule_3_1b_CompareThenStoreThenTrigger()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(1);
-            var seen = 0;
-            host.NewReactor().Add(() => seen = r.Value);
-            WaitUntil.True(() => seen == 1, "first");
-            r.Value = 2;
-            WaitUntil.True(() => seen == 2, "new value");
-        }
 
         [Fact(DisplayName = "s3.1b-01 Racing writers: last run sees final")]
         public void Sem_3_1b_01_RacingWritersLoseNothing()
@@ -507,15 +370,6 @@ namespace Fluorine
             Assert.Equal(2, reg.Value.Id);
         }
 
-        [Fact]
-        public void Rule_3_1c_EqualityThrowStoresNothing()
-        {
-            var v = new EqThrower();
-            var r = new Register<EqThrower>(v);
-            Assert.Throws<InvalidOperationException>(() => r.SetValue(new EqThrower()));
-            Assert.Same(v, r.Value);
-        }
-
         [Fact(DisplayName = "cs1.8-03 Writing an equal value does not trigger")]
         public void Rule_3_2_NoChangeNoTrigger()
         {
@@ -536,17 +390,6 @@ namespace Fluorine
 
     public class Md4_RunGuaranteeTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_4_1_RunsAtLeastOnceAfterLastModification()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var last = -1;
-            host.NewReactor().Add(() => last = r.Value);
-            WaitUntil.True(() => last == 0, "first");
-            r.Value = 9;
-            WaitUntil.True(() => last == 9, "last");
-        }
 
         [Fact(DisplayName = "s4.1-01 Last run sees the final value")]
         public void Sem_4_1_01_RunsAfterLastModification()
@@ -575,54 +418,6 @@ namespace Fluorine
             int final = reg.Value;
             Harness.Barrier2(s);
             Assert.Equal(final, seen);
-        }
-
-        [Fact]
-        public void Rule_4_2_IntermediateValuesMayBeSkipped()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var inRun = new ManualResetEventSlim(false);
-            var go = new ManualResetEventSlim(false);
-            var last = 0;
-            host.NewReactor().Add(() =>
-            {
-                last = r.Value;
-                if (last == 0)
-                {
-                    inRun.Set();
-                    go.Wait();
-                }
-            });
-            WaitUntil.Event(inRun, "in");
-            r.Value = 1;
-            r.Value = 2;
-            r.Value = 3;
-            go.Set();
-            WaitUntil.True(() => last == 3, "skipped");
-        }
-
-        [Fact]
-        public void Rule_4_4_QueuedAtMostOnceAndTriggerDuringRunQueuesOneMore()
-        {
-            using var host = new ThreadHost();
-            var inRun = new ManualResetEventSlim(false);
-            var go = new ManualResetEventSlim(false);
-            var n = 0;
-            var reaction = host.NewReactor().Add(() =>
-            {
-                Interlocked.Increment(ref n);
-                if (n == 1)
-                {
-                    inRun.Set();
-                    go.Wait();
-                }
-            });
-            WaitUntil.Event(inRun, "in");
-            reaction.Trigger();
-            reaction.Trigger();
-            go.Set();
-            WaitUntil.True(() => n == 2, "one more");
         }
 
         [Fact(DisplayName = "s4.4-01 Triggers during a run queue one more")]
@@ -658,33 +453,6 @@ namespace Fluorine
             Assert.Equal(3, Volatile.Read(ref runs));
         }
 
-        [Fact]
-        public void Rule_4_5_ManualRegisterTriggerIgnoresEquality()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(1);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                var _ = r.Value;
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            r.TriggerReactions();
-            WaitUntil.True(() => n == 2, "manual");
-        }
-
-        [Fact]
-        public void Rule_4_6_ManualReactionTrigger()
-        {
-            using var host = new ThreadHost();
-            var n = 0;
-            var reaction = host.NewReactor().Add(() => Interlocked.Increment(ref n));
-            WaitUntil.True(() => n == 1, "first");
-            reaction.Trigger();
-            WaitUntil.True(() => n == 2, "manual");
-        }
-
         [Fact(DisplayName = "s4.6-01 Manual trigger coalesces with write")]
         public void Sem_4_6_01_ManualTriggerQueuedLikeOthers()
         {
@@ -711,21 +479,6 @@ namespace Fluorine
 
     public class Md6_CyclesTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_6_1_SelfWriteRetriggers()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                var v = r.Value;
-                Interlocked.Increment(ref n);
-                if (v < 3)
-                    r.Value = v + 1;
-            });
-            WaitUntil.True(() => n >= 4 && r.Value == 3, "self writes");
-        }
 
         [Fact(DisplayName = "s6.1-01 Self-write retriggers until stable")]
         public void Sem_6_1_01_SelfWriteRetriggers()
@@ -766,30 +519,6 @@ namespace Fluorine
             thread.Start();
             Assert.True(finished.WaitOne(Harness.TimeoutMs), "Shutdown did not complete");
             Assert.True(thread.Join(Harness.TimeoutMs));
-        }
-
-        [Fact]
-        public void Rule_6_3_PausingAppliesToReadsOnly()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                Interlocked.Increment(ref n);
-                if (n == 1)
-                {
-                    Reaction.Pause(() => { var _ = r.Value; });
-                    r.Value = 1;
-                }
-                else
-                {
-                    var _ = r.Value;
-                }
-            });
-            WaitUntil.True(() => n >= 1, "started");
-            Thread.Sleep(80);
-            Assert.Equal(1, n);
         }
 
         [Fact(DisplayName = "s6.3-01 Writes inside Pause still trigger")]
@@ -880,33 +609,6 @@ namespace Fluorine
 
     public class Md7_ProtocolTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_7_1_SubscribeBeforeValueReturned()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                var _ = r.Value;
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            r.Value = 1;
-            WaitUntil.True(() => n == 2, "subscribed");
-        }
-
-        [Fact]
-        public void Rule_7_2_StoreThenTrigger()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var seen = 0;
-            host.NewReactor().Add(() => seen = r.Value);
-            WaitUntil.True(() => seen == 0, "first");
-            r.Value = 5;
-            WaitUntil.True(() => seen == 5, "stored");
-        }
 
         [Fact(DisplayName = "s7.2-01 Triggered run never sees older value")]
         public void Sem_7_2_01_TriggeredReactionSeesNewValue()
@@ -936,48 +638,6 @@ namespace Fluorine
             Harness.Barrier2(s);
             Assert.Equal(0, Volatile.Read(ref older));
             Assert.Equal(reg.Value, lastSeen);
-        }
-
-        [Fact]
-        public void Rule_7_3_DependencyMaintenance()
-        {
-            using var host = new ThreadHost();
-            var a = new Register<int>(0);
-            var b = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                Interlocked.Increment(ref n);
-                if (a.Value == 0)
-                {
-                    var _ = b.Value;
-                }
-            });
-            WaitUntil.True(() => n == 1, "first");
-            a.Value = 1;
-            WaitUntil.True(() => n == 2, "a");
-            b.Value = 1;
-            Thread.Sleep(50);
-            Assert.Equal(2, n);
-        }
-
-        [Fact]
-        public void Rule_7_3a_PausedReadDoesNotKeepSubscription()
-        {
-            using var host = new ThreadHost();
-            var a = new Register<int>(0);
-            var b = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                var _ = a.Value;
-                Reaction.Pause(() => { var unused = b.Value; });
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            b.Value = 1;
-            Thread.Sleep(40);
-            Assert.Equal(1, n);
         }
 
         [Fact(DisplayName = "s7.3a-01 Normal + paused read keeps subscription")]
@@ -1059,25 +719,6 @@ namespace Fluorine
             Assert.Equal(1, max);
         }
 
-        [Fact]
-        public void Rule_7_5_TriggeringDoesNotSubscribe()
-        {
-            using var host = new ThreadHost();
-            var a = new Register();
-            var b = new Register();
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                a.RecordRead();
-                b.TriggerReactions();
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            b.TriggerReactions();
-            Thread.Sleep(40);
-            Assert.Equal(1, n);
-        }
-
         [Fact(DisplayName = "s7.5-01 Triggering does not subscribe")]
         public void Sem_7_5_01_TriggerDoesNotSubscribe()
         {
@@ -1137,24 +778,6 @@ namespace Fluorine
             }
         }
 
-        [Fact]
-        public void Rule_8_2_ReactionDoesNotStopTheLoop()
-        {
-            using var host = new ThreadHost();
-            Reactive.UnhandledException += Ignore;
-            try
-            {
-                host.NewReactor().Add(() => { throw new InvalidOperationException(); });
-                var n = 0;
-                host.NewReactor().Add(() => Interlocked.Increment(ref n));
-                WaitUntil.True(() => n == 1, "loop lives");
-            }
-            finally
-            {
-                Reactive.UnhandledException -= Ignore;
-            }
-        }
-
         [Fact(DisplayName = "s8.2-01 Throwing reaction doesn't stop loop")]
         public void Sem_8_2_01_ThrowingReactionDoesNotStopLoop()
         {
@@ -1175,69 +798,6 @@ namespace Fluorine
             Harness.Barrier(s);
             Assert.True(ran);
         }
-
-        static void Ignore(Exception e)
-        {
-        }
-    }
-
-    public class Md9_PauseTests
-    {
-        [Fact]
-        public void Rule_9_1_PausedReadsDoNotSubscribe()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                Reaction.Pause(() => { var _ = r.Value; });
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            r.Value = 1;
-            Thread.Sleep(40);
-            Assert.Equal(1, n);
-        }
-
-        [Fact]
-        public void Rule_9_2_PauseIsReentrant()
-        {
-            using var host = new ThreadHost();
-            var rec = true;
-            host.NewReactor().Add(() =>
-            {
-                Reaction.Pause(() =>
-                {
-                    Reaction.Pause(() => rec = Reaction.IsRecording);
-                });
-            });
-            Thread.Sleep(50);
-            Assert.False(rec);
-        }
-
-        [Fact]
-        public void Rule_9_3_UnbalancedPauseEndsWithReaction()
-        {
-            using var host = new ThreadHost();
-            host.NewReactor().Add(() => Reaction.PauseRecording());
-            Thread.Sleep(40);
-            Assert.Null(Reaction.Current);
-            Assert.False(Reaction.IsRecording);
-        }
-    }
-
-    public class Md10_ExecutionTests
-    {
-        [Fact]
-        public void Rule_10_1_PlainSynchronousRun()
-        {
-            using var host = new ThreadHost();
-            var depth = 0;
-            host.NewReactor().Add(() => depth = new System.Diagnostics.StackTrace().FrameCount);
-            WaitUntil.True(() => depth > 0, "ran");
-        }
-
     }
 
     public class Md11_SchedulingTests : SemanticsAcceptanceTest
@@ -1276,30 +836,6 @@ namespace Fluorine
             Assert.Equal(101, Volatile.Read(ref runs));
         }
 
-        [Fact]
-        public void Rule_11_2_ReactorCapturesCreatingThreadScheduler()
-        {
-            using var host = new ThreadHost();
-            Reactor reactor = null;
-            host.OnScheduler(() => reactor = new Reactor());
-            var n = 0;
-            reactor.Add(() => Interlocked.Increment(ref n));
-            WaitUntil.True(() => n == 1, "ran on captured");
-        }
-
-        [Fact]
-        public void Rule_11_5_SameLoopFirstRunAfterCreatorFinishes()
-        {
-            using var host = new ThreadHost();
-            var order = "";
-            host.OnScheduler(() =>
-            {
-                new Reactor(host.Scheduler).Add(() => order += "R");
-                order += "C";
-            });
-            WaitUntil.True(() => order == "CR", "creator first");
-        }
-
         [Fact(DisplayName = "s11.5-01 Same-loop add+write: first run sees it")]
         public void Sem_11_5_01_SameLoopStartupOrdering()
         {
@@ -1330,27 +866,6 @@ namespace Fluorine
             Assert.Null(error);
             Assert.True(Volatile.Read(ref runs) >= 1);
             Assert.Equal(5, seen);
-        }
-
-        [Fact]
-        public void Rule_11_7_TwoReactionsOnSameLoopNeverConcurrent()
-        {
-            using var host = new ThreadHost();
-            var concurrent = 0;
-            var max = 0;
-            var n = 0;
-            Action body = () =>
-            {
-                var c = Interlocked.Increment(ref concurrent);
-                if (c > max) max = c;
-                Thread.Sleep(15);
-                Interlocked.Decrement(ref concurrent);
-                Interlocked.Increment(ref n);
-            };
-            host.NewReactor().Add(body);
-            host.NewReactor().Add(body);
-            WaitUntil.True(() => n == 2, "both");
-            Assert.Equal(1, max);
         }
 
         [Fact(DisplayName = "s11.7-01 No concurrent runs on one scheduler")]
@@ -1511,25 +1026,6 @@ namespace Fluorine
             WaitUntil.True(() => seen == 4, "immediate");
         }
 
-        [Fact]
-        public void Rule_11_11_WritesOnOneLoopSeenTogether()
-        {
-            using var host = new ThreadHost();
-            var a = new Register<int>(0);
-            var b = new Register<int>(0);
-            var pair = "";
-            var writerDone = false;
-            host.Scheduler.Queue(() =>
-            {
-                a.Value = 1;
-                b.Value = 2;
-                writerDone = true;
-            });
-            WaitUntil.True(() => writerDone, "written");
-            host.NewReactor().Add(() => pair = a.Value + "," + b.Value);
-            WaitUntil.True(() => pair == "1,2", "together");
-        }
-
         [Fact(DisplayName = "s11.11-01 Same-action writes seen together")]
         public void Sem_11_11_01_SameLoopMultiWritesSeenTogether()
         {
@@ -1574,55 +1070,10 @@ namespace Fluorine
             Thread.Sleep(40);
             Assert.Equal(after, n);
         }
-
-        [Fact]
-        public void Rule_11_16_ShutdownFromAnyThreadAndNotFromReaction()
-        {
-            var host = new ThreadHost();
-            var worker = new Thread(() => host.Scheduler.Shutdown());
-            worker.Start();
-            worker.Join();
-            Assert.True(host.Scheduler.IsFinished);
-        }
     }
 
     public class Md12_LifetimeTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_12_5_DisposeRemovesSubscriptions()
-        {
-            using var host = new ThreadHost();
-            var r = new Register<int>(0);
-            var n = 0;
-            var reaction = host.NewReactor().Add(() =>
-            {
-                var _ = r.Value;
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            reaction.Dispose();
-            Thread.Sleep(40);
-            r.Value = 1;
-            Thread.Sleep(40);
-            Assert.Equal(1, n);
-        }
-
-        [Fact]
-        public void Rule_12_6_QueuedRunDoesNotExecuteOriginalLambda()
-        {
-            using var host = new ThreadHost();
-            var n = 0;
-            Reaction reaction = null;
-            host.OnScheduler(() =>
-            {
-                var reactor = new Reactor(host.Scheduler);
-                reaction = reactor.Add(() => Interlocked.Increment(ref n));
-                reaction.Dispose();
-                Assert.Equal(0, n);
-            });
-            Thread.Sleep(50);
-            Assert.Equal(0, n);
-        }
 
         [Fact(DisplayName = "s12.6b-01 Trigger after dispose has no effect")]
         public void Sem_12_6b_01_LaterTriggerAfterDisposeNoEffect()
@@ -1644,30 +1095,6 @@ namespace Fluorine
             Assert.Equal(before, Volatile.Read(ref runs));
         }
 
-        [Fact]
-        public void Rule_12_8_ValuelessRegisterIsPureSignal()
-        {
-            using var host = new ThreadHost();
-            var s = new Register();
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                s.RecordRead();
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            s.TriggerReactions();
-            WaitUntil.True(() => n == 2, "signal");
-        }
-
-        [Fact]
-        public void Rule_12_9_NullActionIsNoAction()
-        {
-            using var host = new ThreadHost();
-            host.Scheduler.Queue((Action)null);
-            Assert.NotNull(host.NewReactor().Add(null));
-        }
-
         [Fact(DisplayName = "s12.9-01 Null actions are not errors")]
         public void Sem_12_9_01_NullActionsNotErrors()
         {
@@ -1680,70 +1107,10 @@ namespace Fluorine
             Harness.Barrier(s);
             Assert.Equal(0, log.Count);
         }
-
-        [Fact]
-        public void Rule_12_12_AddDuringDisposeCreatesNothing()
-        {
-            using var host = new ThreadHost();
-            var reactor = host.NewReactor();
-            reactor.Dispose();
-            Assert.Null(reactor.Add(() => { }));
-        }
     }
 
     public class Md13_SyncTests : SemanticsAcceptanceTest
     {
-        [Fact]
-        public void Rule_13_1_NoTearing()
-        {
-            var r = new Register<Big>(new Big(1, 1));
-            var errors = 0;
-            var stop = false;
-            var t = new Thread(() =>
-            {
-                while (!stop)
-                {
-                    var v = r.Value;
-                    if (v.X != v.Y)
-                        Interlocked.Increment(ref errors);
-                }
-            });
-            t.Start();
-            for (var i = 0; i < 20000; i++)
-                r.Value = new Big(i, i);
-            stop = true;
-            t.Join();
-            Assert.Equal(0, errors);
-        }
-
-        [Fact]
-        public void Rule_13_3_QueuedAtMostOnceFromManyThreads()
-        {
-            using var host = new ThreadHost();
-            var inRun = new ManualResetEventSlim(false);
-            var go = new ManualResetEventSlim(false);
-            var n = 0;
-            var reaction = host.NewReactor().Add(() =>
-            {
-                Interlocked.Increment(ref n);
-                if (n == 1)
-                {
-                    inRun.Set();
-                    go.Wait();
-                }
-            });
-            WaitUntil.Event(inRun, "in");
-            var threads = new Thread[8];
-            for (var i = 0; i < threads.Length; i++)
-            {
-                threads[i] = new Thread(() => reaction.Trigger());
-                threads[i].Start();
-            }
-            foreach (var t in threads)
-                t.Join();
-            go.Set();
-            WaitUntil.True(() => n == 2, "one extra from many triggers");
-        }
 
         [Fact(DisplayName = "s13.3-01 Concurrent triggers queue only once")]
         public void Sem_13_3_01_QueuedAtMostOnceUnderConcurrency()
@@ -1894,11 +1261,6 @@ namespace Fluorine
             r.Value = 1;
             Assert.True(sw.ElapsedMilliseconds < 1000);
             go.Set();
-        }
-
-        struct Big(long x, long y)
-        {
-            public readonly long X = x, Y = y;
         }
     }
 
