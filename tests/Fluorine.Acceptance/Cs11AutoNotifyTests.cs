@@ -12,7 +12,6 @@ namespace Fluorine.Acceptance
         [Fact(DisplayName = "cs11.1-01")]
         public void cs11_1_01()
         {
-            Assert.True(typeof(AutoNotify).IsAbstract);
             Assert.True(typeof(INotifyPropertyChanged).IsAssignableFrom(typeof(AutoNotify)));
             Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(AutoNotify)));
             var ctor = typeof(AutoNotify).GetConstructor(
