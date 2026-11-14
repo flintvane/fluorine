@@ -310,6 +310,8 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | s6.4-01 | Reaction creating reactions | P | r1 adds r2 to R | Barrier2; dispose R | r2 ran; disposing R stops r1 and r2; disposing r1 alone does not dispose r2 | not yet checked |
 | **s7 Protocol** |||||||
 | s7.2-01 | Triggered reaction sees new value | P stress | write from other thread | – | run sees new or newer value, never older | not yet checked |
+| s7.3-01 | Read subscribes at once, mid-run | E | lambda reads `a`, then blocks on gate G | while blocked write `a`; open G; Barrier2 | exactly one more run (write during the run was seen) | not yet checked |
+| s7.3-02 | Unread deps dropped only after the run | E | run 1 reads `a` and `b`; run 2 reads only `a`, then blocks on gate G | while run 2 blocked write `b`; open G; Barrier2; after run 3 (reads only `a`) write `b`; Barrier | the write during run 2 triggers run 3; the write after run 3 triggers nothing | not yet checked |
 | s7.3a-01 | Normal + paused read keeps subscription | P | lambda reads reg normally and paused | write | reruns | not yet checked |
 | s7.3a-02 | Only-paused read drops old subscription | P | run 1 reads reg normally, run 2 only paused | after run 2 write reg | no rerun | not yet checked |
 | s7.4-01 | Never re-entrant on itself | E | lambda triggers itself and writes its own reg | – | no nested execution (depth counter ≤1) | not yet checked |
