@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows.Forms;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class FormsReactorTests
     {

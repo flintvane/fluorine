@@ -1,4 +1,4 @@
-namespace Fluorine.GeneratorTests
+namespace Fluorine
 {
     public partial class Household : AutoNotify
     {

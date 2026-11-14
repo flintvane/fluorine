@@ -7,7 +7,7 @@ using System.Windows.Threading;
 using System;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class Cs4_ThreadSchedulerTests : AcceptanceTest
     {

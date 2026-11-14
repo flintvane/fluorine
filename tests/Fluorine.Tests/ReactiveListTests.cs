@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class ReactiveListTests
     {

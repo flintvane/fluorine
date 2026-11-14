@@ -4,7 +4,7 @@ using System.Threading;
 using System;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class Md1_ThreadingTests : SemanticsAcceptanceTest
     {

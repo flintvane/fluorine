@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class ReactiveSortedDictionaryTests
     {

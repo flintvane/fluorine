@@ -3,7 +3,7 @@ using System.Threading;
 using System;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class Cs8_ComputedTests : AcceptanceTest
     {

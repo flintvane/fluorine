@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Threading;
 using Xunit;
 
-namespace Fluorine.GeneratorTests
+namespace Fluorine
 {
     public class HouseholdTests
     {

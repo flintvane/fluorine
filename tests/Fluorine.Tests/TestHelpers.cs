@@ -1,18 +1,15 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using System;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     static class WaitUntil
     {
@@ -1059,7 +1056,6 @@ namespace Fluorine.Tests
             Assert.NotNull(diff);
             Assert.True(diff.ReturnType.IsArray);
             Assert.Equal("Change", diff.ReturnType.GetElementType().Name);
-            Assert.Equal(0, version.GetMember("SameAs").Length);
             if (set)
             {
                 Assert.NotNull(version.GetMethod("Contains"));

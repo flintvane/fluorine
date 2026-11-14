@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class ReactiveSetTests : CollectionAcceptanceTest
     {

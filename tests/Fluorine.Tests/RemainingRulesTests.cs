@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading;
@@ -7,7 +6,7 @@ using System.Windows.Forms;
 using System;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class Md5_ConsistencyTests : SemanticsAcceptanceTest
     {

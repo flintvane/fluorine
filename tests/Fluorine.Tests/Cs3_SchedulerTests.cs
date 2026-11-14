@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Threading;
 using Xunit;
 
-namespace Fluorine.Tests
+namespace Fluorine
 {
     public class Cs3_SchedulerTests : AcceptanceTest
     {
@@ -368,7 +368,7 @@ namespace Fluorine.Tests
                 a.Value = 1;
                 WaitUntil.True(() => n == 3, "a");
                 b.Value = 2;
-                Thread.Sleep(50);
+                Thread.Sleep(100);
                 Assert.Equal(3, n);
             }
         }
