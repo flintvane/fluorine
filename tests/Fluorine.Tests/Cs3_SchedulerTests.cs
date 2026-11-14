@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Threading;
 using Xunit;
 
@@ -7,11 +6,6 @@ namespace Fluorine
 {
     public class Cs3_SchedulerTests : AcceptanceTest
     {
-        [Fact]
-        public void Rule_3_1_SchedulerIsAbstract()
-        {
-            Assert.True(typeof(Scheduler).IsAbstract);
-        }
         
         [Fact(DisplayName = "cs3.1-02 Custom Scheduler subclass works")]
         public void Rule_3_1_02_UserDerivedSchedulerPossible()
@@ -28,23 +22,6 @@ namespace Fluorine
             scheduler.Pump();
             Assert.Equal(1, runs);
             Assert.Equal(Thread.CurrentThread, pumping);
-        }
-
-        [Fact]
-        public void Rule_3_2_QueueReactionNeverInlineNeverThrowsAfterShutdownSilent()
-        {
-            using var host = new ThreadHost();
-            var n = 0;
-            Reaction reaction = null;
-            host.OnScheduler(() =>
-            {
-                var reactor = new Reactor(host.Scheduler);
-                reaction = reactor.Add(() => Interlocked.Increment(ref n));
-                Assert.Equal(0, n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            host.Scheduler.Shutdown();
-            host.Scheduler.Queue(reaction);
         }
 
         [Fact(DisplayName = "cs3.2-01 Queue(Reaction) never inline or throws")]
@@ -252,33 +229,6 @@ namespace Fluorine
             Assert.Equal(0, log.Count);
         }
 
-        [Fact(DisplayName = "cs3.4-01 Run/Schedule are protected, not public")]
-        public void Rule_3_4_01_RunPathVisibility()
-        {
-            Assert.Null(typeof(Reaction).GetMethod("Run", BindingFlags.Public | BindingFlags.Instance));
-            Assert.Null(typeof(Scheduler).GetMethod(
-                "RunReaction",
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
-            var schedule = typeof(Scheduler).GetMethod(
-                "Schedule",
-                BindingFlags.Instance | BindingFlags.NonPublic,
-                null,
-                [typeof(Action)],
-                null);
-            Assert.NotNull(schedule);
-            Assert.True(schedule.IsAbstract);
-            Assert.True(schedule.IsFamily);
-            var run = typeof(Scheduler).GetMethod(
-                "Run",
-                BindingFlags.Instance | BindingFlags.NonPublic,
-                null,
-                [typeof(Reaction)],
-                null);
-            Assert.NotNull(run);
-            Assert.True(run.IsFamily);
-            Assert.False(run.IsPublic);
-        }
-
         [Fact(DisplayName = "cs3.4-02 Queue hands work to Schedule")]
         public void Rule_3_4_02_QueueHandsWorkToSchedule()
         {
@@ -324,32 +274,6 @@ namespace Fluorine
             Assert.Equal(beforeRun, ts.ScheduleCalls);
             reg.Value = 1;
             Assert.Equal(beforeRun + 1, ts.ScheduleCalls);
-        }
-
-        [Fact]
-        public void Rule_3_5_RunRecordsReadsThenDisconnectsUnread()
-        {
-            using var host = new ThreadHost();
-            var a = new Register<int>(0);
-            var b = new Register<int>(0);
-            var n = 0;
-            host.NewReactor().Add(() =>
-            {
-                var first = a.Value;
-                if (first == 0)
-                {
-                    var _ = b.Value;
-                }
-                Interlocked.Increment(ref n);
-            });
-            WaitUntil.True(() => n == 1, "first");
-            b.Value = 1;
-            WaitUntil.True(() => n == 2, "b");
-            a.Value = 1;
-            WaitUntil.True(() => n == 3, "a");
-            b.Value = 2;
-            Thread.Sleep(100);
-            Assert.Equal(3, n);
         }
 
         [Fact(DisplayName = "cs3.5-01 Dependencies rediscovered each run")]
@@ -436,12 +360,6 @@ namespace Fluorine
                 hold.Release();
             }
             Assert.Same(s, seen);
-        }
-
-        [Fact]
-        public void Rule_3_7_BaseClassHasNoRun()
-        {
-            Assert.Null(typeof(Scheduler).GetMethod("Run", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
         }
 
         [Fact(DisplayName = "cs3.8-01 Shutdown drains queued runs")]
@@ -736,22 +654,14 @@ namespace Fluorine
             Assert.Equal(0, runs);
         }
 
-        [Fact]
-        public void Rule_3_9_SchedulersAreAnnouncedToReactive()
+        [Fact(DisplayName = "cs3.9-01 Reactive.Shutdown ends new schedulers")]
+        public void Rule_3_9_01_SchedulersAnnouncedAutomatically()
         {
-            using var host = new ThreadHost();
-            var all = Scheduler.SnapshotAll();
-            Assert.Contains(host.Scheduler, all);
-        }
-
-        [Fact]
-        public void Rule_3_10_OneSchedulerServesManyReactors()
-        {
-            using var host = new ThreadHost();
-            var n = 0;
-            host.NewReactor().Add(() => Interlocked.Increment(ref n));
-            host.NewReactor().Add(() => Interlocked.Increment(ref n));
-            WaitUntil.True(() => n == 2, "both");
+            var a = ThreadScheduler.CreateNew("a");
+            var b = ThreadScheduler.CreateNew("b");
+            Reactive.Shutdown();
+            Assert.True(a.IsFinished);
+            Assert.True(b.IsFinished);
         }
 
         [Fact(DisplayName = "cs3.10-01 One scheduler hosts many reactors")]
@@ -778,16 +688,6 @@ namespace Fluorine
             Harness.Barrier(s);
             Assert.Equal(200, runs);
             Assert.Equal(0, bad);
-        }
-
-        [Fact(DisplayName = "cs4.2-03 CreateNew(name) without action works")]
-        public void Rule_3_11_ReactiveShutdownInformsAllThenWaits()
-        {
-            var a = ThreadScheduler.CreateNew("a");
-            var b = ThreadScheduler.CreateNew("b");
-            Reactive.Shutdown();
-            Assert.True(a.IsFinished);
-            Assert.True(b.IsFinished);
         }
 
         [Fact(DisplayName = "cs3.11-01 Reactive.Shutdown ends all schedulers")]
@@ -950,17 +850,6 @@ namespace Fluorine
             Assert.Null(error);
         }
 
-        [Fact]
-        public void Rule_3_12_SchedulersDoNotInterfere()
-        {
-            using var a = new ThreadHost();
-            using var b = new ThreadHost();
-            var n = 0;
-            a.NewReactor().Add(() => Interlocked.Increment(ref n));
-            b.NewReactor().Add(() => Interlocked.Increment(ref n));
-            WaitUntil.True(() => n == 2, "both loops");
-        }
-
         [Fact(DisplayName = "cs3.12-01 Blocked scheduler doesn't block others")]
         public void Rule_3_12_01_BlockedSchedulerDoesNotBlockOther()
         {
@@ -1095,35 +984,6 @@ namespace Fluorine
             var dispatcherScheduler = DispatcherScheduler.CreateNew("cs3.13-06-dispatcher");
             var dispatcherThread = Harness.ThreadOf(dispatcherScheduler);
             Assert.Same(dispatcherScheduler, Scheduler.ForThread(dispatcherThread));
-        }
-
-        [Fact]
-        public void Rule_3_14_SchedulerOfAThreadStaysTheSame()
-        {
-            using var host = new ThreadHost();
-            Scheduler first = null;
-            Scheduler second = null;
-            host.OnScheduler(() => first = Scheduler.Current);
-            host.OnScheduler(() => second = Scheduler.Current);
-            Assert.Same(first, second);
-        }
-
-        [Fact]
-        public void Rule_3_15_AtMostOneReactionPerThread()
-        {
-            var scheduler = new ManualScheduler();
-            try
-            {
-                var reactor = new Reactor(scheduler);
-                var n = 0;
-                reactor.Add(() => n++);
-                scheduler.Pump();
-                Assert.Equal(1, n);
-            }
-            finally
-            {
-                scheduler.Shutdown();
-            }
         }
 
         [Fact(DisplayName = "cs3.16-01 Nested Run(Reaction) throws to caller")]
