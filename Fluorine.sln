@@ -13,8 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "Fluorine.GeneratorTests", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7553}") = "PersonEditor", "demos\PersonEditor\PersonEditor.csproj", "{C3E1A9D4-7B22-4F58-9E01-6A4D2C8B17F0}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluorine.Wpf", "src\Fluorine.Wpf\Fluorine.Wpf.csproj", "{92B5C3D6-6EC1-446F-9B83-EA0ABC1AED7D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluorine.WinForms", "src\Fluorine.WinForms\Fluorine.WinForms.csproj", "{DE05C97C-A8DA-4A02-B2B7-227D4560321A}"
@@ -118,7 +116,5 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{92B5C3D6-6EC1-446F-9B83-EA0ABC1AED7D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
-		{DE05C97C-A8DA-4A02-B2B7-227D4560321A} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
