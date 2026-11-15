@@ -112,6 +112,8 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs3.6-02 | Scheduler.Current null elsewhere | P | test thread | read | null | not yet checked |
 | cs3.6-03 | Still installed during drain | E | action queued before Shutdown reads Current | Shutdown | action saw S | not yet checked |
 | cs3.6-04 | Removed after shutdown finished | E | DispatcherScheduler/WinForms thread still alive after Shutdown (ThreadScheduler thread ends) | read Current on that thread after Shutdown | null | not yet checked |
+| cs3.7-04 | Created loop ends after Shutdown | P | S1 = `ThreadScheduler.CreateNew(n)`, S2 = `DispatcherScheduler.CreateNew(n)` | `Shutdown()` on each; `Join(5s)` on T(S1), T(S2) | both threads ended (see also cs4.3-02) | new 2026-11-15 (cs3.7 @ 2f10bd5); not yet checked |
+| cs3.7-05 | Attached loop keeps running after Shutdown | P | S1 = `DispatcherScheduler.AttachToCurrent()` on an STA thread in `Dispatcher.Run`; S2 = `WinFormsScheduler.AttachToCurrent()` on an STA thread in `Application.Run` | `Shutdown()` on each; then post a message to each loop (`Dispatcher.BeginInvoke`, `form.BeginInvoke`) | both messages run; both threads still alive (see also cs6.3-02) | new 2026-11-15 (cs3.7 @ 2f10bd5); not yet checked |
 | cs3.8-01 | Shutdown drains queued runs | P | S gated; 3 reactions triggered | `Shutdown()` | all 3 ran before return | not yet checked |
 | cs3.8-02 | Shutdown disposes reactors | P | reaction reads reg | Shutdown; write reg | no run; `R.Add` returns null | not yet checked |
 | cs3.8-03 | Runs queued during drain are dropped | N | r1 drained triggers r2 / writes reg read by r2 | Shutdown | r2 does not run again | not yet checked |
