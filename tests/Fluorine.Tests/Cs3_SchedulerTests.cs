@@ -88,6 +88,20 @@ namespace Fluorine
             Assert.Equal(1, runs);
         }
 
+        [Fact(DisplayName = "cs3.3-01 ThreadScheduler: work on its own thread")]
+        public void Rule_3_3_01_ThreadSchedulerWorkOnItsOwnThread()
+        {
+            var s = ThreadScheduler.CreateNew("cs3.3-01");
+            try
+            {
+                AssertWorkRunsOnSchedulerThread(s, Harness.ThreadOf(s));
+            }
+            finally
+            {
+                s.Shutdown();
+            }
+        }
+
         [Fact(DisplayName = "cs3.3-02 Actions and runs share one FIFO")]
         public void Rule_3_3_02_ActionsAndRunsShareFifo()
         {
@@ -227,6 +241,46 @@ namespace Fluorine
             Assert.True(a1);
             Assert.Equal(0, a2);
             Assert.Equal(0, log.Count);
+        }
+
+        [Fact(DisplayName = "cs3.3-09 Dispatcher: work on its own thread")]
+        public void Rule_3_3_09_DispatcherWorkOnItsOwnThread()
+        {
+            try
+            {
+                var created = DispatcherScheduler.CreateNew("cs3.3-09");
+                try
+                {
+                    AssertWorkRunsOnSchedulerThread(created, Harness.ThreadOf(created));
+                }
+                finally
+                {
+                    created.Shutdown();
+                }
+
+                using var loop = DispatcherLoop.Start();
+                AssertWorkRunsOnSchedulerThread(loop.Scheduler, loop.Thread);
+            }
+            catch (Exception ex)
+            {
+                SkipLog.CouldNotRun("Rule_3_3_09", ex.Message);
+                throw;
+            }
+        }
+
+        [Fact(DisplayName = "cs3.3-10 WinForms: work on its own thread")]
+        public void Rule_3_3_10_WinFormsWorkOnItsOwnThread()
+        {
+            try
+            {
+                using var loop = WinFormsLoop.Start();
+                AssertWorkRunsOnSchedulerThread(loop.Scheduler, loop.Thread);
+            }
+            catch (Exception ex)
+            {
+                SkipLog.CouldNotRun("Rule_3_3_10", ex.Message);
+                throw;
+            }
         }
 
         [Fact(DisplayName = "cs3.4-02 Queue hands work to Schedule")]
@@ -1024,6 +1078,43 @@ namespace Fluorine
                 Reactive.UnhandledException -= handler;
                 scheduler.Shutdown();
             }
+        }
+
+
+        static void AssertWorkRunsOnSchedulerThread(Scheduler scheduler, Thread owner)
+        {
+            var testThread = Thread.CurrentThread;
+            Assert.NotSame(testThread, owner);
+
+            Thread actionThread = null;
+            scheduler.Queue(() => actionThread = Thread.CurrentThread);
+            Harness.Barrier(scheduler);
+            Assert.Same(owner, actionThread);
+
+            var reg = new Register<int>(0);
+            var runThreads = new Thread[3];
+            int runs = 0;
+            var reaction = new Reactor(scheduler).Add(() =>
+            {
+                int i = Interlocked.Increment(ref runs) - 1;
+                if ((uint)i < (uint)runThreads.Length)
+                    runThreads[i] = Thread.CurrentThread;
+                var unused = reg.Value;
+            });
+            Harness.Barrier(scheduler);
+            Assert.Equal(1, Volatile.Read(ref runs));
+
+            reaction.Trigger();
+            Harness.Barrier(scheduler);
+            Assert.Equal(2, Volatile.Read(ref runs));
+
+            reg.Value = 1;
+            Harness.Barrier(scheduler);
+            Assert.Equal(3, Volatile.Read(ref runs));
+
+            Assert.Same(owner, runThreads[0]);
+            Assert.Same(owner, runThreads[1]);
+            Assert.Same(owner, runThreads[2]);
         }
 
         static void FinishShutdown(Scheduler scheduler, Hold hold)
