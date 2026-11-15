@@ -32,7 +32,7 @@ The classes below are the standard realisation of a register. Other storage mode
 1.15 `bool SetValue(T newValue, out T oldValue)` does the same, and `oldValue` holds the value the register had before. It is set also when the method returns false. The method records no read: `oldValue` is an untracked read, intended for disposing or releasing the old value, not for control flow in a reaction.
 
 **Equality**
-1.16 Equality is `object.Equals(value, stored)` (3.1). `IEquatable<T>` alone does not count.
+1.16 Equality is `object.Equals(value, stored)` (3.1).
 1.17 An exception thrown by the equality check reaches the caller of the write. Nothing is stored and nothing is triggered (3.1c).
 
 **Atomic values**
