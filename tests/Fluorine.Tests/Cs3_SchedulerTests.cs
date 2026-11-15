@@ -1142,7 +1142,7 @@ namespace Fluorine
             Assert.True(caller.Join(Harness.TimeoutMs), "Shutdown did not return");
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs3.3-11 Cross-scheduler triggers stay on thread")]
         public void PingPong()
         {
             // Set up the 3 schedulers, and obtain their threads
@@ -1183,26 +1183,37 @@ namespace Fluorine
 
             // Check no errors
             Reactive.Shutdown();
-            Assert.Empty(errors);
+            lock (counts)
+                Assert.Empty(errors);
         }
 
         private Action PingTo(Thread shouldBeOn, Dictionary<Scheduler, int> counts, HashSet<Scheduler> errors, List<Reaction> reactions)
         {
             return () =>
             {
-                if (shouldBeOn != Thread.CurrentThread)
-                    errors.Add(Scheduler.Current);
                 lock (counts)
                 {
+                    if (shouldBeOn != Thread.CurrentThread)
+                        errors.Add(Scheduler.Current);
+                    bool allDone = counts.Count == 3;
+                    foreach (var c in counts.Values)
+                        allDone &= c == 100;
+                    if (allDone) return; // everybody reached 100: stop the game
                     counts.TryGetValue(Scheduler.Current, out int cnt);
-                    if (cnt == 100) return; // this stops this run
-                    counts[Scheduler.Current] = cnt + 1;
+                    if (cnt < 100)
+                        counts[Scheduler.Current] = cnt + 1;
                 }
 
+                // Only trigger the other reactions, never ourselves, so every
+                // further run is caused by a trigger from another scheduler.
+                // A reaction that already reached 100 keeps passing the ball
+                // until all three are done, so nobody gets stranded.
+                var self = Reaction.Current;
                 lock (reactions)
                 {
                     foreach (var r in reactions)
-                        r.Trigger();
+                        if (r != self)
+                            r.Trigger();
                 }
             };
         }
