@@ -112,7 +112,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 6.1 `WinFormsScheduler` is the scheduler for the WinForms message loop of a thread. `WinFormsScheduler.AttachToCurrent()` attaches it to the `SynchronizationContext` of the calling thread, which must be the WinForms context. A thread has at most one scheduler: when one is already attached, that one is returned. When the calling thread has no WinForms context, the call throws `ReactiveException`.
 6.2 A `WinFormsScheduler` uses the synchronisation context that WinForms has installed on the thread.
-6.3 `Queue` of a `WinFormsScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8. It does not end the message loop, because the application owns that loop.
+6.3 `Queue` of a `WinFormsScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8.
 
 ## 7. Logging and monitoring
 
