@@ -275,6 +275,7 @@ Kind: **P** positive, **N** negative/error, **E** edge/ordering/concurrency.
 | cs12.35-01 | TryPop on empty subscribes; push reruns | P | r: `q.TryPop(out v)` on empty queue | Barrier; push x; Barrier | r reruns and takes x | not yet checked |
 | cs12.35-02 | Pop on empty subscribes, then throws | N | r: `q.Pop()` on empty queue | Barrier; push x; Barrier | InvalidOperationException (unwrapped) to UnhandledException; rerun pops x without throwing | not yet checked |
 | cs12.35-03 | Push records nothing | P | r: pushes x, then pops it in the same run | Barrier | no follow-up run from that push | not yet checked |
+| cs12.36-01 | Every pop triggers, also the last one | P | r: `if (q.TryPop(out v)) seen.Add(v); else n_empty++` | push x, y; Barrier2 | r ran once per element plus one run that found the queue empty (n_empty == 1); no further runs | not yet checked |
 | cs12.37-01 | Pop outside a reaction takes the head | P | r pops one per run; queue gated | pop from test thread; then Barrier | r never sees that element | not yet checked |
 | cs12.37-02 | Two consumers: each item handled once | P | r1 and r2 both pop from q | push n items; Barrier | every item handled exactly once by one of them; none lost | not yet checked |
 | cs12.37-03 | Threaded producers: none lost, order kept | P stress | r drains q; producers on other threads | push from several threads; Barrier2 | all items once; each producer order kept | not yet checked |
