@@ -82,7 +82,7 @@ The classes below are the standard realisation of a register. Other storage mode
 3.4 A derived scheduler implements the protected abstract `Schedule(Action)`, which places an item in its queue to be executed on its own thread. `Queue(Action)` and `Queue(Reaction)` hand their work to `Schedule`. A queued reaction is run through the protected `Run(Reaction)` of the base class, which runs the reaction synchronously. This is the only way for a scheduler to run a reaction; `Reaction.Run()` itself is internal to the library.
 3.5 `Reaction.Run()` runs the lambda, during which all reads are recorded. Afterwards, the reaction is disconnected from all registers that it no longer read (7.3). An exception from the lambda is handled as in 8.1.
 3.6 The scheduler of a thread is a thread-static, `Scheduler.Current`. A scheduler installs itself on its own thread (11.3). When its shutdown has finished, it removes itself from that thread, so `Scheduler.Current` is null there afterwards. During the shutdown it stays installed, because the reactions that are drained still run on it.
-3.7 The loop of a scheduler created by `CreateNew` runs from its creation on (4.2, 5.2). A scheduler that attaches to an existing loop uses that loop (5.3, 6.1).
+3.7 The loop of a scheduler created by `CreateNew` runs from its creation on (4.2, 5.2). A scheduler that attaches to an existing loop uses that loop (5.3, 6.1). When its shutdown has finished (3.8), a scheduler ends a loop it created and leaves a loop it attached to running.
 3.8 `Scheduler.Shutdown()` returns when all queued reactions and all queued actions have run, and all reactors of the scheduler have been disposed (11.15, 11.16), so that their reactions are disconnected (2.11). It can be called from any thread. Called from inside a reaction, paused or not, it throws `ReactiveException` (15.2). Called on the thread of the scheduler itself, outside a reaction, it processes what is still open before it returns. A second call to `Shutdown()` on the same scheduler starts nothing new and returns when the shutdown has finished.
 3.9 The base class `Scheduler` announces every scheduler to the static class `Reactive`. The user does not register schedulers manually.
 3.10 Schedulers are not light-weight. Their lifetime is intended to be the lifetime of the application, and one scheduler may serve many reactors.
@@ -112,7 +112,7 @@ The classes below are the standard realisation of a register. Other storage mode
 
 6.1 `WinFormsScheduler` is the scheduler for the WinForms message loop of a thread. `WinFormsScheduler.AttachToCurrent()` attaches it to the `SynchronizationContext` of the calling thread, which must be the WinForms context. A thread has at most one scheduler: when one is already attached, that one is returned. When the calling thread has no WinForms context, the call throws `ReactiveException`.
 6.2 A `WinFormsScheduler` uses the synchronisation context that WinForms has installed on the thread.
-6.3 `Queue` of a `WinFormsScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8. It does not end the message loop, because the application owns that loop.
+6.3 `Queue` of a `WinFormsScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8.
 
 ## 7. Logging and monitoring
 

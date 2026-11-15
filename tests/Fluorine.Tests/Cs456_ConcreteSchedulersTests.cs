@@ -796,7 +796,7 @@ namespace Fluorine
         }
         
         [Fact(DisplayName = "cs6.1-01 WinForms scheduler runs queued work")]
-        public void Rule_6_3_QueueNeverBlocksAndShutdownDoesNotEndLoop()
+        public void Rule_6_1_01_WinFormsRunsQueuedWork()
         {
             try
             {
@@ -808,7 +808,7 @@ namespace Fluorine
             }
             catch (Exception ex)
             {
-                SkipLog.CouldNotRun("Rule_6_3", ex.Message);
+                SkipLog.CouldNotRun("Rule_6_1_01", ex.Message);
                 throw;
             }
         }
