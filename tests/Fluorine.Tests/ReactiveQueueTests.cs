@@ -10,7 +10,7 @@ namespace Fluorine
     // What each test locks in for the docs: ../ReactiveQueue-for-docs.md
     public class ReactiveQueueTests
     {
-        [Fact]
+        [Fact(DisplayName = "cs12.34-01 Queue is FIFO, incl. duplicates/null")]
         public void PushPopAndTryPopAreFifo()
         {
             var queue = new ReactiveQueue<string>();
@@ -110,7 +110,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.35-01 Empty TryPop subscribes; push reruns")]
         public void WaitingTryPopRerunsWhenPushMakesAHead()
         {
             var scheduler = new ManualScheduler();
@@ -151,7 +151,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.36-01 Every pop triggers, also the last")]
         public void StopWhenEmptyWasTriggered()
         {
             var scheduler = new ManualScheduler();
@@ -347,7 +347,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.35-02 Pop on empty subscribes, then throws")]
         public void PopOnEmptySubscribesThenThrows()
         {
             var scheduler = new ManualScheduler();
@@ -386,7 +386,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.37-01 Pop outside reaction takes the head")]
         public void OutsidePopRemovesTheHeadTheReactionWouldHaveTaken()
         {
             var scheduler = new ManualScheduler();
@@ -417,7 +417,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.37-02 Two consumers: each item handled once")]
         public void CompetingPopsShareTheItems()
         {
             var scheduler = new ManualScheduler();
@@ -453,7 +453,7 @@ namespace Fluorine
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "cs12.37-03 Threaded producers: none lost, in order")]
         public void AReactionKeepsUpWithProducersOnOtherThreads()
         {
             using (var host = new ThreadHost())
