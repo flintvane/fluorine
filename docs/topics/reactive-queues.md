@@ -36,9 +36,9 @@ Order is first in, first out. `TryPop` returns `false` when the queue is empty a
 
 A push triggers only when the queue was empty, because that element is then the new head. A push behind an existing head does not trigger. The later element is delivered when a pop uncovers it.
 
-A successful pop triggers only when another element is then at the head. Popping the last element triggers nothing.
+Every pop that removes an element triggers, including the pop that empties the queue.
 
-A reaction that pops one element per run therefore takes buffered elements one per run and does not run again after the last:
+A reaction that pops one element per run therefore takes buffered elements one per run and runs once more after the last, when `TryPop` returns false:
 
 ```csharp
 var queue = new ReactiveQueue<string>(new[] { "Ada", "Byron" });
@@ -51,9 +51,9 @@ reactor.Add(() =>
 });
 ```
 
-The first run takes `"Ada"` and is scheduled again because `"Byron"` is now at the head. The second run takes `"Byron"`. Nothing further is queued.
+The first run takes `"Ada"` and is scheduled again because `"Byron"` is now at the head. The second run takes `"Byron"` and is scheduled again because the queue is now empty. The third run sees `TryPop` return false. Nothing further is queued.
 
-A reaction that drains the queue in one run takes every element present in that run. If one of those pops uncovers a further element, that trigger schedules one follow-up run, which finds the queue empty. Triggers coalesce, so the follow-up is one run:
+A reaction that drains the queue in one run takes every element present in that run. Those pops trigger, including the last, so one follow-up run finds the queue empty. Triggers coalesce, so the follow-up is one run:
 
 ```csharp
 reactor.Add(() =>
@@ -69,7 +69,7 @@ A run that does not call `Pop` or `TryPop` drops the watch, and later pushes do 
 
 `Pop` on an empty queue subscribes and then throws. Inside a reaction the exception reaches `Reactive.UnhandledException` as `InvalidOperationException` ([Errors and logging](errors-and-logging.md)). A later push reruns the reaction, and `Pop` returns that element.
 
-Order inside one run follows the same rules. A `TryPop` that finds the queue empty subscribes first; a `Push` in that run then sees a listener and schedules a follow-up, which takes the element. A `Push` before any pop in that run notifies nobody, because `Push` itself does not subscribe; if the same run then pops the element, no follow-up is queued.
+Order inside one run follows the same rules. A `TryPop` that finds the queue empty subscribes first; a `Push` in that run then sees a listener and schedules a follow-up, which takes the element. A `Push` before any pop in that run notifies nobody, because `Push` itself does not subscribe; if the same run then pops the element, that pop still triggers, and a follow-up run finds the queue empty.
 
 ## Each element is taken once
 
