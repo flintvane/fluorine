@@ -424,6 +424,81 @@ namespace Fluorine
             Assert.Same(s, seen);
         }
 
+        [Fact(DisplayName = "cs3.7-04 Created loop ends after Shutdown")]
+        public void Rule_3_7_04_CreatedLoopEndsAfterShutdown()
+        {
+            try
+            {
+                Thread threadThread = null;
+                var threadScheduler = ThreadScheduler.CreateNew("cs3.7-04-thread", () => threadThread = Thread.CurrentThread);
+                try
+                {
+                    Thread dispatcherThread = null;
+                    var dispatcherScheduler = DispatcherScheduler.CreateNew("cs3.7-04-dispatcher", () => dispatcherThread = Thread.CurrentThread);
+                    try
+                    {
+                        threadScheduler.Shutdown();
+                        dispatcherScheduler.Shutdown();
+                        Assert.True(threadThread.Join(Harness.TimeoutMs), "ThreadScheduler thread did not end");
+                        Assert.True(dispatcherThread.Join(Harness.TimeoutMs), "DispatcherScheduler thread did not end");
+                    }
+                    finally
+                    {
+                        dispatcherScheduler.Shutdown();
+                    }
+                }
+                finally
+                {
+                    threadScheduler.Shutdown();
+                }
+            }
+            catch (Exception ex)
+            {
+                SkipLog.CouldNotRun("Rule_3_7_04", ex.Message);
+                throw;
+            }
+        }
+
+        [Fact(DisplayName = "cs3.7-05 Attached loop runs on after Shutdown")]
+        public void Rule_3_7_05_AttachedLoopRunsOnAfterShutdown()
+        {
+            try
+            {
+                using var dispatcher = DispatcherLoop.Start();
+                using var forms = WinFormsLoop.Start();
+                dispatcher.Scheduler.Shutdown();
+                forms.Scheduler.Shutdown();
+
+                bool dispatcherRan = false;
+                var dispatcherDone = new ManualResetEvent(false);
+                dispatcher.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    dispatcherRan = true;
+                    dispatcherDone.Set();
+                }));
+
+                bool formsRan = false;
+                var formsDone = new ManualResetEvent(false);
+                forms.Form.BeginInvoke(new Action(() =>
+                {
+                    formsRan = true;
+                    formsDone.Set();
+                }));
+
+                Harness.Wait(dispatcherDone, "dispatcher message after shutdown");
+                Harness.Wait(formsDone, "winforms message after shutdown");
+                Assert.True(dispatcherRan);
+                Assert.True(formsRan);
+                Assert.True(dispatcher.Thread.IsAlive, "Dispatcher.Run ended");
+                Assert.True(forms.Thread.IsAlive, "Application.Run ended");
+            }
+            catch (Exception ex)
+            {
+                SkipLog.CouldNotRun("Rule_3_7_05", ex.Message);
+                throw;
+            }
+        }
+
         [Fact(DisplayName = "cs3.8-01 Shutdown drains queued runs")]
         public void Rule_3_8_01_ShutdownDrainsQueuedRuns()
         {
