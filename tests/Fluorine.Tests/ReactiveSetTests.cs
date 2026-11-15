@@ -478,12 +478,12 @@ namespace Fluorine
             sc.Add(k1p);
             var v2 = sc.Values;
             var forward = v2.Diff(v1);
-            Assert.Equal(1, forward.Length);
+            Assert.Single(forward);
             Assert.Equal(ChangeKind.Updated, forward[0].Kind);
             Assert.True(ReferenceEquals(forward[0].Item, k1p));
             Assert.True(ReferenceEquals(forward[0].Previous, k1));
             var back = v1.Diff(v2);
-            Assert.Equal(1, back.Length);
+            Assert.Single(back);
             Assert.Equal(ChangeKind.Updated, back[0].Kind);
             Assert.True(ReferenceEquals(back[0].Item, k1));
             Assert.True(ReferenceEquals(back[0].Previous, k1p));
@@ -493,7 +493,7 @@ namespace Fluorine
             ints.Remove(1);
             ints.Add(1);
             var w2 = ints.Values;
-            Assert.Equal(0, w2.Diff(w1).Length);
+            Assert.Empty(w2.Diff(w1));
         }
 
         private void Dummy(object sender, NotifyCollectionChangedEventArgs e)

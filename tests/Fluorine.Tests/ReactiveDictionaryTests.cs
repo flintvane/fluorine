@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System;
 using Xunit;
 
 namespace Fluorine
@@ -1056,7 +1056,7 @@ namespace Fluorine
             AssertRose(ref sn, () => sc.Add(k1), s);
             AssertRose(ref sn, () => sc.Add(k2), s);
             AssertRose(ref sn, () => sc.Remove(k1), s);
-            AssertRose(ref sn, () => sc.Clear(), s);
+            AssertRose(ref sn, sc.Clear, s);
 
             var dc = new ReactiveDictionary<K, string>();
             int dn = 0;
@@ -1069,7 +1069,7 @@ namespace Fluorine
             AssertRose(ref dn, () => dc[k1] = "d", s);
             AssertRose(ref dn, () => dc[k2] = "e", s);
             AssertRose(ref dn, () => dc.Remove(k1), s);
-            AssertRose(ref dn, () => dc.Clear(), s);
+            AssertRose(ref dn, dc.Clear, s);
         }
 
         [Fact(DisplayName = "cs12.10-02 Count reader reruns on every write")]
@@ -1247,8 +1247,8 @@ namespace Fluorine
             sc.Remove(k1);
             sc.Add(k1);
             var sv1 = sc.Values;
-            Assert.Equal(0, sv1.Diff(sv0).Length);
-            Assert.Equal(0, sv1.Diff(sv1).Length);
+            Assert.Empty(sv1.Diff(sv0));
+            Assert.Empty(sv1.Diff(sv1));
 
             var dc = new ReactiveDictionary<K, string> { { k1, "a" } };
             var dv0 = dc.Value;
@@ -1258,7 +1258,7 @@ namespace Fluorine
             dc.Remove(k2);
             var dv1 = dc.Value;
             Assert.Empty(dv1.Diff(dv0));
-            Assert.Equal(0, dv1.Diff(dv1).Length);
+            Assert.Empty(dv1.Diff(dv1));
         }
 
         [Fact(DisplayName = "cs12.13-04 Diff(null) treats previous as empty")]
@@ -1284,7 +1284,7 @@ namespace Fluorine
             foreach (var change in dictFromNull)
                 Assert.Equal(ChangeKind.Added, change.Kind);
             AssertDictTags(dictFromNull, "Added:1:a:", "Added:2:b:");
-            Assert.Equal(0, new ReactiveDictionary<K, string>().Value.Diff(null).Length);
+            Assert.Empty(new ReactiveDictionary<K, string>().Value.Diff(null));
         }
 
         [Fact(DisplayName = "cs12.13-05 Diff changes neither version")]
@@ -1397,8 +1397,8 @@ namespace Fluorine
         [Fact(DisplayName = "cs12.23-02 Null comparer means default comparer")]
         public void Rule_12_23_02_NullComparerMeansDefault()
         {
-            var setCmp = new ReactiveSet<string>((IEqualityComparer<string>)null);
-            var setItems = new ReactiveSet<string>(["a"], null);
+            var setCmp = new ReactiveSet<string>(null);
+            var setItems = new ReactiveSet<string>(["a"]);
             Assert.True(setCmp.Add("a"));
             Assert.True(setCmp.Add("A"));
             Assert.Equal(2, setCmp.Count);
@@ -1421,9 +1421,9 @@ namespace Fluorine
         {
             var cmp = StringComparer.OrdinalIgnoreCase;
             Assert.Throws<ArgumentNullException>(() => new ReactiveSet<string>((IEnumerable<string>)null));
-            Assert.Throws<ArgumentNullException>(() => new ReactiveSet<string>((IEnumerable<string>)null, cmp));
+            Assert.Throws<ArgumentNullException>(() => new ReactiveSet<string>(null, cmp));
             Assert.Throws<ArgumentNullException>(() => new ReactiveDictionary<string, string>((IEnumerable<KeyValuePair<string, string>>)null));
-            Assert.Throws<ArgumentNullException>(() => new ReactiveDictionary<string, string>((IEnumerable<KeyValuePair<string, string>>)null, cmp));
+            Assert.Throws<ArgumentNullException>(() => new ReactiveDictionary<string, string>(null, cmp));
         }
         
         static void Exercise(IEqualityComparer<int> comparer, int keyMin, int keyMax)
