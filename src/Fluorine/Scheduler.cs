@@ -348,9 +348,7 @@ namespace Fluorine
             thread.Start();
             ready.Wait();
 
-            if (error != null)
-                throw error;
-            return created;
+            return error != null ? throw error : created;
         }
 
         static void ThrowIfOccupied(Type incoming)

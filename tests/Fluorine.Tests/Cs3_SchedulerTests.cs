@@ -1,12 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
+using System.Windows.Documents;
+using System.Windows.Forms;
 using Xunit;
 
 namespace Fluorine
 {
     public class Cs3_SchedulerTests : AcceptanceTest
     {
-        
         [Fact(DisplayName = "cs3.1-02 Custom Scheduler subclass works")]
         public void Rule_3_1_02_UserDerivedSchedulerPossible()
         {
@@ -44,6 +46,7 @@ namespace Fluorine
                 {
                     error = ex;
                 }
+
                 if (ran)
                     error = new InvalidOperationException("Trigger ran inline");
                 try
@@ -54,6 +57,7 @@ namespace Fluorine
                 {
                     error = ex;
                 }
+
                 if (ran)
                     error = new InvalidOperationException("Queue(Reaction) ran inline");
             });
@@ -128,6 +132,7 @@ namespace Fluorine
             {
                 hold.Release();
             }
+
             Harness.Barrier(s);
             Assert.Equal(["r1", "a1", "r2", "a2"], order.Snapshot());
         }
@@ -214,6 +219,7 @@ namespace Fluorine
             {
                 hold.Release();
             }
+
             Assert.Equal(3, n);
         }
 
@@ -238,6 +244,7 @@ namespace Fluorine
             {
                 hold.Release();
             }
+
             Assert.True(a1);
             Assert.Equal(0, a2);
             Assert.Equal(0, log.Count);
@@ -413,6 +420,7 @@ namespace Fluorine
             {
                 hold.Release();
             }
+
             Assert.Same(s, seen);
         }
 
@@ -432,6 +440,7 @@ namespace Fluorine
                         Interlocked.Increment(ref extra);
                 });
             }
+
             Harness.Barrier(s);
             count = true;
             var hold = Harness.Gate(s);
@@ -445,6 +454,7 @@ namespace Fluorine
             {
                 hold.Release();
             }
+
             Assert.Equal(3, extra);
         }
 
@@ -500,6 +510,7 @@ namespace Fluorine
             {
                 hold.Release();
             }
+
             Assert.Equal(2, r1);
             Assert.Equal(1, r2);
         }
@@ -704,6 +715,7 @@ namespace Fluorine
             {
                 hold.Release();
             }
+
             Assert.True(created == null || runs == 0);
             Assert.Equal(0, runs);
         }
@@ -735,6 +747,7 @@ namespace Fluorine
                     Interlocked.Increment(ref runs);
                 });
             }
+
             Harness.Barrier(s);
             Assert.Equal(100, runs);
             for (int i = 0; i < reactions.Length; i++)
@@ -761,6 +774,7 @@ namespace Fluorine
                     int index = i;
                     schedulers[i].Queue(() => done[index].Set());
                 }
+
                 var started = new ManualResetEvent(false);
                 var caller = new Thread(() =>
                 {
@@ -958,6 +972,7 @@ namespace Fluorine
                     done.Set();
                     return;
                 }
+
                 b.Value = value;
             });
             new Reactor(s2).Add(() =>
@@ -1065,6 +1080,7 @@ namespace Fluorine
                     {
                         caught = ex;
                     }
+
                     startedDuring = otherStarts - before;
                 });
                 other = reactor.Add(() => otherStarts++);
@@ -1124,6 +1140,71 @@ namespace Fluorine
             Harness.WaitUntilBlocked(caller, started);
             hold.Release();
             Assert.True(caller.Join(Harness.TimeoutMs), "Shutdown did not return");
+        }
+
+        [Fact]
+        public void PingPong()
+        {
+            // Set up the 3 schedulers, and obtain their threads
+            Thread tt = null, dt = null, ft = null;
+            var ts = ThreadScheduler.CreateNew("cs3.3-01", () => tt = Thread.CurrentThread);
+            var ds = DispatcherScheduler.CreateNew("cs3.3-09", () => dt = Thread.CurrentThread);
+            using var loop = WinFormsLoop.Start();
+            ft = loop.Thread;
+            Assert.NotNull(dt);
+            Assert.NotNull(ft);
+            Assert.NotNull(tt);
+            Assert.True(tt != dt && tt != ft && dt != ft);
+            var fs = loop.Scheduler;
+            // Set up the 3 reactors
+            var tr = new Reactor(ts);
+            var dr = new Reactor(ds);
+            var fr = new Reactor(fs);
+            // Set up three reactions playing ping-pong
+            Dictionary<Scheduler, int> counts = new Dictionary<Scheduler, int>();
+            HashSet<Scheduler> errors = new HashSet<Scheduler>();
+            List<Reaction> reactions = new List<Reaction>();
+            lock (reactions)
+            {
+                reactions.Add(tr.Add(PingTo(tt, counts, errors, reactions)));
+                reactions.Add(dr.Add(PingTo(dt, counts, errors, reactions)));
+                reactions.Add(fr.Add(PingTo(ft, counts, errors, reactions)));
+            }
+
+            // Here we wait until we have 100 in every reaction
+            while (true)
+                lock (counts)
+                {
+                    bool all100 = counts.Count==3;
+                    foreach (var c in counts.Values)
+                        all100 &= c == 100;
+                    if (all100) break;
+                }
+
+            // Check no errors
+            Reactive.Shutdown();
+            Assert.Empty(errors);
+        }
+
+        private Action PingTo(Thread shouldBeOn, Dictionary<Scheduler, int> counts, HashSet<Scheduler> errors, List<Reaction> reactions)
+        {
+            return () =>
+            {
+                if (shouldBeOn != Thread.CurrentThread)
+                    errors.Add(Scheduler.Current);
+                lock (counts)
+                {
+                    counts.TryGetValue(Scheduler.Current, out int cnt);
+                    if (cnt == 100) return; // this stops this run
+                    counts[Scheduler.Current] = cnt + 1;
+                }
+
+                lock (reactions)
+                {
+                    foreach (var r in reactions)
+                        r.Trigger();
+                }
+            };
         }
     }
 }
