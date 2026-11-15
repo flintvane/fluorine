@@ -1,4 +1,4 @@
-[← Reactive arrays](reactive-arrays.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Reactive arrays](reactive-arrays.md) · [Topics](../index.md) · [Reactive queues →](reactive-queues.md)
 
 # 17. Reactive lists
 
@@ -130,4 +130,4 @@ There is no separate "inserted" or "deleted" event. Those are a position changin
 
 *Position and presence reads follow register recording (§7.1, cs 12.31–12.33). Versions and `Diff` follow cs 12.30 and 12.15. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
 
-[← Reactive arrays](reactive-arrays.md) · [Topics](../index.md) · [Derived values, self-writes and cycles →](derived-values.md)
+[← Reactive arrays](reactive-arrays.md) · [Topics](../index.md) · [Reactive queues →](reactive-queues.md)

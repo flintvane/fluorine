@@ -52,6 +52,8 @@ Two threads writing the same register at once can cause at most one extra run, o
 
 `ReactiveArray<T>` and `ReactiveList<T>` compare elements with `object.Equals` ([Reactive arrays](reactive-arrays.md), [Reactive lists](reactive-lists.md)). An equal write keeps the stored instance. On a list, `GetHashCode` must agree with `Equals` and stay stable while the value is present, because `Contains` counts occurrences.
 
+`ReactiveQueue<T>` does not compare its elements: an equal value is another element ([Reactive queues](reactive-queues.md)).
+
 ---
 
 *Spec references: §3, §14.2; cs 1.16, 1.17. (§ = spec/semantics.md 0.10, cs = spec/semantics-cs.md 0.6)*
