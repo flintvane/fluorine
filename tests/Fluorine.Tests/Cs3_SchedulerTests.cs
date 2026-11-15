@@ -437,10 +437,21 @@ namespace Fluorine
                     var dispatcherScheduler = DispatcherScheduler.CreateNew("cs3.7-04-dispatcher", () => dispatcherThread = Thread.CurrentThread);
                     try
                     {
-                        threadScheduler.Shutdown();
-                        dispatcherScheduler.Shutdown();
-                        Assert.True(threadThread.Join(Harness.TimeoutMs), "ThreadScheduler thread did not end");
-                        Assert.True(dispatcherThread.Join(Harness.TimeoutMs), "DispatcherScheduler thread did not end");
+                        Thread formsThread = null;
+                        var formsScheduler = WinFormsScheduler.CreateNew("cs3.7-04-winforms", () => formsThread = Thread.CurrentThread);
+                        try
+                        {
+                            threadScheduler.Shutdown();
+                            dispatcherScheduler.Shutdown();
+                            formsScheduler.Shutdown();
+                            Assert.True(threadThread.Join(Harness.TimeoutMs), "ThreadScheduler thread did not end");
+                            Assert.True(dispatcherThread.Join(Harness.TimeoutMs), "DispatcherScheduler thread did not end");
+                            Assert.True(formsThread.Join(Harness.TimeoutMs), "WinFormsScheduler thread did not end");
+                        }
+                        finally
+                        {
+                            formsScheduler.Shutdown();
+                        }
                     }
                     finally
                     {
