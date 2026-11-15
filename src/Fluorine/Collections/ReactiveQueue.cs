@@ -40,36 +40,22 @@ namespace Fluorine
                 TriggerReactions();
         }
 
-        public T Pop()
-        {
-            if (TryPop(out var item))
-                return item;
-            throw new InvalidOperationException("The queue is empty.");
-        }
+        public T Pop() 
+            => TryPop(out var item) ? item : throw new InvalidOperationException("The queue is empty.");
 
         public bool TryPop(out T item)
         {
             bool taken;
-            bool successor;
             lock (this)
             {
                 // Subscribe and observe under the same lock, so a push cannot
                 // make a head visible without this reaction being a listener.
                 RecordRead();
                 taken = _items.Count > 0;
-                if (!taken)
-                {
-                    item = default;
-                    successor = false;
-                }
-                else
-                {
-                    item = _items.Dequeue();
-                    successor = _items.Count > 0;
-                }
+                item = !taken ? default : _items.Dequeue();
             }
 
-            if (successor)
+            if (taken)
                 TriggerReactions();
             return taken;
         }
