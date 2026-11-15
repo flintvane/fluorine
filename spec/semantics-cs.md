@@ -25,7 +25,7 @@ The classes below are the standard realisation of a register. Other storage mode
 1.8 `Value` is a property. The getter calls `RecordRead()` and then returns the stored value. The setter performs a write as described in 3.1b.
 1.9 `Register.Name` is a settable property, for logs and debugging (15.4).
 1.10 The name is always kept.
-1.11 Registers can be inherited. `Value`, `RecordRead()` and `TriggerReactions()` are not virtual.
+1.11 Registers can be inherited.
 1.12 The backing value of the `Value` property is protected. It is only available to inheritors that want to specialize further.
 1.13 The constructors, and the getter and setter of `Value`, can be called from any thread.
 1.14 `bool SetValue(T newValue)` writes like the setter and returns true if the value was changed.
@@ -36,7 +36,7 @@ The classes below are the standard realisation of a register. Other storage mode
 1.17 An exception thrown by the equality check reaches the caller of the write. Nothing is stored and nothing is triggered (3.1c).
 
 **Atomic values**
-1.18 A value of a value type is assigned without tearing (13.1). Where the type is larger than what the platform replaces atomically, the assignment can be performed under the same lock as the register has. For smaller types, a compare-and-swap can be used. Boxing every write is a valid but expensive alternative and is not recommended.
+1.18 A value of a value type is assigned without tearing (13.1). Where the type is larger than what the platform replaces atomically, the assignment can be performed under the same lock as the register has. For smaller types, a compare-and-swap can be used.
 
 ## 2. Reactors and reactions
 
@@ -48,7 +48,7 @@ The classes below are the standard realisation of a register. Other storage mode
 2.5 `Reactor.Name` is a settable property, for logs and debugging.
 
 **Creating reactions**
-2.6 Reactions are only created through a reactor. `Reaction` has no public constructor.
+2.6 Reactions are only created through a reactor.
 2.7 `Reactor.Add(lambda)` and `Reactor.Add(name, lambda)` create a reaction, queue its first run on the scheduler of the reactor, and return the `Reaction`.
 2.8 A reaction never runs inline, also not when the caller is on the scheduler thread.
 2.9 `Add` on a disposed reactor creates nothing and returns null. It is not an error and is not logged (12.12).
@@ -97,21 +97,21 @@ The classes below are the standard realisation of a register. Other storage mode
 
 ## 4. Thread scheduler
 
-4.1 `ThreadScheduler` is the scheduler for a plain thread with its own event loop. It has no public constructor. It has the same members as `DispatcherScheduler` (section 5), except that it has no `AttachToCurrent()`: a plain thread has no event loop of its own to attach to.
+4.1 `ThreadScheduler` is the scheduler for a plain thread with its own event loop.
 4.2 `ThreadScheduler.CreateNew(string name, Action initial = null)` behaves as `DispatcherScheduler.CreateNew` (5.2), with the event loop of the scheduler in place of the dispatcher.
 4.3 `Queue` of a `ThreadScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8, and the thread ends afterwards.
 
 ## 5. WPF Dispatcher scheduler
 
-5.1 `DispatcherScheduler` is the scheduler for a WPF `Dispatcher`. It has no public constructor.
+5.1 `DispatcherScheduler` is the scheduler for a WPF `Dispatcher`.
 5.2 `DispatcherScheduler.CreateNew(string name, Action initial = null)` creates a new thread named `name`, so that logs and debuggers show which thread is which, with a scheduler and a running dispatcher on it (3.6). A null or empty `name` throws `ReactiveException` and creates no thread (7.2). The action is the first message the new scheduler executes: no other work, including work from `Reactive.Shutdown`, runs before it. `CreateNew` returns the scheduler once that message has finished, and the dispatcher keeps running. If the action throws, the exception goes unwrapped to `Reactive.UnhandledException` (7.3), and `CreateNew` still returns the scheduler. When the thread or its scheduler cannot be brought up, for example because the platform refuses a dispatcher, the platform exception is passed back unchanged to the caller of `CreateNew` and is not logged (1.8, 7.2). No scheduler remains for that thread.
 5.3 `DispatcherScheduler.AttachToCurrent()` attaches a scheduler to the dispatcher of the calling thread. A thread has at most one scheduler: when one is already attached, that one is returned.
 5.4 `Queue` of a `DispatcherScheduler` hands the run to the dispatcher without blocking. Its `Shutdown()` follows 3.8.
 
 ## 6. WinForms scheduler
 
-6.1 `WinFormsScheduler` is the scheduler for the WinForms message loop of a thread. It has no public constructor, and `WinFormsScheduler.AttachToCurrent()` attaches it to the `SynchronizationContext` of the calling thread, which must be the WinForms context. A thread has at most one scheduler: when one is already attached, that one is returned. When the calling thread has no WinForms context, the call throws `ReactiveException`.
-6.2 A `WinFormsScheduler` uses the synchronisation context that WinForms has installed on the thread. A context passed in by the user is not supported, and a scheduler cannot be created for a context that is not the WinForms one.
+6.1 `WinFormsScheduler` is the scheduler for the WinForms message loop of a thread. `WinFormsScheduler.AttachToCurrent()` attaches it to the `SynchronizationContext` of the calling thread, which must be the WinForms context. A thread has at most one scheduler: when one is already attached, that one is returned. When the calling thread has no WinForms context, the call throws `ReactiveException`.
+6.2 A `WinFormsScheduler` uses the synchronisation context that WinForms has installed on the thread.
 6.3 `Queue` of a `WinFormsScheduler` never blocks (3.2). Its `Shutdown()` follows 3.8. It does not end the message loop, because the application owns that loop.
 
 ## 7. Logging and monitoring
@@ -206,13 +206,13 @@ Enumeration order of `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` is 
 12.23 Both collections have a parameterless constructor, one taking a comparer, one taking initial contents, and one taking initial contents and a comparer. A null comparer means the default comparer; null initial contents throw `ArgumentNullException`.
 
 **Sorted collections**
-12.24 `ReactiveSortedSet<T>` and `ReactiveSortedDictionary<TKey, TValue>` follow 12.1, 12.4–12.15 and 12.23, with `IComparer<T>` or `IComparer<TKey>` in place of the equality comparer. Sorted dictionary values are compared as register values (12.2). Ordering replaces `Equals` and `GetHashCode`. There is no hash code. A comparison result must stay stable while the element or key is present. A null comparer means `Comparer<T>.Default` or `Comparer<TKey>.Default`.
+12.24 `ReactiveSortedSet<T>` and `ReactiveSortedDictionary<TKey, TValue>` follow 12.1, 12.4–12.15 and 12.23, with `IComparer<T>` or `IComparer<TKey>` in place of the equality comparer. Sorted dictionary values are compared as register values (12.2). Ordering replaces `Equals` and `GetHashCode`. A comparison result must stay stable while the element or key is present. A null comparer means `Comparer<T>.Default` or `Comparer<TKey>.Default`.
 12.25 Enumeration of a sorted collection, of its `Version`, and of a sorted dictionary's `Keys` and `Values`, yields items in comparer order. `Diff` yields its changes in that same order.
 12.26 Null elements, values and keys are handled as in 12.3; a sorted set accepts a null element only when its comparer accepts it.
 12.27 `Add` on a sorted set leaves the stored instance in place when the comparer reports zero. `Diff` reports `Updated` when two pictures hold different instances of a reference type at the same position (12.13).
 
 **Sequences**
-12.28 `ReactiveArray<T>` is a fixed-length sequence. It derives from `Register`. `Value` returns a `Version`, an immutable picture. Reading and writing can be done from any thread, and creating one needs no scheduler (1.13). The length is fixed by the constructor. An index is a slot: writing one index does not move another. There is no `Contains`. Element values are compared as register values (1.16, 1.17). `ReactiveArray(int length)` fills that many slots with `default(T)`. A negative length throws `ArgumentOutOfRangeException`. `ReactiveArray(IEnumerable<T>)` stores that sequence in order and takes its length. A null sequence throws `ArgumentNullException`. Construction triggers nothing. `Length` and `Count` are the same number.
+12.28 `ReactiveArray<T>` is a fixed-length sequence. It derives from `Register`. `Value` returns a `Version`, an immutable picture. Reading and writing can be done from any thread, and creating one needs no scheduler (1.13). The length is fixed by the constructor. An index is a slot: writing one index does not move another. Element values are compared as register values (1.16, 1.17). `ReactiveArray(int length)` fills that many slots with `default(T)`. A negative length throws `ArgumentOutOfRangeException`. `ReactiveArray(IEnumerable<T>)` stores that sequence in order and takes its length. A null sequence throws `ArgumentNullException`. Construction triggers nothing. `Length` and `Count` are the same number.
 12.29 The indexer getter records a read on the value at that index. Changing that slot triggers the reaction. Another slot does not. An index outside `0 .. Length - 1` throws `ArgumentOutOfRangeException` and records nothing. The setter and `SetValue` replace that slot. `SetValue` returns true when the picture changed. `oldValue` is the stored value and is read without recording (1.15). An equal write stores nothing, publishes no new `Version` and triggers nothing, and the stored instance stays. An out-of-range write throws and publishes nothing. If equality throws, `oldValue` is the stored value, nothing is stored and nothing is triggered (1.17).
 12.30 `Value`, `Count`, `Length` and enumeration record a read on the whole array. Every write that changes the picture triggers the reaction. A `Version` offers `Count`, the indexer and `Diff(previous)`. Reads on a version record nothing. The indexer throws `ArgumentOutOfRangeException` outside the picture. Enumeration is index order. `Diff` follows 12.13's picture rule, by index: `Updated` where both pictures have the index and the values differ, `Added` for an index past the older length, and `Removed` for an index past the newer length. Changes are in index order. `Value` is the new value, or the value that left for `Removed`. `Previous` is the replaced value for `Updated` and `default(T)` otherwise. A null previous picture counts as empty. `Diff` changes neither version. A version keeps no older version alive (12.15). Unchanged blocks are shared, and `Diff` skips a block both pictures still point at.
 12.31 `ReactiveList<T>` is a variable-length sequence with the same picture, thread and version rules as 12.28–12.30. `Add` appends. `Insert(index, item)` inserts at that index and shifts later positions; the index may be `Count`. `RemoveAt` deletes the element at that index and shifts later positions. `Remove(item)` deletes the first element that `object.Equals` accepts and returns false when there is none. `Clear` drops every element; a second `Clear` on an empty list triggers nothing. An index below zero, or past the end for a write, throws `ArgumentOutOfRangeException` and records nothing. The indexer getter records a read on that position and then, when the position is past the end, throws. A later write triggers it when the value at that position appears or changes.
@@ -220,7 +220,7 @@ Enumeration order of `ReactiveSet<T>` and `ReactiveDictionary<TKey, TValue>` is 
 12.33 `Contains(item)` records a read on whether that value occurs at least once. It triggers when the number of `object.Equals` matches goes from zero to one or from one to zero, including through `Clear`. A further copy, or removing one copy while another remains, does not. Replacing a slot triggers presence only for a value whose count crosses that boundary. Presence uses `object.Equals`. `GetHashCode` must agree with that equality and stay stable while the value is present. A null element is allowed when `T` allows it. `Diff` of a list is the index picture of 12.30, so an insert in the middle is `Updated` at the shifted indexes and `Added` at the new tail, not a single insertion. The same net picture is what a coalesced run observes.
 
 **Queues**
-12.34 `ReactiveQueue<T>` is a first-in, first-out queue. It derives from `Register`. `Push` adds at the tail; `Pop` and `TryPop` take from the head. Pushing and popping can be done from any thread, and creating one needs no scheduler (1.13). It has a parameterless constructor and one taking initial contents; null initial contents throw `ArgumentNullException`, and construction triggers nothing. Elements are not compared: an equal value is another element.
+12.34 `ReactiveQueue<T>` is a first-in, first-out queue. It derives from `Register`. `Push` adds at the tail; `Pop` and `TryPop` take from the head. Pushing and popping can be done from any thread, and creating one needs no scheduler (1.13). It has a parameterless constructor and one taking initial contents; null initial contents throw `ArgumentNullException`, and construction triggers nothing.
 12.35 `Pop` and `TryPop` record a read on whether a new element is available at the head, also when the queue is empty. `TryPop` returns false on an empty queue. `Pop` on an empty queue throws `InvalidOperationException` after recording the read. `Push` records nothing.
 12.36 A push triggers only when the queue was empty, because the pushed element is then the new head. Every pop that removes an element triggers, including the pop that empties the queue. A reaction that pops one element per run therefore takes buffered elements one per run and runs once more after the last, when `TryPop` returns false. A reaction that drains the queue in one run gets one follow-up run, which finds it empty.
 12.37 Each element is taken by exactly one pop, from a reaction or from outside one. Pushes from one thread keep their order. Which of several popping reactions takes which element is not specified.
