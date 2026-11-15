@@ -328,7 +328,7 @@ namespace Fluorine
             Assert.Equal(before + 1, runs);
         }
 
-        [Fact(DisplayName = "cs3.6-01 Scheduler.Current is S on its own thread")]
+        [Fact(DisplayName = "cs3.6-01 cs3.6-02 Scheduler.Current is S on its own thread")]
         public void Rule_3_6_CurrentIsThreadStaticAndClearedAfterShutdown()
         {
             Thread owner = null;

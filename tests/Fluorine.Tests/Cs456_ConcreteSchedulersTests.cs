@@ -11,7 +11,7 @@ namespace Fluorine
     public class Cs4_ThreadSchedulerTests : AcceptanceTest
     {
 
-        [Fact(DisplayName = "cs4.2-01 CreateNew runs initial; throw is logged")]
+        [Fact(DisplayName = "cs4.2-01 cs4.2-04 CreateNew runs initial; throw is logged")]
         public void Rule_4_2_CreateNewRunsInitialThenLoop()
         {
             Assert.Throws<ReactiveException>(() => ThreadScheduler.CreateNew(null));

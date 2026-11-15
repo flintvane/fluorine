@@ -166,7 +166,7 @@ namespace Fluorine
             Assert.Equal(0, log.Count);
         }
 
-        [Fact(DisplayName = "cs1.8-01 Getter subscribes, new value reruns")]
+        [Fact(DisplayName = "cs1.8-01 cs1.8-02 Getter subscribes, new value reruns")]
         public void Rule_1_8_ValueGetterRecordsReadSetterWrites()
         {
             using var host = new ThreadHost();
@@ -277,7 +277,7 @@ namespace Fluorine
             Assert.True(found, "final value " + finalValue + " was not one of the written values");
         }
 
-        [Fact(DisplayName = "cs1.14 SetValue can returns true whether something changed")]
+        [Fact(DisplayName = "cs1.14-01 SetValue returns whether it changed")]
         public void Rule_1_14_SetValueReturnsWhetherChanged()
         {
             var s = Harness.Create();
@@ -301,7 +301,7 @@ namespace Fluorine
             Assert.Equal(before, runs);
         }
 
-        [Fact(DisplayName = "cs1.15-03 SetValue(out old): old value, no read")]
+        [Fact(DisplayName = "cs1.15-03 cs1.15-01 cs1.15-02 SetValue(out old): old value, no read")]
         public void Rule_1_15_SetValueOutOldValueDoesNotRecordRead()
         {
             using var host = new ThreadHost();
@@ -323,7 +323,7 @@ namespace Fluorine
             Assert.Equal(5, old2);
         }
 
-        [Fact(DisplayName = "cs1.16 Equality uses object.Equals")]
+        [Fact(DisplayName = "cs1.16-01 Equality uses object.Equals")]
         public void Rule_1_16_EqualityUsesObjectEquals()
         {
             var s = Harness.Create();

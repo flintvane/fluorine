@@ -302,7 +302,7 @@ namespace Fluorine
             Assert.Equal(0, log.Count);
         }
         
-        [Fact(DisplayName = "cs2.17-02 Dispose twice from test thread detaches")]
+        [Fact(DisplayName = "cs2.17-02 cs2.17-03 Dispose twice from test thread detaches")]
         public void Rule_2_17_DisposeNullsLambdaAndDetaches()
         {
             using var host = new ThreadHost();

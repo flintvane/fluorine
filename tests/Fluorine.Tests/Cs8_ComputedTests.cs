@@ -6,7 +6,7 @@ namespace Fluorine
 {
     public class Cs8_ComputedTests : AcceptanceTest
     {
-        [Fact(DisplayName = "cs8.1-04 Computed writes result, follows input")]
+        [Fact(DisplayName = "cs8.1-04 cs8.1-05 Computed writes result, follows input")]
         public void Rule_8_1_ComputedAddsReactionThatWritesTheRegister()
         {
             using var host = new ThreadHost();
