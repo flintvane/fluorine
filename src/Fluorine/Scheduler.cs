@@ -26,8 +26,7 @@ namespace Fluorine
         int _state;
         Thread _ownerThread;
 
-        protected Scheduler()
-            : this(true)
+        protected Scheduler(): this(true)
         {
         }
 

@@ -100,6 +100,8 @@ namespace Fluorine
 
         protected override void OnShutdownFinished()
         {
+            if (IsOwnerThread)
+                ctx?.ExitThread();
         }
 
         void InvokeWork(Action action)
@@ -135,20 +137,21 @@ namespace Fluorine
                 CompleteShutdown();
         }
 
-        // Private method to set up a WinForms synchronisation contextz
-        private WinFormsScheduler()
+        // Private method to set up a WinForms synchronisation context
+        private ApplicationContext ctx;
+        private WinFormsScheduler(): base(true)
         {
+            ctx = new ApplicationContext();
         }
 
-        public static WinFormsScheduler CreateNew(string name, Action initial)
+        public static WinFormsScheduler CreateNew(string name, Action initial=null)
         {
-            ApplicationContext ctx=null;
             return StartOwnedThread(name,
                 ApartmentState.STA,
                 typeof(WinFormsScheduler),
                 () =>
                 {
-                    ctx = new ApplicationContext();
+                   
                     return new WinFormsScheduler();
                 },
                 (s, a) =>
@@ -158,13 +161,13 @@ namespace Fluorine
                     s._context = SynchronizationContext.Current;
                     dispatcher.BeginInvoke(()=>
                     {
-                        a();
-                        dispatcher?.Dispose();
+                        a?.Invoke();
+                        dispatcher.Dispose();
                     });
                 },
                 (s) =>
                 {
-                    Application.Run(ctx);
+                    Application.Run(s.ctx);
                 },
                 initial);
         }
