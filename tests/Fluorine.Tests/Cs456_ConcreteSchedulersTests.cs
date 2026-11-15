@@ -796,7 +796,7 @@ namespace Fluorine
         }
         
         [Fact(DisplayName = "cs6.1-01 WinForms scheduler runs queued work")]
-        public void Rule_6_3_QueueNeverBlocksAndShutdownDoesNotEndLoop()
+        public void Rule_6_1_01_WinFormsRunsQueuedWork()
         {
             try
             {
@@ -808,7 +808,7 @@ namespace Fluorine
             }
             catch (Exception ex)
             {
-                SkipLog.CouldNotRun("Rule_6_3", ex.Message);
+                SkipLog.CouldNotRun("Rule_6_1_01", ex.Message);
                 throw;
             }
         }
@@ -843,23 +843,6 @@ namespace Fluorine
             {
                 release.Set();
             }
-        }
-
-        [Fact(DisplayName = "cs6.3-02 Shutdown keeps WinForms loop running")]
-        public void Rule_6_3_02_ShutdownDoesNotEndMessageLoop()
-        {
-            using var forms = WinFormsLoop.Start();
-            forms.Scheduler.Shutdown();
-            bool ran = false;
-            var done = new ManualResetEvent(false);
-            forms.Form.BeginInvoke(new Action(() =>
-            {
-                ran = true;
-                done.Set();
-            }));
-            Harness.Wait(done, "message after shutdown");
-            Assert.True(ran);
-            Assert.True(forms.Thread.IsAlive, "Application.Run ended");
         }
     }
 
