@@ -6,10 +6,9 @@ namespace Fluorine
 {
     public sealed class WinFormsScheduler : Scheduler
     {
-        [ThreadStatic]
-        static int t_executing;
+        [ThreadStatic] static int t_executing;
 
-        readonly SynchronizationContext _context;
+        private SynchronizationContext _context;
         int _pending;
 
         WinFormsScheduler(SynchronizationContext context)
@@ -52,6 +51,7 @@ namespace Fluorine
                     return;
                 _pending++;
             }
+
             try
             {
                 _context.Post(_ => InvokeWork(action), null);
@@ -71,6 +71,7 @@ namespace Fluorine
                 if (_pending == 0 && !IsOwnerThread)
                     postSentinel = true;
             }
+
             if (!postSentinel)
                 return;
             try
@@ -129,8 +130,43 @@ namespace Fluorine
                 if (HasStartedShutdown && !IsFinished && _pending <= 0 && t_executing == 0)
                     complete = true;
             }
+
             if (complete)
                 CompleteShutdown();
+        }
+
+        // Private method to set up a WinForms synchronisation contextz
+        private WinFormsScheduler()
+        {
+        }
+
+        public static WinFormsScheduler CreateNew(string name, Action initial)
+        {
+            ApplicationContext ctx=null;
+            return StartOwnedThread(name,
+                ApartmentState.STA,
+                typeof(WinFormsScheduler),
+                () =>
+                {
+                    ctx = new ApplicationContext();
+                    return new WinFormsScheduler();
+                },
+                (s, a) =>
+                {
+                    var dispatcher = new Control();
+                    _ = dispatcher.Handle;
+                    s._context = SynchronizationContext.Current;
+                    dispatcher.BeginInvoke(()=>
+                    {
+                        a();
+                        dispatcher?.Dispose();
+                    });
+                },
+                (s) =>
+                {
+                    Application.Run(ctx);
+                },
+                initial);
         }
     }
 }

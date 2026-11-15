@@ -1147,15 +1147,13 @@ namespace Fluorine
         {
             // Set up the 3 schedulers, and obtain their threads
             Thread tt = null, dt = null, ft = null;
-            var ts = ThreadScheduler.CreateNew("cs3.3-01", () => tt = Thread.CurrentThread);
-            var ds = DispatcherScheduler.CreateNew("cs3.3-09", () => dt = Thread.CurrentThread);
-            using var loop = WinFormsLoop.Start();
-            ft = loop.Thread;
+            var ts = ThreadScheduler.CreateNew("thread-scheduler", () => tt = Thread.CurrentThread);
+            var ds = DispatcherScheduler.CreateNew("dispatcher-scheduler", () => dt = Thread.CurrentThread);
+            var fs = WinFormsScheduler.CreateNew("forms-scheduler", () => ft=Thread.CurrentThread);
             Assert.NotNull(dt);
             Assert.NotNull(ft);
             Assert.NotNull(tt);
             Assert.True(tt != dt && tt != ft && dt != ft);
-            var fs = loop.Scheduler;
             // Set up the 3 reactors
             var tr = new Reactor(ts);
             var dr = new Reactor(ds);
