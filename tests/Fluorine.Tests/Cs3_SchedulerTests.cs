@@ -1174,17 +1174,21 @@ namespace Fluorine
             // Here we wait until we have 100 in every reaction
             while (true)
                 lock (counts)
-                {
-                    bool all100 = counts.Count==3;
-                    foreach (var c in counts.Values)
-                        all100 &= c == 100;
-                    if (all100) break;
-                }
+                    if (AllDone(counts)) 
+                        break;
 
             // Check no errors
             Reactive.Shutdown();
             lock (counts)
                 Assert.Empty(errors);
+        }
+
+        private static bool AllDone(Dictionary<Scheduler, int> counts)
+        {
+            bool all100 = counts.Count==3;
+            foreach (var c in counts.Values)
+                all100 &= c == 100;
+            return all100;
         }
 
         private Action PingTo(Thread shouldBeOn, Dictionary<Scheduler, int> counts, HashSet<Scheduler> errors, List<Reaction> reactions)
@@ -1195,10 +1199,7 @@ namespace Fluorine
                 {
                     if (shouldBeOn != Thread.CurrentThread)
                         errors.Add(Scheduler.Current);
-                    bool allDone = counts.Count == 3;
-                    foreach (var c in counts.Values)
-                        allDone &= c == 100;
-                    if (allDone) return; // everybody reached 100: stop the game
+                    if (AllDone(counts)) return; // everybody reached 100: stop the game
                     counts.TryGetValue(Scheduler.Current, out int cnt);
                     if (cnt < 100)
                         counts[Scheduler.Current] = cnt + 1;
